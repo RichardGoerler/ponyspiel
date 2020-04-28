@@ -1,0 +1,36 @@
+# -*- coding: utf-8 -*-
+
+MAIN_TITLE = 'Pony Dingen'
+PONY_ID = 'Pony-ID'
+REQUEST = 'Daten abfragen'
+LOGIN_BUTTON = 'Login-Daten'
+EXPORT = 'Daten-Export'
+SELECT_FILE = 'Datei auswählen'
+CSV_FILES = 'CSV-Dateien'
+HTML_FILES = 'HTML-Dateien'
+PONY_INFO_ERROR = 'Fehler beim Abrufen der Infos'
+PONY_IMAGE_ERROR = 'Fehler beim Abrufen der Bilder'
+NOT_SUPPORTED_ERROR = 'Funktion (noch) nicht unterstützt'
+IO_ERROR = "E/A-Fehler"
+CSV_WRITE_ERROR = "Fehler beim Schreiben der CSV-Datei"
+HTML_WRITE_ERROR = "Fehler beim Schreiben der HTML-Datei"
+RADIO_HTML = 'HTML-Tabelle'
+RADIO_CSV = 'CSV-Format'
+RADIO_CLIPBOARD = 'Zwischenablage'
+RADIO_FILE = 'Datei'
+CHECK_ALL = 'Alles'
+CHECK_GESUNDHEIT = 'Gesundheit'
+CHECK_CHARAKTER = 'Charakter'
+CHECK_EXTERIEUR = 'Exterieur'
+CHECK_TRAINING = 'Training'
+CHECK_TRAINING_DETAILS = 'Training-Details'
+CHECK_TABLE_HEADINGS = 'Tabellenüberschriften'
+CHECK_SUM_VALUES = 'Summierte Werte'
+CHECK_COMPLETE_GESUNDHEIT = 'Gesundheit komplett'
+
+DIALOG_TITLE = 'Dialogfenster'
+DIALOG_OK = 'OK'
+DIALOG_CANCEL = 'Abbrechen'
+LOGIN_TITLE = 'Login-Daten eingeben'
+USER_LABEL = 'Benutzer'
+PASSWORD_LABEL = 'Passwort'
