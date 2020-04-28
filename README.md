@@ -2,7 +2,7 @@
 
 ### Requirements
 ##### Nur getestet auf Windows!
-#####Python 3
+##### Python 3
 mit folgenden Paketen
 * tkinter
 * requests
