@@ -219,7 +219,7 @@ class PonyGUI:
         if self.check_exterieur_var.get():
             write_dict.update({k: self.extractor.parser.exterieur_values[k] for k in list(self.extractor.parser.exterieur_values.keys())[int(delete_first):]})
         if self.check_training_var.get():
-            write_dict.update({k: self.extractor.parser.training_values[k] for k in list(self.extractor.parser.training_values.keys())[int(delete_first):]})
+            write_dict.update({k: self.extractor.parser.training_max[k] for k in list(self.extractor.parser.training_max.keys())[int(delete_first):]})
         if self.check_training_details_var.get():
             write_dict.update({**{k: self.extractor.parser.ausbildung_max[k] for k in list(self.extractor.parser.ausbildung_max.keys())[int(delete_first):]},
                                **{k: self.extractor.parser.gangarten_max[k] for k in list(self.extractor.parser.gangarten_max.keys())[int(delete_first):]},
