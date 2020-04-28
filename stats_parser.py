@@ -22,7 +22,7 @@ class MyHTMLParser(HTMLParser):
 
         # Query containers
         self.details_headings = ['Gesundheit', 'Zufriedenheit', 'Robustheit', 'Hufe', 'Zähne', 'Impfungen', 'Wurmkur',
-                                 'Charakter', 'Vertrauen', 'Intelligenz', 'Mut', 'Aufmerksamkeit', 'Gehorsam', 'Gelassenheit', 'Nervenstärke', 'Siegeswille', 'Motivation', 'Gutmütigkeit',
+                                 'Charakter', 'Vertrauen', 'Intelligenz', 'Mut', 'Aufmerksamkeit', 'Gehorsam', 'Gelassenheit', 'Nervenstärke', 'Siegeswille', 'Motivation', 'Gutmütigkeit', 'Genauigkeit', 'Auffassungsvermögen',
                                  'Exterieur', 'Trainingszustand', 'Bemuskelung', 'Bewegungen', 'Haltung', 'Ausdruck', 'Kopf', 'Halsansatz', 'Rückenlinie', 'Beinstellung']
         self.gesundheit_headings = self.details_headings[self.details_headings.index('Gesundheit'):self.details_headings.index('Charakter')]
         self.charakter_headings = self.details_headings[self.details_headings.index('Charakter'):self.details_headings.index('Exterieur')]
