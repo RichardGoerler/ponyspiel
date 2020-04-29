@@ -5,6 +5,14 @@ from PIL import Image
 import pickle
 import csv
 
+def add_margin(pil_img, top, right, bottom, left, color):
+    width, height = pil_img.size
+    new_width = width + right + left
+    new_height = height + top + bottom
+    result = Image.new(pil_img.mode, (new_width, new_height), color)
+    result.paste(pil_img, (left, top))
+    return result
+
 class MyHTMLParser(HTMLParser):
     def __init__(self):
         super(MyHTMLParser, self).__init__()
@@ -71,6 +79,9 @@ class MyHTMLParser(HTMLParser):
 
     def exit_block(self):
         self.block = 'none'
+        self.next_data_type = ''
+        self.span_id = ''
+        self.span_value_entered = False
 
     def enter_block(self, block_type):
         if block_type in self.block_types:
@@ -341,10 +352,17 @@ class PonyExtractor:
         for im in imlist:
             this_im = Image.open(im).convert('RGBA')
             if last_im is not None:
-                if last_im.size == this_im.size:
-                    last_im = Image.alpha_composite(last_im, this_im)
-                else:
-                    self.log.append("Skipping {}".format(im))
+                x_dif = last_im.size[0] - this_im.size[0]
+                y_dif = last_im.size[1] - this_im.size[1]
+                if y_dif > 0:
+                    this_im = add_margin(this_im, y_dif, 0, 0, 0, (0,0,0,0))
+                elif y_dif < 0:
+                    last_im = add_margin(last_im, -y_dif, 0, 0, 0, (0,0,0,0))
+                if x_dif > 0:
+                    this_im = add_margin(this_im, 0, x_dif, 0, 0, (0,0,0,0))
+                elif x_dif < 0:
+                    last_im = add_margin(last_im, 0, -x_dif, 0, 0, (0,0,0,0))
+                last_im = Image.alpha_composite(last_im, this_im)
             else:
                 last_im = this_im
         last_im = last_im.crop(last_im.getbbox())
