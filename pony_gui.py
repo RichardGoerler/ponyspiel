@@ -80,7 +80,7 @@ class PonyGUI:
         imobj = self.imorg.resize((dim, dim2), Image.ANTIALIAS)
         self.banner = ImageTk.PhotoImage(imobj)
         self.banner_label = tk.Label(self.root, image=self.banner, bg=self.bg)
-        self.banner_label.grid(rowspan=6)
+        self.banner_label.grid(rowspan=6, padx=(self.default_size, 0), pady=(self.default_size, 0))
 
         self.title_frame = tk.Frame(self.root)
         self.title_frame.grid(row=0, column=1, columnspan=2, padx=self.default_size)

@@ -175,14 +175,16 @@ class MyHTMLParser(HTMLParser):
                 self.tag_counter = 0
 
         if self.block == 'facts':
-            if len(self.next_data_type) == 0 and content in self.facts_headings:
+            # if len(self.next_data_type) == 0 and content in self.facts_headings:
+            if content in self.facts_headings:
                 self.next_data_type = content
             elif len(self.next_data_type) > 0 and len(content) > 0:
                 self.facts_values[self.next_data_type] = content
                 self.next_data_type = ''
 
         if self.block == 'details':
-            if len(self.next_data_type) == 0 and content in self.details_headings:
+            # if len(self.next_data_type) == 0 and content in self.details_headings:
+            if content in self.details_headings:
                 self.next_data_type = content
             elif len(self.next_data_type) > 0 and len(content) > 0:
                 self.details_values[self.next_data_type] = int(content)
@@ -196,7 +198,8 @@ class MyHTMLParser(HTMLParser):
                             self.military_values, self.western_values, self.rennen_values, self.fahren_values][list_index]
             block_max = [self.training_max, self.ausbildung_max, self.gangarten_max, self.dressur_max, self.springen_max,
                          self.military_max, self.western_max, self.rennen_max, self.fahren_max][list_index]
-            if len(self.next_data_type) == 0 and content in block_headings:
+            # if len(self.next_data_type) == 0 and content in block_headings:
+            if content in block_headings:
                 self.next_data_type = content
             elif len(self.next_data_type) > 0 and len(content) > 0:
                 # We need to read either one value
