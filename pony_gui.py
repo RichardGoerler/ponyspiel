@@ -82,6 +82,9 @@ class PonyGUI:
         self.banner_label = tk.Label(self.root, image=self.banner, bg=self.bg)
         self.banner_label.grid(rowspan=6, padx=(self.default_size, 0), pady=(self.default_size, 0))
 
+        self.quality_label = tk.Label(self.root, text='', bg=self.bg)
+        self.quality_label.grid(row=6, column=0)
+
         self.title_frame = tk.Frame(self.root)
         self.title_frame.grid(row=0, column=1, columnspan=2, padx=self.default_size)
         self.name_label = tk.Label(self.title_frame, text='', font=self.big_bold_font, bg=self.bg)
@@ -130,22 +133,22 @@ class PonyGUI:
                                                                                                                                                                  padx=int(self.default_size/2))
         self.check_var_container = []
         self.check_gesundheit_var = tk.IntVar()
-        self.check_gesundheit_var.set(0)
+        self.check_gesundheit_var.set(1)
         self.check_var_container.append(self.check_gesundheit_var)
         tk.Checkbutton(self.checkbox_frame, text=lang.CHECK_GESUNDHEIT, font=self.default_font, variable=self.check_gesundheit_var, command=self.toggle_all_off, bg=self.bg).grid(row=1, column=0,
                                                                                                                                                                      padx=int(self.default_size / 2))
         self.check_charakter_var = tk.IntVar()
-        self.check_charakter_var.set(0)
+        self.check_charakter_var.set(1)
         self.check_var_container.append(self.check_charakter_var)
         tk.Checkbutton(self.checkbox_frame, text=lang.CHECK_CHARAKTER, font=self.default_font, variable=self.check_charakter_var, command=self.toggle_all_off, bg=self.bg).grid(row=1, column=1,
                                                                                                                                                                     padx=int(self.default_size / 2))
         self.check_exterieur_var = tk.IntVar()
-        self.check_exterieur_var.set(0)
+        self.check_exterieur_var.set(1)
         self.check_var_container.append(self.check_exterieur_var)
         tk.Checkbutton(self.checkbox_frame, text=lang.CHECK_EXTERIEUR, font=self.default_font, variable=self.check_exterieur_var, command=self.toggle_all_off, bg=self.bg).grid(row=1, column=2,
                                                                                                                                                                     padx=int(self.default_size / 2))
         self.check_training_var = tk.IntVar()
-        self.check_training_var.set(0)
+        self.check_training_var.set(1)
         self.check_var_container.append(self.check_training_var)
         tk.Checkbutton(self.checkbox_frame, text=lang.CHECK_TRAINING, font=self.default_font, variable=self.check_training_var, command=self.toggle_all_off, bg=self.bg).grid(row=2, column=0,
                                                                                                                                                                         padx=int(self.default_size/2))
@@ -163,7 +166,7 @@ class PonyGUI:
         tk.Checkbutton(self.checkbox_frame2, text=lang.CHECK_TABLE_HEADINGS, font=self.default_font, variable=self.check_table_headings_var, bg=self.bg).grid(row=0, column=0,
                                                                                                                                                                        padx=int(self.default_size / 2))
         self.check_sum_values_var = tk.IntVar()
-        self.check_sum_values_var.set(0)
+        self.check_sum_values_var.set(1)
         tk.Checkbutton(self.checkbox_frame2, text=lang.CHECK_SUM_VALUES, font=self.default_font, variable=self.check_sum_values_var, bg=self.bg).grid(row=0, column=1,
                                                                                                                                                               padx=int(self.default_size / 2))
         self.check_complete_gesundheit_var = tk.IntVar()
@@ -198,6 +201,9 @@ class PonyGUI:
         self.name_label.configure(text=self.extractor.parser.name)
         self.id_label.configure(text=str(pony_id))
         self.export_button['state'] = tk.NORMAL
+
+        qual = self.extractor.get_pony_quality()
+        self.quality_label.configure(text='Qualität: {:.0f}%'.format(qual*100))
 
     def enter_login(self):
         _ = LoginWindow(self.root, self, lang.LOGIN_TITLE)
