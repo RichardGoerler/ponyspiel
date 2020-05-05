@@ -388,6 +388,30 @@ class PonyExtractor:
         except IOError:
             print("I/O error")
 
+    def get_pony_quality(self):
+        if self.parser is not None:
+            try:
+                gesundheit = (self.parser.details_values['Gesundheit']-400)/200
+                charakter = self.parser.details_values['Charakter'] / 1200
+                exterieur = self.parser.details_values['Exterieur'] / 800
+                ausbildung = self.parser.training_max['Ausbildung'] / 2200
+                gangarten = self.parser.training_max['Gangarten'] / 3100
+                dressur = self.parser.training_max['Dressur'] /3300
+                springen = self.parser.training_max['Springen'] / 2100
+                military = self.parser.training_max['Military'] / 2200
+                western = self.parser.training_max['Western'] / 1800
+                rennen = self.parser.training_max['Rennen'] / 1300
+                fahren = self.parser.training_max['Fahren'] / 1600
+            except:
+                return 0
+
+            gesundheit_weight = 0.5
+            training = (ausbildung + gangarten + dressur + springen + military + western + rennen + fahren) / 8
+            quality = (training + charakter + exterieur + gesundheit_weight * gesundheit) / (3 + gesundheit_weight)
+
+            return quality
+
+
     def print_pony_info(self):
         if self.parser is not None:
             print(self.parser.name)
