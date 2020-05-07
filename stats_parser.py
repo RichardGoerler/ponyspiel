@@ -343,14 +343,17 @@ class PonyExtractor:
                 ri = self.session.get(full_url)
                 if 'DOCTYPE html' in ri.text or len(ri.text) < 100:
                     self.log.append('Retrieving image at {} failed'.format(full_url))
-                    return False
-                with open('.cache/{}/img{:02d}.png'.format(self.pony_id, ind), 'wb') as out_file:
-                    out_file.write(ri.content)
+                    # return False
+                else:
+                    with open('.cache/{}/img{:02d}.png'.format(self.pony_id, ind), 'wb') as out_file:
+                        out_file.write(ri.content)
                 del ri
 
         if write_file.exists():
             write_file.unlink()   # delete file so it is not in the mixture. In the end it is overwritten anyway
         imlist = sorted(Path('.cache/{}/'.format(self.pony_id)).glob('*.png'))
+        if len(imlist) == 0:
+            return False
         last_im = None
         for im in imlist:
             this_im = Image.open(im).convert('RGBA')
