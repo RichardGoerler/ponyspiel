@@ -4,6 +4,7 @@ from html.parser import HTMLParser
 from PIL import Image
 import pickle
 import csv
+import shutil
 
 def add_margin(pil_img, top, right, bottom, left, color):
     width, height = pil_img.size
@@ -37,6 +38,7 @@ class MyHTMLParser(HTMLParser):
         self.exterieur_headings = self.details_headings[self.details_headings.index('Exterieur'):]
         self.training_headings = ['Gesamtpotenzial', 'Ausbildung', 'Gangarten', 'Dressur', 'Springen', 'Military', 'Western', 'Rennen', 'Fahren']
         self.facts_headings = ['Rufname', 'Besitzer', 'Züchter', 'Rasse', 'Alter', 'Geburtstag', 'Stockmaß', 'Erwartetes Stockmaß', 'Fellfarbe']
+                                        # additionaly, there are 'Geschlecht' and 'Fohlen' which are extracted differently (handle_starttag)
         self.ausbildung_headings = ['Ausbildung', 'Stärke', 'Trittsicherheit', 'Ausdauer', 'Geschwindigkeit', 'Beschleunigung', 'Wendigkeit', 'Sprungkraft', 'taktrein', 'Geschicklichkeit',
                                     'Sand', 'Gras', 'Erde', 'Schnee', 'Lehm', 'Späne',
                                     'Halle', 'Arena', 'draußen', 'sehr weich', 'weich', 'mittel', 'hart', 'sehr hart']
@@ -93,6 +95,21 @@ class MyHTMLParser(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         # ============================= Statements for entering blocks ==========================================================
+        if not self.is_in_block() and tag == 'button' and len(attrs) > 0:
+            if attrs[0] == ('class', 'tooltipover'):
+                data_content = (None, None)
+                for tup in attrs:
+                    if tup[0] == 'data-content':
+                        data_content = tup
+                        break
+                if data_content[0] is not None:
+                    if 'trächtig' in data_content[1]:
+                        date = data_content[1][data_content[1].index('(')+1:data_content[1].index(')')]
+                        self.facts_values['Fohlen'] = date
+                    elif data_content[1].strip() == 'Stute':
+                        self.facts_values['Geschlecht'] = 'Stute'
+                    elif data_content[1].strip() == 'Hengst':
+                        self.facts_values['Geschlecht'] = 'Hengst'
         if not self.is_in_block() and tag == 'div' and len(attrs) > 0:
             if len(self.name) == 0 and attrs[0] == ('class', 'main'):
                 # Start des Seiteninhalts. Das nächste Stück Text (h2-Überschrift) beinhaltet den Namen des Pferdes
@@ -241,6 +258,7 @@ class PonyExtractor:
         self.session = None
         self.post_login_url = 'https://noblehorsechampion.com/index.php'
         self.request_url_base = 'https://noblehorsechampion.com/inside/horse.php?id={}'
+        self.organize_url_base = 'https://noblehorsechampion.com/inside/organizehorses.php?id={}'
         self.base_url = 'https://noblehorsechampion.com/inside/'
         self.payload = {'email': '', 'passwort': '', 'login': ''}
         self.pony_id = 0
@@ -279,8 +297,55 @@ class PonyExtractor:
                 return False
         return True
 
+    def get_own_ponies(self):
+        if not self._login_if_required():
+            return False
+        r1 = self.session.get(self.base_url)
+        text = r1.text
+        if len(text) < self.loginpage_length_threshold:
+            self.log.append('Contacting start page at {} failed'.format(self.base_url))
+            return False
+        search_string = 'organizehorses.php?id='
+        if not search_string in text:
+            self.log.append('Could not find organizehorses link in start page')
+            return False
+        index = text.index(search_string) + len(search_string)
+        id_string = ''
+        while text[index].isnumeric():
+            id_string += text[index]
+            index += 1
+        organize_id = int(id_string)
+
+        r2 = self.session.get(self.organize_url_base.format(organize_id))
+        text = r2.text
+        if len(text) < self.loginpage_length_threshold:
+            self.log.append('Contacting organize page at {} failed'.format(self.organize_url_base.format(organize_id)))
+            return False
+
+        search_string = 'class="main"'
+        if not search_string in text:
+            self.log.append('Could not find main class in start page')
+            return False
+        text = text[text.index(search_string):]
+
+        horse_ids = []
+        search_string = '"horse.php?id='
+        while search_string in text:
+            index = text.index(search_string) + len(search_string)
+            id_string = ''
+            while text[index].isnumeric():
+                id_string += text[index]
+                index += 1
+            id = int(id_string)
+            if not id in horse_ids:
+                horse_ids.append(id)
+            text = text[index:]
+        return horse_ids
+
+
     def _request_pony_file(self, pony_id, cached=True):
-        Path('.cache/{}/'.format(pony_id)).mkdir(parents=True, exist_ok=True)
+        cache_path = Path('.cache/{}/'.format(pony_id))
+        cache_path.mkdir(parents=True, exist_ok=True)
         write_file = Path('.cache/{}/ponyfile.html'.format(pony_id))
         if cached:
             if len(self.data) > 0 and self.pony_id == pony_id:
@@ -299,15 +364,21 @@ class PonyExtractor:
             r = self.session.get(request_url)
         except requests.exceptions.TooManyRedirects:
             self.log.append('Retrieving pony page at {} failed'.format(request_url))
+            self.del_pony_cache(pony_id)
             return False
         if len(r.text) < self.insidepage_length_threshold:
             self.log.append('Retrieving pony page at {} failed'.format(request_url))
+            self.del_pony_cache(pony_id)
             return False
         self.data = str(r.text)
         # store to disk
         with open(write_file, 'w', encoding='utf-8') as f:
             f.write(self.data)
         return True
+
+    def del_pony_cache(self, pony_id):
+        cache_path = Path('.cache/{}/'.format(pony_id))
+        shutil.rmtree(cache_path, ignore_errors=True)
 
     def get_pony_info(self, pony_id, cached=True):
         if self.pony_id == 0:
