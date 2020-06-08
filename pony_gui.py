@@ -19,10 +19,14 @@ def argsort(seq):
     return sorted(range(len(seq)), key=seq.__getitem__)[::-1]
 
 class ListingWindow(dialog.Dialog):
+
     def header(self, master):
         pass
 
     def body(self, master):
+        self.MAXROWS = 25
+        self.MAX_LEN_NAME = 20
+        self.MAX_LEN_PROP = 3
         self.def_size = self.gui.default_size
         self.def_font = font.Font(family=self.gui.default_font['family'], size=self.def_size)
         self.bol_font = font.Font(family=self.gui.default_font['family'], size=self.def_size, weight='bold')
@@ -61,9 +65,9 @@ class ListingWindow(dialog.Dialog):
         self.header_objects = [tk.Label(self.table_frame, text=lang.LISTING_HEADER_NAME, font=self.bol_font, bg=self.gui.bg)]
         self.data_headers = [lang.LISTING_HEADER_NAME]
         for prop in self.props:
-            self.header_objects.append(tk.Button(self.table_frame, text=prop[0], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
+            self.header_objects.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
             self.data_headers.append(prop[0])
-        self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE, font=self.bol_font, command=lambda p='avg': self.sort(p), bg=self.gui.bg))
+        self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p='avg': self.sort(p), bg=self.gui.bg))
         self.data_headers.append(lang.LISTING_HEADER_AVERAGE)
         for ci, el in enumerate(self.header_objects):
             el.grid(row=0, column=ci+1, padx=int(self.def_size / 2))
@@ -93,7 +97,7 @@ class ListingWindow(dialog.Dialog):
                 self.images.append(im)
                 self.banners.append(ImageTk.PhotoImage(im))
                 object_row.append(tk.Label(self.table_frame, image=self.banners[-1], bg=self.gui.bg))
-                object_row.append(tk.Label(self.table_frame, text=self.gui.extractor.parser.name, font=self.bol_font, bg=self.gui.bg))
+                object_row.append(tk.Label(self.table_frame, text=self.gui.extractor.parser.name[:self.MAX_LEN_NAME], font=self.bol_font, bg=self.gui.bg))
                 table_row.append(self.gui.extractor.parser.name)
                 for prop in self.props:
                     if len(prop) == 1:
@@ -118,18 +122,30 @@ class ListingWindow(dialog.Dialog):
                     self.sex.append(1)
                 else:
                     self.sex.append(2)
-        for ri, object_row in enumerate(self.objects):
-            for ci, el in enumerate(object_row):
-                el.grid(row=ri+1, column=ci, padx=int(self.def_size/2))
+        self.draw_objects()
 
         redraw = False
-        while 2.5*self.def_size*(len(self.data_table)+4) + 2.5*self.gui.default_size > self.gui.screenheight*0.8:
+        while 2.5*self.def_size*(min(self.MAXROWS, len(self.data_table))+4) + 2.5*self.gui.default_size > self.gui.screenheight*0.8:
             redraw = True
             self.def_size -= 1
             self.def_font['size'] = self.def_size
             self.bol_font['size'] = self.def_size
         if redraw:
             self.redraw()
+
+    def draw_objects(self):
+        if self.show_sex == 0:
+            disp_sex = [1,2]
+        else:
+            disp_sex = [self.show_sex]
+        row_index = 0
+        for ri, object_row in enumerate(self.objects):
+            if self.sex[ri] in disp_sex:
+                for ci, el in enumerate(object_row):
+                    rindex = row_index % self.MAXROWS
+                    cindex = ci + len(object_row) * (row_index // self.MAXROWS)
+                    el.grid(row=rindex+1, column=cindex, padx=int(self.def_size/2))
+                row_index += 1
 
     def redraw(self):
         self.sex_all_button.grid_forget()
@@ -139,11 +155,17 @@ class ListingWindow(dialog.Dialog):
         self.table_frame.grid_forget()
         for i, h in enumerate(self.header_objects):
             h.grid_forget()
-            if i == 0:
+            if i == 0 or i == len(self.header_objects)-1:
                 h.configure(font=self.bol_font)
             else:
                 h.configure(font=self.def_font)
-        self.filter_sex(self.show_sex)
+        for ri, object_row in enumerate(self.objects):
+            for ci, el in enumerate(object_row):
+                if ci < 2 or ci == len(object_row)-1:
+                    el.configure(font=self.bol_font)
+                else:
+                    el.configure(font=self.def_font)
+                el.grid_forget()
         self.sex_all_button.configure(font=self.def_font)
         self.sex_female_button.configure(font=self.def_font)
         self.sex_male_button.configure(font=self.def_font)
@@ -159,29 +181,16 @@ class ListingWindow(dialog.Dialog):
             self.banners[ii] = ImageTk.PhotoImage(im)
             self.objects[ii][0].configure(image=self.banners[ii])
         self.table_frame.grid(row=1, column=0, padx=self.def_size)
-        for ri, object_row in enumerate(self.objects):
-            for ci, el in enumerate(object_row):
-                if ci < 2 or ci == len(object_row)-1:
-                    el.configure(font=self.bol_font)
-                else:
-                    el.configure(font=self.def_font)
-                el.grid(row=ri + 1, column=ci, padx=int(self.def_size / 2))
+        for ci, el in enumerate(self.header_objects):
+            el.grid(row=0, column=ci + 1, padx=int(self.def_size / 2))
+        self.draw_objects()
 
     def filter_sex(self, sex_identifier):
         self.show_sex = sex_identifier
-        if self.show_sex == 0:
-            disp_sex = [1,2]
-        else:
-            disp_sex = [self.show_sex]
         for ri, object_row in enumerate(self.objects):
             for ci, el in enumerate(object_row):
                 el.grid_forget()
-        row_index = 0
-        for ri, object_row in enumerate(self.objects):
-            if self.sex[ri] in disp_sex:
-                for ci, el in enumerate(object_row):
-                    el.grid(row=row_index + 1, column=ci, padx=int(self.def_size / 2))
-                row_index += 1
+        self.draw_objects()
 
     def sort(self, prop):
         if self.show_sex == 0:
@@ -207,12 +216,7 @@ class ListingWindow(dialog.Dialog):
         self.objects = objects_sorted
         self.data_table = table_sorted
         self.sex = sex_sorted
-        row_index = 0
-        for ri, object_row in enumerate(self.objects):
-            if self.sex[ri] in disp_sex:
-                for ci, el in enumerate(object_row):
-                    el.grid(row=row_index+1, column=ci, padx=int(self.def_size/2))
-                row_index += 1
+        self.draw_objects()
 
     def get_prop_value_and_count(self, prop):
         p = self.gui.extractor.parser
