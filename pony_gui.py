@@ -7,6 +7,7 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 from pathlib import Path
 import csv
+from datetime import datetime
 
 import lang
 import stats_parser
@@ -27,6 +28,7 @@ class ListingWindow(dialog.Dialog):
         self.MAXROWS = 25
         self.MAX_LEN_NAME = 20
         self.MAX_LEN_PROP = 3
+        self.now = datetime.now()
         self.def_size = self.gui.default_size
         self.def_font = font.Font(family=self.gui.default_font['family'], size=self.def_size)
         self.bol_font = font.Font(family=self.gui.default_font['family'], size=self.def_size, weight='bold')
@@ -62,8 +64,10 @@ class ListingWindow(dialog.Dialog):
         self.gui.race_ids = []
         self.table_frame = tk.Frame(master, bg=self.gui.bg)
         self.table_frame.grid(row=1, column=0, padx=self.def_size)
-        self.header_objects = [tk.Label(self.table_frame, text=lang.LISTING_HEADER_NAME, font=self.bol_font, bg=self.gui.bg)]
+        self.header_objects = [tk.Label(self.table_frame, text=lang.LISTING_HEADER_NAME[:self.MAX_LEN_PROP], font=self.bol_font, bg=self.gui.bg)]
         self.data_headers = [lang.LISTING_HEADER_NAME]
+        self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AGE[:self.MAX_LEN_PROP], command=lambda p=lang.LISTING_HEADER_AGE: self.sort(p), bg=self.gui.bg))
+        self.data_headers.append(lang.LISTING_HEADER_AGE)
         for prop in self.props:
             self.header_objects.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
             self.data_headers.append(prop[0])
@@ -99,6 +103,14 @@ class ListingWindow(dialog.Dialog):
                 object_row.append(tk.Label(self.table_frame, image=self.banners[-1], bg=self.gui.bg))
                 object_row.append(tk.Label(self.table_frame, text=self.gui.extractor.parser.name[:self.MAX_LEN_NAME], font=self.bol_font, bg=self.gui.bg))
                 table_row.append(self.gui.extractor.parser.name)
+
+                age = self.get_age()
+                table_row.append(age)
+                pony_months = age.days
+                pony_years = pony_months // 12
+                pony_months %= 12
+                object_row.append(tk.Label(self.table_frame, text='{}/{}'.format(pony_years, pony_months), font=self.def_font, bg=self.gui.bg))
+
                 for prop in self.props:
                     if len(prop) == 1:
                         val, norm = self.get_prop_value_and_count(prop[0])
@@ -112,7 +124,7 @@ class ListingWindow(dialog.Dialog):
                     table_row.append(normval)
 
                 # total average
-                table_row.append(sum(table_row[1:])/(len(table_row)-1))
+                table_row.append(sum(table_row[2:])/(len(table_row)-1))
                 object_row.append(tk.Label(self.table_frame, text=str(round(table_row[-1], 1)), font=self.bol_font, bg=self.gui.bg))
 
                 self.objects.append(object_row)
@@ -122,6 +134,10 @@ class ListingWindow(dialog.Dialog):
                     self.sex.append(1)
                 else:
                     self.sex.append(2)
+
+                if pony_years < 3:
+                    for el in object_row:
+                        el.configure(fg='red')
         self.draw_objects()
 
         redraw = False
@@ -132,6 +148,19 @@ class ListingWindow(dialog.Dialog):
             self.bol_font['size'] = self.def_size
         if redraw:
             self.redraw()
+
+    def get_age(self):
+        birthday_split = self.gui.extractor.parser.facts_values['Geburtstag'].split('-')
+        date_str = birthday_split[0].strip()
+        time_str = birthday_split[1].strip()
+        time_split = time_str.split(':')
+        hour = int(time_split[0])
+        minute = int(time_split[1])
+        date_split = date_str.split('.')
+        year = int(date_split[2])
+        month = int(date_split[1])
+        day = int(date_split[0])
+        return self.now - datetime(year, month, day, hour, minute)
 
     def draw_objects(self):
         if self.show_sex == 0:
