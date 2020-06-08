@@ -427,7 +427,11 @@ class PonyExtractor:
             return False
         last_im = None
         for im in imlist:
-            this_im = Image.open(im).convert('RGBA')
+            try:
+                this_im = Image.open(im).convert('RGBA')
+            except:
+                self.log.append('Loading image {} failed. Skipping.'.format(im))
+                break
             if last_im is not None:
                 x_dif = last_im.size[0] - this_im.size[0]
                 y_dif = last_im.size[1] - this_im.size[1]
