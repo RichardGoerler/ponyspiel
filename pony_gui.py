@@ -98,8 +98,8 @@ class ListingWindow(dialog.Dialog):
             if not avg_done:
                 self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p='avg': self.sort(p), bg=self.gui.bg))
                 self.data_headers.append(lang.LISTING_HEADER_AVERAGE)
+                self.BOLD_COLUMNS = [0, 2, len(self.data_headers) - 1]
                 avg_done = True
-        self.BOLD_COLUMNS = [0, 2, len(self.data_headers)-1]
         for ci, el in enumerate(self.header_objects):
             el.grid(row=0, column=ci+1, padx=int(self.def_size / 2))   # ci + 1 because the image does not have a corresponding header!
 
