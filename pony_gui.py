@@ -82,7 +82,8 @@ class ListingWindow(dialog.Dialog):
         self.gui.race_ids = []
         self.table_frame = tk.Frame(master, bg=self.gui.bg)
         self.table_frame.grid(row=1, column=0, padx=self.def_size)
-        self.header_objects = [tk.Label(self.table_frame, text=lang.LISTING_HEADER_NAME[:self.MAX_LEN_PROP], font=self.bol_font, bg=self.gui.bg)]
+        # self.header_objects = [tk.Label(self.table_frame, text=lang.LISTING_HEADER_NAME[:self.MAX_LEN_PROP], font=self.bol_font, bg=self.gui.bg)]
+        self.header_objects = [tk.Button(self.table_frame, text=lang.LISTING_HEADER_NAME[:self.MAX_LEN_NAME], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_NAME: self.sort(p), bg=self.gui.bg)]
         self.data_headers = [lang.LISTING_HEADER_NAME]
         self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AGE[:self.MAX_LEN_PROP], command=lambda p=lang.LISTING_HEADER_AGE: self.sort(p), bg=self.gui.bg))
         self.data_headers.append(lang.LISTING_HEADER_AGE)
