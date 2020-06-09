@@ -68,13 +68,17 @@ class ListingWindow(dialog.Dialog):
         self.data_headers = [lang.LISTING_HEADER_NAME]
         self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AGE[:self.MAX_LEN_PROP], command=lambda p=lang.LISTING_HEADER_AGE: self.sort(p), bg=self.gui.bg))
         self.data_headers.append(lang.LISTING_HEADER_AGE)
+        self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_POTENTIAL[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_POTENTIAL: self.sort(p), bg=self.gui.bg))
+        self.data_headers.append(lang.LISTING_HEADER_POTENTIAL)
+        NUM_NON_USER_PROP = 3  # number of entries in the data table that is not defined by the user (and which the average is calculated over). Does not include the image!
         for prop in self.props:
             self.header_objects.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
             self.data_headers.append(prop[0])
         self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p='avg': self.sort(p), bg=self.gui.bg))
         self.data_headers.append(lang.LISTING_HEADER_AVERAGE)
+        self.BOLD_COLUMNS = [0, 2, len(self.data_headers)-1]
         for ci, el in enumerate(self.header_objects):
-            el.grid(row=0, column=ci+1, padx=int(self.def_size / 2))
+            el.grid(row=0, column=ci+1, padx=int(self.def_size / 2))   # ci + 1 because the image does not have a corresponding header!
 
         self.objects = []
         self.data_table = []
@@ -111,6 +115,9 @@ class ListingWindow(dialog.Dialog):
                 pony_months %= 12
                 object_row.append(tk.Label(self.table_frame, text='{}/{}'.format(pony_years, pony_months), font=self.def_font, bg=self.gui.bg))
 
+                table_row.append(self.gui.extractor.parser.training_max['Gesamtpotenzial'])
+                object_row.append(tk.Label(self.table_frame, text=table_row[-1], font=self.bol_font, bg=self.gui.bg))
+
                 for prop in self.props:
                     if len(prop) == 1:
                         val, norm = self.get_prop_value_and_count(prop[0])
@@ -124,7 +131,7 @@ class ListingWindow(dialog.Dialog):
                     table_row.append(normval)
 
                 # total average
-                table_row.append(sum(table_row[2:])/(len(table_row)-1))
+                table_row.append(sum(table_row[NUM_NON_USER_PROP:])/(len(table_row)-NUM_NON_USER_PROP))
                 object_row.append(tk.Label(self.table_frame, text=str(round(table_row[-1], 1)), font=self.bol_font, bg=self.gui.bg))
 
                 self.objects.append(object_row)
@@ -184,13 +191,13 @@ class ListingWindow(dialog.Dialog):
         self.table_frame.grid_forget()
         for i, h in enumerate(self.header_objects):
             h.grid_forget()
-            if i == 0 or i == len(self.header_objects)-1:
+            if i in self.BOLD_COLUMNS:
                 h.configure(font=self.bol_font)
             else:
                 h.configure(font=self.def_font)
         for ri, object_row in enumerate(self.objects):
             for ci, el in enumerate(object_row):
-                if ci < 2 or ci == len(object_row)-1:
+                if (ci-1) in self.BOLD_COLUMNS:  # ci - 1 because BOLD_COLUMNS is for header columns (without) image. So 1 here corresponds to 0 in BOLD_COLUMNS
                     el.configure(font=self.bol_font)
                 else:
                     el.configure(font=self.def_font)
@@ -558,6 +565,12 @@ class PonyGUI:
             self.request_button.configure(state=tk.NORMAL)
 
     def export(self):
+        id_text = self.id_label.cget('text')
+        if int(self.id_label.cget('text')) != self.extractor.pony_id:
+            self.id_spin.delete(0, "end")
+            self.id_spin.insert(0, id_text)
+            # print('requesting again')
+            self.request()
         write_dict = dict()
         delete_first = not self.check_sum_values_var.get()   # Sum value is always the first value
         if self.check_gesundheit_var.get():
@@ -604,6 +617,7 @@ class PonyGUI:
                     messagebox.showerror(title=lang.IO_ERROR, message=lang.CSV_WRITE_ERROR)
             else: # clipboard
                 messagebox.showerror(title=lang.NOT_SUPPORTED_ERROR, message=lang.NOT_SUPPORTED_ERROR)
+
         else: # html
             # example_data = "<tr><th>Firstname</th><th>Lastname</th><th>Age</th></tr><tr><td>Jill</td><td>Smith</td><td>50</td></tr>"
             html_string = "\n\n<table>"
