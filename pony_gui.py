@@ -41,9 +41,13 @@ class ListingWindow(dialog.Dialog):
         self.props = []
         divider_found = False
         self.additional = []
+        p = self.gui.extractor.parser
+        valid_keys = [p.gesundheit_headings, p.charakter_headings, p.exterieur_headings, p.ausbildung_headings, p.gangarten_headings, p.dressur_headings,
+                      p.springen_headings, p.military_headings, p.western_headings, p.rennen_headings, p.fahren_headings]
         for l in config[1:]:
             if '=' in l:
                 divider_found = True
+                valid_keys.append(p.facts_headings)
                 continue
             if not divider_found:
                 append_to = self.props
@@ -51,6 +55,12 @@ class ListingWindow(dialog.Dialog):
                 append_to = self.additional
             colon_split = l.split(':')
             part = [colon_split[0]]
+            part_ok = False            # Anything that is not in the parser keys does not make sense here. facts are additionaly allowed if we are after the divider (which means no average has to be computed)
+            for keylist in valid_keys:
+                if part[0] in keylist:
+                    part_ok = True
+            if not part_ok:
+                continue
             if len(colon_split) > 1:
                 part.append([attr.strip() for attr in colon_split[1].split(',')])
             append_to.append(part)
@@ -140,8 +150,12 @@ class ListingWindow(dialog.Dialog):
                             val = 0
                             for subprop in prop[1]:
                                 val += self.get_prop_value(subprop)
-                        normval = val/norm
-                        object_row.append(tk.Label(self.table_frame, text=str(round(normval, 1)), font=self.def_font, bg=self.gui.bg))
+                        if isinstance(val, (int, float)):
+                            normval = val/norm
+                            textval = str(round(normval, 1))
+                        else:
+                            normval = textval = val
+                        object_row.append(tk.Label(self.table_frame, text=textval, font=self.def_font, bg=self.gui.bg))
                         table_row.append(normval)
 
                     # total average - only done once
@@ -272,7 +286,7 @@ class ListingWindow(dialog.Dialog):
 
     def get_prop_value_and_count(self, prop):
         p = self.gui.extractor.parser
-        l = [p.gesundheit_values, p.charakter_values, p.exterieur_values, p.ausbildung_max, p.gangarten_max, p.dressur_max,
+        l = [p.facts_values, p.gesundheit_values, p.charakter_values, p.exterieur_values, p.ausbildung_max, p.gangarten_max, p.dressur_max,
              p.springen_max, p.military_max, p.western_max, p.rennen_max, p.fahren_max]
         for l_list in l:
             if prop in list(l_list.keys()):

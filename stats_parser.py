@@ -252,7 +252,7 @@ class MyHTMLParser(HTMLParser):
 
 class PonyExtractor:
     def __init__(self):
-        self.parser = None
+        self.parser = MyHTMLParser()
         self.pony_image = None
         self.data = ''
         self.session = None
