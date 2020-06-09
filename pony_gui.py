@@ -39,13 +39,21 @@ class ListingWindow(dialog.Dialog):
             config = f.read().splitlines()
         races = [r.strip() for r in config[0].split(',')]
         self.props = []
+        divider_found = False
+        self.additional = []
         for l in config[1:]:
+            if '=' in l:
+                divider_found = True
+                continue
+            if not divider_found:
+                append_to = self.props
+            else:
+                append_to = self.additional
             colon_split = l.split(':')
-            part = []
-            part.append(colon_split[0])
+            part = [colon_split[0]]
             if len(colon_split) > 1:
                 part.append([attr.strip() for attr in colon_split[1].split(',')])
-            self.props.append(part)
+            append_to.append(part)
 
         self.button_frame = tk.Frame(master, bg=self.gui.bg)
         self.button_frame.grid(row=0, column=0, padx=self.def_size, pady=self.def_size)
@@ -71,11 +79,15 @@ class ListingWindow(dialog.Dialog):
         self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_POTENTIAL[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_POTENTIAL: self.sort(p), bg=self.gui.bg))
         self.data_headers.append(lang.LISTING_HEADER_POTENTIAL)
         NUM_NON_USER_PROP = 3  # number of entries in the data table that is not defined by the user (and which the average is calculated over). Does not include the image!
-        for prop in self.props:
-            self.header_objects.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
-            self.data_headers.append(prop[0])
-        self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p='avg': self.sort(p), bg=self.gui.bg))
-        self.data_headers.append(lang.LISTING_HEADER_AVERAGE)
+        avg_done = False
+        for prop_list in [self.props, self.additional]:
+            for prop in prop_list:
+                self.header_objects.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
+                self.data_headers.append(prop[0])
+            if not avg_done:
+                self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p='avg': self.sort(p), bg=self.gui.bg))
+                self.data_headers.append(lang.LISTING_HEADER_AVERAGE)
+                avg_done = True
         self.BOLD_COLUMNS = [0, 2, len(self.data_headers)-1]
         for ci, el in enumerate(self.header_objects):
             el.grid(row=0, column=ci+1, padx=int(self.def_size / 2))   # ci + 1 because the image does not have a corresponding header!
@@ -118,21 +130,25 @@ class ListingWindow(dialog.Dialog):
                 table_row.append(self.gui.extractor.parser.training_max['Gesamtpotenzial'])
                 object_row.append(tk.Label(self.table_frame, text=table_row[-1], font=self.bol_font, bg=self.gui.bg))
 
-                for prop in self.props:
-                    if len(prop) == 1:
-                        val, norm = self.get_prop_value_and_count(prop[0])
-                    else:
-                        norm = len(prop[1])
-                        val = 0
-                        for subprop in prop[1]:
-                            val += self.get_prop_value(subprop)
-                    normval = val/norm
-                    object_row.append(tk.Label(self.table_frame, text=str(round(normval, 1)), font=self.def_font, bg=self.gui.bg))
-                    table_row.append(normval)
+                avg_done = False
+                for prop_list in [self.props, self.additional]:
+                    for prop in prop_list:
+                        if len(prop) == 1:
+                            val, norm = self.get_prop_value_and_count(prop[0])
+                        else:
+                            norm = len(prop[1])
+                            val = 0
+                            for subprop in prop[1]:
+                                val += self.get_prop_value(subprop)
+                        normval = val/norm
+                        object_row.append(tk.Label(self.table_frame, text=str(round(normval, 1)), font=self.def_font, bg=self.gui.bg))
+                        table_row.append(normval)
 
-                # total average
-                table_row.append(sum(table_row[NUM_NON_USER_PROP:])/(len(table_row)-NUM_NON_USER_PROP))
-                object_row.append(tk.Label(self.table_frame, text=str(round(table_row[-1], 1)), font=self.bol_font, bg=self.gui.bg))
+                    # total average - only done once
+                    if not avg_done:
+                        table_row.append(sum(table_row[NUM_NON_USER_PROP:])/(len(table_row)-NUM_NON_USER_PROP))
+                        object_row.append(tk.Label(self.table_frame, text=str(round(table_row[-1], 1)), font=self.bol_font, bg=self.gui.bg))
+                        avg_done = True
 
                 self.objects.append(object_row)
                 self.data_table.append(table_row)
