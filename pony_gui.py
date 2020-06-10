@@ -408,7 +408,7 @@ class PonyGUI:
 
         self.export_button = tk.Button(self.a_button_frame, text=lang.EXPORT, width=self.default_size, command=self.export, bg=self.bg, state=tk.DISABLED)
         self.export_button.grid(row=1, column=0, padx=int(self.default_size/2), pady=int(self.default_size/2))
-        self.del_cache_button = tk.Button(self.a_button_frame, text=lang.DEL_CACHE.format(''), width=self.default_size, command=self.del_cache, bg=self.bg, state=tk.DISABLED)
+        self.del_cache_button = tk.Button(self.a_button_frame, text=lang.DEL_CACHE.format('Cache'), width=self.default_size, command=self.del_cache, bg=self.bg, state=tk.DISABLED)
         self.del_cache_button.grid(row=1, column=1, padx=int(self.default_size/2), pady=int(self.default_size/2))
 
         self.radio_frame = tk.Frame(self.root, bg=self.bg)
@@ -504,7 +504,7 @@ class PonyGUI:
             pony_id_str = self.extractor.pony_id
         self.extractor.del_pony_cache(pony_id_str)
         self.del_cache_button['state'] = tk.DISABLED
-        self.del_cache_button.configure(text=lang.DEL_CACHE.format(''))
+        self.del_cache_button.configure(text=lang.DEL_CACHE.format('Cache'))
 
     def load_own_ponies(self):
         horse_ids = self.extractor.get_own_ponies()
