@@ -195,8 +195,10 @@ class MyHTMLParser(HTMLParser):
             # if len(self.next_data_type) == 0 and content in self.facts_headings:
             if content in self.facts_headings:
                 self.next_data_type = content
+                self.facts_values[self.next_data_type] = ''
             elif len(self.next_data_type) > 0 and len(content) > 0:
-                self.facts_values[self.next_data_type] = content
+                if not content.lower() == 'kurzbeschreibung':
+                    self.facts_values[self.next_data_type] = content
                 self.next_data_type = ''
 
         if self.block == 'details':
