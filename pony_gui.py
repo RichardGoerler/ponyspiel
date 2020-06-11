@@ -96,7 +96,7 @@ class ListingWindow(dialog.Dialog):
                 self.header_objects.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
                 self.data_headers.append(prop[0])
             if not avg_done:
-                self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p='avg': self.sort(p), bg=self.gui.bg))
+                self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_AVERAGE: self.sort(p), bg=self.gui.bg))
                 self.data_headers.append(lang.LISTING_HEADER_AVERAGE)
                 self.BOLD_COLUMNS = [0, 2, len(self.data_headers) - 1]
                 avg_done = True
@@ -264,10 +264,7 @@ class ListingWindow(dialog.Dialog):
             disp_sex = [1,2]
         else:
             disp_sex = [self.show_sex]
-        if prop == 'avg':
-            row_to_sort_by = -1
-        else:
-            row_to_sort_by = self.data_headers.index(prop)
+        row_to_sort_by = self.data_headers.index(prop)
         avgs = [row[row_to_sort_by] for row in self.data_table]
         sorted_idx = argsort(avgs)
         for ri, object_row in enumerate(self.objects):
