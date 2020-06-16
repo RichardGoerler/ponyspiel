@@ -28,22 +28,31 @@ class ListingWindow(dialog.Dialog):
         self.MAXROWS = 25
         self.MAX_LEN_NAME = 20
         self.MAX_LEN_PROP = 3
+        self.max_prop_dict = dict()
+        for key in self.gui.extractor.parser.training_headings:
+            self.max_prop_dict[key] = 0
         self.now = datetime.now()
         self.def_size = self.gui.default_size
         self.def_font = font.Font(family=self.gui.default_font['family'], size=self.def_size)
         self.bol_font = font.Font(family=self.gui.default_font['family'], size=self.def_size, weight='bold')
         self.show_sex = 0  # 0: all, 1: female, 2: male
-        lname = self.gui.option_var.get()
-        lfile = self.gui.listing_files[self.gui.listing_names.index(lname)]
-        with open(lfile, 'r', encoding='utf-8') as f:
-            config = f.read().splitlines()
+        if not self.gui.exterior_search_requested:
+            lname = self.gui.option_var.get()
+            lfile = self.gui.listing_files[self.gui.listing_names.index(lname)]
+            with open(lfile, 'r', encoding='utf-8') as f:
+                config = f.read().splitlines()
+        else:
+            config = [self.gui.race_var.get(), 'Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung', '=', 'id']
         races = [r.strip() for r in config[0].split(',')]
+        if 'Alle'.strip("'") in races:
+            races = list(self.gui.extractor.race_dict.keys())
+            config.append('Rasse')
         self.props = []
         divider_found = False
         self.additional = []
         p = self.gui.extractor.parser
         valid_keys = [p.gesundheit_headings, p.charakter_headings, p.exterieur_headings, p.ausbildung_headings, p.gangarten_headings, p.dressur_headings,
-                      p.springen_headings, p.military_headings, p.western_headings, p.rennen_headings, p.fahren_headings]
+                      p.springen_headings, p.military_headings, p.western_headings, p.rennen_headings, p.fahren_headings, ['id']]
         for l in config[1:]:
             if '=' in l:
                 divider_found = True
@@ -74,41 +83,50 @@ class ListingWindow(dialog.Dialog):
         self.sex_male_button = tk.Button(self.button_frame, text=lang.LISTING_SEX_MALE, font=self.def_font, command=lambda: self.filter_sex(2), bg=self.gui.bg)
         self.sex_male_button.grid(row=0, column=2, padx=int(self.def_size / 2))
 
-        own_file = Path('./owned_ponies')
-        own_ids = []
-        if own_file.is_file():
-            with open(own_file, 'r') as f:
-                own_ids = f.read().split()
+        if not self.gui.exterior_search_requested:
+            own_file = Path('./owned_ponies')
+            all_ids = []
+            if own_file.is_file():
+                with open(own_file, 'r') as f:
+                    all_ids = f.read().split()
+        else:
+            all_ids = self.gui.exterior_search_ids
         self.gui.race_ids = []
         self.table_frame = tk.Frame(master, bg=self.gui.bg)
         self.table_frame.grid(row=1, column=0, padx=self.def_size)
-        # self.header_objects = [tk.Label(self.table_frame, text=lang.LISTING_HEADER_NAME[:self.MAX_LEN_PROP], font=self.bol_font, bg=self.gui.bg)]
         self.header_objects = [tk.Button(self.table_frame, text=lang.LISTING_HEADER_NAME[:self.MAX_LEN_NAME], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_NAME: self.sort(p), bg=self.gui.bg)]
+        self.header_max_labels = [tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg)]
         self.data_headers = [lang.LISTING_HEADER_NAME]
         self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AGE[:self.MAX_LEN_PROP], command=lambda p=lang.LISTING_HEADER_AGE: self.sort(p), bg=self.gui.bg))
+        self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
         self.data_headers.append(lang.LISTING_HEADER_AGE)
         self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_POTENTIAL[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_POTENTIAL: self.sort(p), bg=self.gui.bg))
+        self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
         self.data_headers.append(lang.LISTING_HEADER_POTENTIAL)
         NUM_NON_USER_PROP = 3  # number of entries in the data table that is not defined by the user (and which the average is calculated over). Does not include the image!
         avg_done = False
         for prop_list in [self.props, self.additional]:
             for prop in prop_list:
                 self.header_objects.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
+                self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
                 self.data_headers.append(prop[0])
             if not avg_done:
                 self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_AVERAGE: self.sort(p), bg=self.gui.bg))
+                self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
                 self.data_headers.append(lang.LISTING_HEADER_AVERAGE)
                 self.BOLD_COLUMNS = [0, 2, len(self.data_headers) - 1]
                 avg_done = True
+        for ci, el in enumerate(self.header_max_labels):
+            el.grid(row=0, column=ci+1, padx=int(self.def_size / 2))
         for ci, el in enumerate(self.header_objects):
-            el.grid(row=0, column=ci+1, padx=int(self.def_size / 2))   # ci + 1 because the image does not have a corresponding header!
+            el.grid(row=1, column=ci+1, padx=int(self.def_size / 2))   # ci + 1 because the image does not have a corresponding header!
 
         self.objects = []
         self.data_table = []
         self.sex = []
         self.banners = []
         self.images = []
-        for id in own_ids:
+        for id in all_ids:
             if not self.gui.extractor.get_pony_info(id):
                 messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.gui.extractor.log[-1])
                 return
@@ -144,20 +162,28 @@ class ListingWindow(dialog.Dialog):
                 avg_done = False
                 for prop_list in [self.props, self.additional]:
                     for prop in prop_list:
-                        if len(prop) == 1:
-                            val, norm = self.get_prop_value_and_count(prop[0])
+                        if prop[0] == 'id':
+                            normval = textval = id
                         else:
-                            norm = len(prop[1])
-                            val = 0
-                            for subprop in prop[1]:
-                                val += self.get_prop_value(subprop)
-                        if isinstance(val, (int, float)):
-                            normval = val/norm
-                            textval = str(round(normval, 1))
-                        else:
-                            normval = textval = val
+                            if len(prop) == 1:
+                                val, norm = self.get_prop_value_and_count(prop[0])
+                            else:
+                                norm = len(prop[1])
+                                val = 0
+                                for subprop in prop[1]:
+                                    val += self.get_prop_value(subprop)
+                            if isinstance(val, (int, float)):
+                                normval = val/norm
+                                textval = str(round(normval, 1))
+                            else:
+                                normval = textval = val
                         object_row.append(tk.Label(self.table_frame, text=textval, font=self.def_font, bg=self.gui.bg))
                         table_row.append(normval)
+
+                    for key in self.max_prop_dict.keys():
+                        this_val = self.get_prop_value(key)
+                        if self.max_prop_dict[key] < this_val:
+                            self.max_prop_dict[key] = this_val
 
                     # total average - only done once
                     if not avg_done:
@@ -176,6 +202,11 @@ class ListingWindow(dialog.Dialog):
                 if pony_years < 3:
                     for el in object_row:
                         el.configure(fg='red')
+
+        for hdi, hd in enumerate(self.data_headers):
+            if hd in self.max_prop_dict.keys():
+                self.header_max_labels[hdi].configure(text=str(self.max_prop_dict[hd]))
+
         self.draw_objects()
 
         redraw = False
@@ -211,7 +242,7 @@ class ListingWindow(dialog.Dialog):
                 for ci, el in enumerate(object_row):
                     rindex = row_index % self.MAXROWS
                     cindex = ci + len(object_row) * (row_index // self.MAXROWS)
-                    el.grid(row=rindex+1, column=cindex, padx=int(self.def_size/2))
+                    el.grid(row=rindex+2, column=cindex, padx=int(self.def_size/2))
                 row_index += 1
 
     def redraw(self):
@@ -226,6 +257,9 @@ class ListingWindow(dialog.Dialog):
                 h.configure(font=self.bol_font)
             else:
                 h.configure(font=self.def_font)
+        for i, h in enumerate(self.header_max_labels):
+            h.grid_forget()
+            h.configure(font=self.def_font)
         for ri, object_row in enumerate(self.objects):
             for ci, el in enumerate(object_row):
                 if (ci-1) in self.BOLD_COLUMNS:  # ci - 1 because BOLD_COLUMNS is for header columns (without) image. So 1 here corresponds to 0 in BOLD_COLUMNS
@@ -249,6 +283,8 @@ class ListingWindow(dialog.Dialog):
             self.objects[ii][0].configure(image=self.banners[ii])
         self.table_frame.grid(row=1, column=0, padx=self.def_size)
         for ci, el in enumerate(self.header_objects):
+            el.grid(row=1, column=ci + 1, padx=int(self.def_size / 2))
+        for ci, el in enumerate(self.header_max_labels):
             el.grid(row=0, column=ci + 1, padx=int(self.def_size / 2))
         self.draw_objects()
 
@@ -357,6 +393,8 @@ class PonyGUI:
             pass
         self.root.title(lang.MAIN_TITLE)
         self.root.configure(bg=self.bg)
+        self.exterior_search_requested = False
+        self.exterior_search_ids = []
 
         # Create gui elements here
         # banner
@@ -403,10 +441,8 @@ class PonyGUI:
         self.login_button = tk.Button(self.a_button_frame, text=lang.LOGIN_BUTTON, command=self.enter_login, bg=self.bg)
         self.login_button.grid(row=0, column=1, padx=self.default_size//2, pady=int(self.default_size/2))
 
-        self.export_button = tk.Button(self.a_button_frame, text=lang.EXPORT, width=self.default_size, command=self.export, bg=self.bg, state=tk.DISABLED)
+        self.export_button = tk.Button(self.a_button_frame, text=lang.EXPORT, command=self.export, bg=self.bg, state=tk.DISABLED)
         self.export_button.grid(row=1, column=0, padx=int(self.default_size/2), pady=int(self.default_size/2))
-        self.del_cache_button = tk.Button(self.a_button_frame, text=lang.DEL_CACHE.format('Cache'), width=self.default_size, command=self.del_cache, bg=self.bg, state=tk.DISABLED)
-        self.del_cache_button.grid(row=1, column=1, padx=int(self.default_size/2), pady=int(self.default_size/2))
 
         self.radio_frame = tk.Frame(self.root, bg=self.bg)
         self.radio_frame.grid(row=4, column=1, columnspan=2, padx=self.default_size)
@@ -488,20 +524,74 @@ class PonyGUI:
 
         self.listing_button = tk.Button(self.listing_frame, text=lang.LISTING_BUTTON, command=self.make_listing, bg=self.bg)
         self.listing_button.grid(row=1, column=1, padx=int(self.default_size / 2))
-        self.race_ids = []
 
         self.own_button = tk.Button(self.root, text=lang.OWN_BUTTON, command=self.load_own_ponies, bg=self.bg)
         self.own_button.grid(row=7, column=0, padx=self.default_size)
-        
+
+        self.exterior_frame = tk.Frame(self.root, bg=self.bg)
+        self.exterior_frame.grid(row=8, column=1, columnspan=2, padx=self.default_size, pady=self.default_size)
+
+        tk.Label(self.exterior_frame, text=lang.EXTERIEUR_LABEL, font=self.bold_font, bg=self.bg).grid(row=0, column=0, columnspan=2, padx=int(self.default_size/2))
+
+        self.horse_pages = ['Pferdehandel', 'Deckstation']
+        self.horse_page_type_var = tk.StringVar()
+        self.horse_page_type_var.set(self.horse_pages[0])  # default value
+        tk.OptionMenu(self.exterior_frame, self.horse_page_type_var, *self.horse_pages).grid(row=1, column=0, padx=int(self.default_size / 2))
+
+        races = list(self.extractor.race_dict.keys())
+        self.race_var = tk.StringVar()
+        self.race_var.set(races[0])  # default value
+        tk.OptionMenu(self.exterior_frame, self.race_var, *races).grid(row=1, column=1, padx=int(self.default_size / 2))
+
+        self.ext_button = tk.Button(self.exterior_frame, text=lang.EXTERIEUR_BUTTON, command=self.exterior_search, bg=self.bg)
+        self.ext_button.grid(row=1, column=2, padx=int(self.default_size / 2))
+
+        tk.Label(self.exterior_frame, text=lang.N_PAGES_LABEL, font=self.default_font, bg=self.bg).grid(row=1, column=3, padx=int(self.default_size / 2))
+
+        n_pages_list = ['1', '2', '3', '4']
+        self.n_pages_var = tk.StringVar()
+        self.n_pages_var.set(n_pages_list[0])  # default value
+        tk.OptionMenu(self.exterior_frame, self.n_pages_var, *n_pages_list).grid(row=1, column=4)
+
+        self.cache_frame = tk.Frame(self.root, bg=self.bg)
+        self.cache_frame.grid(row=8, column=0, padx=self.default_size, pady=self.default_size)
+
+        tk.Label(self.cache_frame, text=lang.CACHE_LABEL, font=self.bold_font, bg=self.bg).grid(row=0, column=1, padx=int(self.default_size / 2))
+        tk.Button(self.cache_frame, text=lang.CACHE_ALL_BUTTON, command=lambda: self.del_cache('all'), bg=self.bg).grid(row=1, column=0, padx=int(self.default_size / 2))
+        tk.Button(self.cache_frame, text=lang.CACHE_NOT_OWNED_BUTTON, command=lambda: self.del_cache('not_owned'), bg=self.bg).grid(row=1, column=1, padx=int(self.default_size / 2))
+        self.this_cache_button = tk.Button(self.cache_frame, text=lang.CACHE_THIS_BUTTON, command=lambda: self.del_cache('this'), bg=self.bg, state=tk.DISABLED)
+        self.this_cache_button.grid(row=1, column=2, padx=int(self.default_size / 2))
+
         self.root.mainloop()
 
-    def del_cache(self):
+    def exterior_search(self):
+        self.exterior_search_ids = self.extractor.browse_horses(self.horse_page_type_var.get() == 'Deckstation', self.race_var.get(), pages=int(self.n_pages_var.get()))
+        if self.exterior_search_ids == False:
+            messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+        else:
+            self.exterior_search_requested = True
+            _ = ListingWindow(self.root, self, lang.LISTING_TITLE)
+
+    def del_cache(self, type='this'):
         pony_id_str = self.id_label.cget('text')
-        if len(pony_id_str) < 2:
-            pony_id_str = self.extractor.pony_id
-        self.extractor.del_pony_cache(pony_id_str)
-        self.del_cache_button['state'] = tk.DISABLED
-        self.del_cache_button.configure(text=lang.DEL_CACHE.format('Cache'))
+        if type == 'this':
+            if len(pony_id_str) < 2:
+                pony_id_str = self.extractor.pony_id
+            self.extractor.del_pony_cache(pony_id_str)
+            self.this_cache_button['state'] = tk.DISABLED
+        elif type == 'not_owned':
+            own_file = Path('./owned_ponies')
+            own_ids = []
+            if own_file.is_file():
+                with open(own_file, 'r') as f:
+                    own_ids = f.read().split()
+            self.extractor.del_pony_cache_all(exclude=own_ids)
+            if pony_id_str not in own_ids:
+                self.this_cache_button['state'] = tk.DISABLED
+        else:
+            self.extractor.del_pony_cache_all()
+            self.this_cache_button['state'] = tk.DISABLED
+
 
     def load_own_ponies(self):
         horse_ids = self.extractor.get_own_ponies()
@@ -514,6 +604,7 @@ class PonyGUI:
                     f.write(str(id) + '\n')
 
     def make_listing(self):
+        self.exterior_search_requested = False
         _ = ListingWindow(self.root, self, lang.LISTING_TITLE)
 
     def get_listing_files(self):
@@ -579,8 +670,8 @@ class PonyGUI:
         self.name_label.configure(text=self.extractor.parser.name)
         self.id_label.configure(text=str(pony_id))
         self.export_button['state'] = tk.NORMAL
-        self.del_cache_button['state'] = tk.NORMAL
-        self.del_cache_button.configure(text=lang.DEL_CACHE.format(pony_id))
+        self.this_cache_button['state'] = tk.NORMAL
+        self.this_cache_button.configure(text=str(pony_id))
         self.ownership_checkbutton['state'] = tk.NORMAL
         self.check_ownership_var.set(int(self.is_owned()))
 
