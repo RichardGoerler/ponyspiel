@@ -263,6 +263,16 @@ class PonyExtractor:
         self.organize_url_base = 'https://noblehorsechampion.com/inside/organizehorses.php?id={}'
         self.base_url = 'https://noblehorsechampion.com/inside/'
         self.payload = {'email': '', 'passwort': '', 'login': ''}
+        self.race_dict = {'Alle': 0,
+                    'Hannoveraner': 1,
+                     'Andalusier': 2,
+                     'Holsteiner': 3,
+                     'Englisches Vollblut': 4,
+                     'Tinker': 5,
+                     'American Paint Horse': 6,
+                     'Araber': 7,
+                     'Welsh Mountain Pony': 8,
+                     'Isländer': 9}
         self.pony_id = 0
         self.log = []
         self.insidepage_length_threshold = 40000
@@ -345,6 +355,56 @@ class PonyExtractor:
         return horse_ids
 
 
+    def browse_horses(self, deckstation=False, race='Alle', pages=3):
+        if deckstation:
+            url = self.base_url + 'stud.php'
+        else:
+            url = self.base_url + 'horsetrade.php'
+        race_num = self.race_dict[race] if race in self.race_dict.keys() else 0
+        if not self._login_if_required():
+            return False
+        form_data = {'rasse': race_num, 'filter': 'gp', 'submit': ''}
+        if not deckstation:
+            form_data['geschlecht'] = 'gall'
+        post = self.session.post(url, data=form_data)
+        text = post.text
+        if len(text) < self.insidepage_length_threshold:
+            self.log.append('Posting to {} failed.'.format(url))
+            return False
+
+        page = 1
+        horse_ids = []
+        while page <= pages:
+            if page > 1:
+                r = self.session.get(url + '?page={}'.format(page))
+                text = r.text
+                if len(text) < self.insidepage_length_threshold:
+                    self.log.append('Retrieving {} failed.'.format(url))
+                    return False
+
+            search_string = 'class="main"'
+            if not search_string in text:
+                self.log.append('Could not find main class in start page')
+                return False
+            text = text[text.index(search_string):]
+
+            search_string = '"horse.php?id='
+            while search_string in text:
+                index = text.index(search_string) + len(search_string)
+                id_string = ''
+                while text[index].isnumeric():
+                    id_string += text[index]
+                    index += 1
+                id = int(id_string)
+                if not id in horse_ids:
+                    horse_ids.append(id)
+                text = text[index:]
+
+            page += 1
+
+        return horse_ids
+
+
     def _request_pony_file(self, pony_id, cached=True):
         cache_path = Path('.cache/{}/'.format(pony_id))
         cache_path.mkdir(parents=True, exist_ok=True)
@@ -382,6 +442,16 @@ class PonyExtractor:
         cache_path = Path('.cache/{}/'.format(pony_id))
         shutil.rmtree(cache_path, ignore_errors=True)
 
+    def del_pony_cache_all(self, exclude=None):
+        cache_all_path = Path('.cache/')
+        if exclude is None:
+            shutil.rmtree(cache_all_path, ignore_errors=True)
+        else:
+            p = cache_all_path.glob('**/*')
+            for pa in p:
+                if pa.name not in exclude:
+                    shutil.rmtree(pa)
+
     def get_pony_info(self, pony_id, cached=True):
         if self.pony_id == 0:
             self.pony_id = pony_id
@@ -393,9 +463,13 @@ class PonyExtractor:
                 # we can load the file from disk
                 with open(write_file, 'rb') as f:
                     self.parser = pickle.load(f)
+                    # When loading parser from disk, we need to null data, because we are not overwriting it
+                    # Otherwise, wrong old data will be in data.
+                    self.data = ''
                 return True
         if not self._request_pony_file(pony_id):
             return False
+        self.pony_id = pony_id
         self.parser = MyHTMLParser()
         self.parser.feed(self.data)
         self.parser.gesundheit_values = {k: self.parser.details_values[k] for k in self.parser.gesundheit_headings}
