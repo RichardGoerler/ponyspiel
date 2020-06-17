@@ -8,6 +8,8 @@ from PIL import Image, ImageTk
 from pathlib import Path
 import csv
 from datetime import datetime
+import win32clipboard
+import webbrowser
 
 import lang
 import stats_parser
@@ -164,10 +166,8 @@ class ListingWindow(dialog.Dialog):
                     for prop in prop_list:
                         if prop[0] == 'id':
                             normval = textval = id
-                            object_row.append(tk.Entry(self.table_frame, font=self.def_font, bg=self.gui.bg, width=int(self.def_size/2.5)))
-                            object_row[-1].delete(0, tk.END)
-                            object_row[-1].insert(0, str(id))
-                            object_row[-1].configure(state = 'readonly')
+                            object_row.append(tk.Label(self.table_frame, text=str(textval), font=self.def_font, bg=self.gui.bg, cursor="hand2"))
+                            object_row[-1].bind("<Button-1>", lambda e, url=self.gui.extractor.base_url + 'horse.php?id={}'.format(id): webbrowser.open(url))
                         else:
                             if len(prop) == 1:
                                 val, norm = self.get_prop_value_and_count(prop[0])
@@ -222,6 +222,14 @@ class ListingWindow(dialog.Dialog):
         if redraw:
             self.redraw()
 
+    def text_to_clipboard(self, text):
+        try:
+            win32clipboard.OpenClipboard(0)
+            win32clipboard.EmptyClipboard()
+            win32clipboard.SetClipboardText(text, win32clipboard.CF_TEXT)
+        finally:
+            win32clipboard.CloseClipboard()
+
     def get_age(self):
         birthday_split = self.gui.extractor.parser.facts_values['Geburtstag'].split('-')
         date_str = birthday_split[0].strip()
@@ -266,8 +274,6 @@ class ListingWindow(dialog.Dialog):
             h.configure(font=self.def_font)
         for ri, object_row in enumerate(self.objects):
             for ci, el in enumerate(object_row):
-                if type(el) == tk.Entry:
-                    el.configure(width=int(self.def_size/2.5))
                 if (ci-1) in self.BOLD_COLUMNS:  # ci - 1 because BOLD_COLUMNS is for header columns (without) image. So 1 here corresponds to 0 in BOLD_COLUMNS
                     el.configure(font=self.bol_font)
                 else:
