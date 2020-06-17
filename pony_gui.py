@@ -164,6 +164,10 @@ class ListingWindow(dialog.Dialog):
                     for prop in prop_list:
                         if prop[0] == 'id':
                             normval = textval = id
+                            object_row.append(tk.Entry(self.table_frame, font=self.def_font, bg=self.gui.bg, width=int(self.def_size/2.5)))
+                            object_row[-1].delete(0, tk.END)
+                            object_row[-1].insert(0, str(id))
+                            object_row[-1].configure(state = 'readonly')
                         else:
                             if len(prop) == 1:
                                 val, norm = self.get_prop_value_and_count(prop[0])
@@ -177,7 +181,7 @@ class ListingWindow(dialog.Dialog):
                                 textval = str(round(normval, 1))
                             else:
                                 normval = textval = val
-                        object_row.append(tk.Label(self.table_frame, text=textval, font=self.def_font, bg=self.gui.bg))
+                            object_row.append(tk.Label(self.table_frame, text=textval, font=self.def_font, bg=self.gui.bg))
                         table_row.append(normval)
 
                     for key in self.max_prop_dict.keys():
@@ -262,6 +266,8 @@ class ListingWindow(dialog.Dialog):
             h.configure(font=self.def_font)
         for ri, object_row in enumerate(self.objects):
             for ci, el in enumerate(object_row):
+                if type(el) == tk.Entry:
+                    el.configure(width=int(self.def_size/2.5))
                 if (ci-1) in self.BOLD_COLUMNS:  # ci - 1 because BOLD_COLUMNS is for header columns (without) image. So 1 here corresponds to 0 in BOLD_COLUMNS
                     el.configure(font=self.bol_font)
                 else:
