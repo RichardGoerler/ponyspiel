@@ -548,12 +548,17 @@ class PonyGUI:
         self.horse_pages = ['Pferdehandel', 'Deckstation']
         self.horse_page_type_var = tk.StringVar()
         self.horse_page_type_var.set(self.horse_pages[0])  # default value
-        tk.OptionMenu(self.exterior_frame, self.horse_page_type_var, *self.horse_pages).grid(row=1, column=0, padx=int(self.default_size / 2))
+        tk.OptionMenu(self.exterior_frame, self.horse_page_type_var, *self.horse_pages).grid(row=0, column=2, padx=int(self.default_size / 2))
 
         races = list(self.extractor.race_dict.keys())
         self.race_var = tk.StringVar()
         self.race_var.set(races[0])  # default value
-        tk.OptionMenu(self.exterior_frame, self.race_var, *races).grid(row=1, column=1, padx=int(self.default_size / 2))
+        tk.OptionMenu(self.exterior_frame, self.race_var, *races).grid(row=1, column=0, padx=int(self.default_size / 2))
+
+        sort_bys = list(self.extractor.sort_by_dict.keys())
+        self.sort_by_var = tk.StringVar()
+        self.sort_by_var.set(sort_bys[7])  # default value
+        tk.OptionMenu(self.exterior_frame, self.sort_by_var, *sort_bys).grid(row=1, column=1, padx=int(self.default_size / 2))
 
         self.ext_button = tk.Button(self.exterior_frame, text=lang.EXTERIEUR_BUTTON, command=self.exterior_search, bg=self.bg)
         self.ext_button.grid(row=1, column=2, padx=int(self.default_size / 2))
@@ -577,7 +582,9 @@ class PonyGUI:
         self.root.mainloop()
 
     def exterior_search(self):
-        self.exterior_search_ids = self.extractor.browse_horses(self.horse_page_type_var.get() == 'Deckstation', self.race_var.get(), pages=int(self.n_pages_var.get()))
+        sort_by_key = self.sort_by_var.get()
+        sort_by_value = self.extractor.sort_by_dict[sort_by_key]
+        self.exterior_search_ids = self.extractor.browse_horses(self.horse_page_type_var.get() == 'Deckstation', race=self.race_var.get(), sort_by=sort_by_value, pages=int(self.n_pages_var.get()))
         if self.exterior_search_ids == False:
             messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
         else:
