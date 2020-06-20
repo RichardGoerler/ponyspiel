@@ -273,6 +273,22 @@ class PonyExtractor:
                      'Araber': 7,
                      'Welsh Mountain Pony': 8,
                      'Isländer': 9}
+        self.sort_by_dict = {'Neueste zuerst': 'firstnew',
+                            'Jüngste zuerst': 'firstyoung',
+                            'Älteste zuerst': 'firstold',
+                            'Namen A-Z': 'firsta',
+                             'Namen Z-A': 'firstz',
+                             'Preis aufsteigend': 'firstminprize',
+                             'Preis absteigend': 'firstmaxprize',
+                             'Gesamtpotenzial': 'gp',
+                             'Ausbildung': 'summaxausbildung',
+                             'Gangarten': 'summaxgangarten',
+                             'Dressur': 'summaxdressur',
+                             'Springen': 'summaxspringen',
+                             'Military': 'summaxmilitary',
+                             'Western': 'summaxwestern',
+                             'Rennen': 'summaxrennen',
+                             'Fahren': 'summaxfahren'}
         self.pony_id = 0
         self.log = []
         self.insidepage_length_threshold = 40000
@@ -355,7 +371,7 @@ class PonyExtractor:
         return horse_ids
 
 
-    def browse_horses(self, deckstation=False, race='Alle', pages=3):
+    def browse_horses(self, deckstation=False, race='Alle', sort_by='gp', pages=3):
         if deckstation:
             url = self.base_url + 'stud.php'
         else:
@@ -363,7 +379,7 @@ class PonyExtractor:
         race_num = self.race_dict[race] if race in self.race_dict.keys() else 0
         if not self._login_if_required():
             return False
-        form_data = {'rasse': race_num, 'filter': 'gp', 'submit': ''}
+        form_data = {'rasse': race_num, 'filter': sort_by, 'submit': ''}
         if not deckstation:
             form_data['geschlecht'] = 'gall'
         post = self.session.post(url, data=form_data)
