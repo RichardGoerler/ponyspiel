@@ -38,11 +38,15 @@ class ListingWindow(dialog.Dialog):
         self.def_font = font.Font(family=self.gui.default_font['family'], size=self.def_size)
         self.bol_font = font.Font(family=self.gui.default_font['family'], size=self.def_size, weight='bold')
         self.show_sex = 0  # 0: all, 1: female, 2: male
-        if not self.gui.exterior_search_requested:
-            lname = self.gui.option_var.get()
+        lname = self.gui.market_listing_var.get() if self.gui.exterior_search_requested else self.gui.option_var.get()
+        if not lname == lang.EXTERIEUR_LISTING:
             lfile = self.gui.listing_files[self.gui.listing_names.index(lname)]
             with open(lfile, 'r', encoding='utf-8') as f:
                 config = f.read().splitlines()
+            if self.gui.exterior_search_requested:
+                config[0] = self.gui.race_var.get()   # race to filter for always equals the race the market search was filtered for
+                config.append('=')
+                config.append('id')
         else:
             config = [self.gui.race_var.get(), 'Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung', '=', 'id']
         races = [r.strip() for r in config[0].split(',')]
@@ -66,14 +70,15 @@ class ListingWindow(dialog.Dialog):
                 append_to = self.additional
             colon_split = l.split(':')
             part = [colon_split[0]]
-            part_ok = False            # Anything that is not in the parser keys does not make sense here. facts are additionaly allowed if we are after the divider (which means no average has to be computed)
-            for keylist in valid_keys:
-                if part[0] in keylist:
-                    part_ok = True
-            if not part_ok:
-                continue
             if len(colon_split) > 1:
                 part.append([attr.strip() for attr in colon_split[1].split(',')])
+            else:
+                part_ok = False           # Anything that is not in the parser keys does not make sense here. facts are additionaly allowed if we are after the divider (which means no average has to be computed)
+                for keylist in valid_keys:
+                    if part[0] in keylist:
+                        part_ok = True
+                if not part_ok:
+                    continue
             append_to.append(part)
 
         self.button_frame = tk.Frame(master, bg=self.gui.bg)
@@ -170,12 +175,12 @@ class ListingWindow(dialog.Dialog):
                             object_row[-1].bind("<Button-1>", lambda e, url=self.gui.extractor.base_url + 'horse.php?id={}'.format(id): webbrowser.open(url))
                         else:
                             if len(prop) == 1:
-                                val, norm = self.get_prop_value_and_count(prop[0])
+                                val, norm = self.gui.get_prop_value_and_count(prop[0])
                             else:
                                 norm = len(prop[1])
                                 val = 0
                                 for subprop in prop[1]:
-                                    val += self.get_prop_value(subprop)
+                                    val += self.gui.get_prop_value(subprop)
                             if isinstance(val, (int, float)):
                                 normval = val/norm
                                 textval = str(round(normval, 1))
@@ -185,7 +190,7 @@ class ListingWindow(dialog.Dialog):
                         table_row.append(normval)
 
                     for key in self.max_prop_dict.keys():
-                        this_val = self.get_prop_value(key)
+                        this_val = self.gui.get_prop_value(key)
                         if self.max_prop_dict[key] < this_val:
                             self.max_prop_dict[key] = this_val
 
@@ -221,14 +226,6 @@ class ListingWindow(dialog.Dialog):
             self.bol_font['size'] = self.def_size
         if redraw:
             self.redraw()
-
-    def text_to_clipboard(self, text):
-        try:
-            win32clipboard.OpenClipboard(0)
-            win32clipboard.EmptyClipboard()
-            win32clipboard.SetClipboardText(text, win32clipboard.CF_TEXT)
-        finally:
-            win32clipboard.CloseClipboard()
 
     def get_age(self):
         birthday_split = self.gui.extractor.parser.facts_values['Geburtstag'].split('-')
@@ -329,24 +326,6 @@ class ListingWindow(dialog.Dialog):
         self.data_table = table_sorted
         self.sex = sex_sorted
         self.draw_objects()
-
-    def get_prop_value_and_count(self, prop):
-        p = self.gui.extractor.parser
-        l = [p.facts_values, p.gesundheit_values, p.charakter_values, p.exterieur_values, p.ausbildung_max, p.gangarten_max, p.dressur_max,
-             p.springen_max, p.military_max, p.western_max, p.rennen_max, p.fahren_max]
-        for l_list in l:
-            if prop in list(l_list.keys()):
-                return (l_list[prop], len(l_list)-1)
-        return (0,1)
-
-    def get_prop_value(self, prop):
-        p = self.gui.extractor.parser
-        l = [p.gesundheit_values, p.charakter_values, p.exterieur_values, p.ausbildung_max, p.gangarten_max, p.dressur_max,
-             p.springen_max, p.military_max, p.western_max, p.rennen_max, p.fahren_max]
-        for l_list in l:
-            if prop in list(l_list.keys()):
-                return l_list[prop]
-        return 0
 
 class LoginWindow(dialog.Dialog):
     def header(self, master):
@@ -456,6 +435,9 @@ class PonyGUI:
         self.export_button = tk.Button(self.a_button_frame, text=lang.EXPORT, command=self.export, bg=self.bg, state=tk.DISABLED)
         self.export_button.grid(row=1, column=0, padx=int(self.default_size/2), pady=int(self.default_size/2))
 
+        self.description_button = tk.Button(self.a_button_frame, text=lang.DESCRIPTION, command=self.clipboard_description, bg=self.bg, state=tk.DISABLED)
+        self.description_button.grid(row=1, column=1, padx=int(self.default_size / 2), pady=int(self.default_size / 2))
+
         self.radio_frame = tk.Frame(self.root, bg=self.bg)
         self.radio_frame.grid(row=4, column=1, columnspan=2, padx=self.default_size)
         self.export_format_var = tk.IntVar()
@@ -553,12 +535,18 @@ class PonyGUI:
         races = list(self.extractor.race_dict.keys())
         self.race_var = tk.StringVar()
         self.race_var.set(races[0])  # default value
-        tk.OptionMenu(self.exterior_frame, self.race_var, *races).grid(row=1, column=0, padx=int(self.default_size / 2))
+        tk.OptionMenu(self.exterior_frame, self.race_var, *races).grid(row=0, column=3, columnspan=2, padx=int(self.default_size / 2))
+
+        self.listing_names_plus_ext = list(self.listing_names)
+        self.listing_names_plus_ext.append('Exterieur')
+        self.market_listing_var = tk.StringVar()
+        self.market_listing_var.set(self.listing_names_plus_ext[-1])
+        tk.OptionMenu(self.exterior_frame, self.market_listing_var, *self.listing_names_plus_ext).grid(row=1, column=1, padx=int(self.default_size / 2))
 
         sort_bys = list(self.extractor.sort_by_dict.keys())
         self.sort_by_var = tk.StringVar()
         self.sort_by_var.set(sort_bys[7])  # default value
-        tk.OptionMenu(self.exterior_frame, self.sort_by_var, *sort_bys).grid(row=1, column=1, padx=int(self.default_size / 2))
+        tk.OptionMenu(self.exterior_frame, self.sort_by_var, *sort_bys).grid(row=1, column=0, padx=int(self.default_size / 2))
 
         self.ext_button = tk.Button(self.exterior_frame, text=lang.EXTERIEUR_BUTTON, command=self.exterior_search, bg=self.bg)
         self.ext_button.grid(row=1, column=2, padx=int(self.default_size / 2))
@@ -580,6 +568,95 @@ class PonyGUI:
         self.this_cache_button.grid(row=1, column=2, padx=int(self.default_size / 2))
 
         self.root.mainloop()
+
+    def clipboard_description(self):
+        pony_id_str = self.id_label.cget('text')
+        if not self.extractor.get_pony_info(int(pony_id_str)):
+            messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+            return
+        this_race = self.extractor.parser.facts_values['Rasse']
+        file_list, name_list = self.get_description_files()
+        if this_race not in name_list:
+            this_race = 'default'
+        f_index = name_list.index(this_race)
+        load_file = file_list[f_index]
+        with open(load_file, 'r', encoding='utf-8') as f:
+            config = f.read().splitlines()
+        prefixes = []
+        props = []
+        p = self.extractor.parser
+        valid_keys = [p.gesundheit_headings, p.charakter_headings, p.exterieur_headings, p.ausbildung_headings, p.gangarten_headings, p.dressur_headings,
+                      p.springen_headings, p.military_headings, p.western_headings, p.rennen_headings, p.fahren_headings, p.facts_headings, ['Gesamtpotenzial']]
+
+        for l in config:
+            colon_split = l.split(':')
+            front_split = colon_split[0].split('_')
+            prefix = ''
+            if len(front_split) > 1:
+                prefix = front_split[0].strip() + ' '
+                part = [front_split[1].strip()]
+            else:
+                part = [front_split[0].strip()]
+            if len(colon_split) > 1:
+                part.append([attr.strip() for attr in colon_split[1].split(',')])
+            else:
+                part_ok = False  # Anything that is not in the parser keys does not make sense here. facts are additionaly allowed if we are after the divider (which means no average has to be computed)
+                for keylist in valid_keys:
+                    if part[0] in keylist:
+                        part_ok = True
+                if not part_ok:
+                    continue
+            props.append(part)
+            prefixes.append(prefix)
+
+        description_string = ''
+        for it, (pref, prop) in enumerate(zip(prefixes, props)):
+            if 0 < it:
+                description_string += ' | '
+            if len(prop) == 1:
+                if prop[0] == 'Gesamtpotenzial':
+                    val, norm = self.extractor.parser.training_max['Gesamtpotenzial'], 1
+                else:
+                    val, norm = self.get_prop_value_and_count(prop[0])
+            else:
+                norm = len(prop[1])
+                val = 0
+                for subprop in prop[1]:
+                    val += self.get_prop_value(subprop)
+            if isinstance(val, (int, float)):
+                normval = val / norm
+                textval = str(round(normval, 1)) if normval <= 100 else str(int(normval)) # if Gesamtpotenzial ( > 100), show as integer
+            else:
+                textval = val
+            description_string += (pref + textval)
+
+        self.text_to_clipboard(description_string)
+
+    def text_to_clipboard(self, text):
+        try:
+            win32clipboard.OpenClipboard(0)
+            win32clipboard.EmptyClipboard()
+            win32clipboard.SetClipboardText(text, win32clipboard.CF_TEXT)
+        finally:
+            win32clipboard.CloseClipboard()
+
+    def get_prop_value_and_count(self, prop):
+        p = self.extractor.parser
+        l = [p.facts_values, p.gesundheit_values, p.charakter_values, p.exterieur_values, p.ausbildung_max, p.gangarten_max, p.dressur_max,
+             p.springen_max, p.military_max, p.western_max, p.rennen_max, p.fahren_max]
+        for l_list in l:
+            if prop in list(l_list.keys()):
+                return (l_list[prop], len(l_list)-1)
+        return (0,1)
+
+    def get_prop_value(self, prop):
+        p = self.extractor.parser
+        l = [p.gesundheit_values, p.charakter_values, p.exterieur_values, p.ausbildung_max, p.gangarten_max, p.dressur_max,
+             p.springen_max, p.military_max, p.western_max, p.rennen_max, p.fahren_max]
+        for l_list in l:
+            if prop in list(l_list.keys()):
+                return l_list[prop]
+        return 0
 
     def exterior_search(self):
         sort_by_key = self.sort_by_var.get()
@@ -625,6 +702,16 @@ class PonyGUI:
     def make_listing(self):
         self.exterior_search_requested = False
         _ = ListingWindow(self.root, self, lang.LISTING_TITLE)
+
+    def get_description_files(self):
+        p = Path('./descriptions/').glob('**/*')
+        file_list = [f for f in p if f.is_file()]
+        name_list = [f.stem for f in file_list]
+        if len(file_list) == 0:
+            return ([''], [''])
+        else:
+            return (file_list, name_list)
+        pass
 
     def get_listing_files(self):
         p = Path('./listings/').glob('**/*')
@@ -689,6 +776,7 @@ class PonyGUI:
         self.name_label.configure(text=self.extractor.parser.name)
         self.id_label.configure(text=str(pony_id))
         self.export_button['state'] = tk.NORMAL
+        self.description_button['state'] = tk.NORMAL
         self.this_cache_button['state'] = tk.NORMAL
         self.this_cache_button.configure(text=str(pony_id))
         self.ownership_checkbutton['state'] = tk.NORMAL
