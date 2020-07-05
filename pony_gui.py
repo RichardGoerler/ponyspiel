@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import font
 from tkinter import messagebox
 from tkinter import filedialog
+from tkinter import ttk
 from PIL import Image, ImageTk
 from pathlib import Path
 import csv
@@ -16,6 +17,63 @@ import stats_parser
 import html_clipboard
 import dialog
 
+class ProgressWindow(tk.Toplevel):
+    def __init__(self, parent, gui, title=lang.PROGRESS, steps=100, initial_text=''):
+
+        tk.Toplevel.__init__(self, parent)
+        self.configure(bg="#EDEEF3")
+        try:
+            self.iconbitmap("favicon.ico")
+        except:
+            pass
+        self.gui = gui
+        self.transient(parent)
+
+        if title:
+            self.title(title)
+
+        self.parent = parent
+
+        self.max_value = 100
+        self.steps = steps
+        self.stepsize = self.max_value/self.steps
+        self.value = 0
+
+        self.frame = tk.Frame(self, bg=self.gui.bg)
+
+        self.pb_text = tk.Label(self.frame, text=initial_text, font=self.gui.default_font, bg=self.gui.bg)
+        self.pb_text.pack()
+        self.pb = ttk.Progressbar(self.frame, orient=tk.HORIZONTAL, length=500, mode='determinate')
+        self.pb.pack()
+
+        self.frame.pack()
+
+        self.attributes('-disabled', True)
+
+    def pad_str(self, text):
+        PAD_TO = 50
+        l = len(text)
+        if not l >= 30:
+            pad_to_half = PAD_TO // 2
+            l_half = l // 2
+            text = text.rjust(pad_to_half+l_half)
+            text = text.ljust(PAD_TO)
+        return text
+
+
+    def step(self, text=None):
+        if text is not None:
+            self.pb_text.configure(text=self.pad_str(text))
+        self.value += self.stepsize
+        self.pb['value'] = self.value
+        if self.value > self.max_value-self.stepsize/2:
+            self.destroy()
+        self.gui.root.update_idletasks()
+
+    def close(self):
+        self.destroy()
+
+
 def argsort(seq):
     #http://stackoverflow.com/questions/3382352/equivalent-of-numpy-argsort-in-basic-python/3382369#3382369
     #by unutbu
@@ -27,6 +85,16 @@ class ListingWindow(dialog.Dialog):
         pass
 
     def body(self, master):
+        if not self.gui.exterior_search_requested:
+            own_file = Path('./owned_ponies')
+            all_ids = []
+            if own_file.is_file():
+                with open(own_file, 'r') as f:
+                    all_ids = f.read().split()
+        else:
+            all_ids = self.gui.exterior_search_ids
+
+        progressbar = ProgressWindow(self, self.gui, steps=len(all_ids)+3, initial_text=lang.PROGRESS_READING_CONFIG)
         self.MAXROWS = 25
         self.MAX_LEN_NAME = 20
         self.MAX_LEN_PROP = 3
@@ -81,6 +149,8 @@ class ListingWindow(dialog.Dialog):
                     continue
             append_to.append(part)
 
+        progressbar.step(lang.PROGRESS_MAKING_HEADERS)
+
         self.button_frame = tk.Frame(master, bg=self.gui.bg)
         self.button_frame.grid(row=0, column=0, padx=self.def_size, pady=self.def_size)
         self.sex_all_button = tk.Button(self.button_frame, text=lang.LISTING_SEX_ALL, font=self.def_font, command=lambda: self.filter_sex(0), bg=self.gui.bg)
@@ -90,14 +160,6 @@ class ListingWindow(dialog.Dialog):
         self.sex_male_button = tk.Button(self.button_frame, text=lang.LISTING_SEX_MALE, font=self.def_font, command=lambda: self.filter_sex(2), bg=self.gui.bg)
         self.sex_male_button.grid(row=0, column=2, padx=int(self.def_size / 2))
 
-        if not self.gui.exterior_search_requested:
-            own_file = Path('./owned_ponies')
-            all_ids = []
-            if own_file.is_file():
-                with open(own_file, 'r') as f:
-                    all_ids = f.read().split()
-        else:
-            all_ids = self.gui.exterior_search_ids
         self.gui.race_ids = []
         self.table_frame = tk.Frame(master, bg=self.gui.bg)
         self.table_frame.grid(row=1, column=0, padx=self.def_size)
@@ -134,8 +196,10 @@ class ListingWindow(dialog.Dialog):
         self.banners = []
         self.images = []
         for id in all_ids:
+            progressbar.step(str(id))
             if not self.gui.extractor.get_pony_info(id):
                 messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.gui.extractor.log[-1])
+                progressbar.close()
                 return
             if self.gui.extractor.parser.facts_values['Rasse'] in races:
                 self.gui.race_ids.append(id)
@@ -216,6 +280,7 @@ class ListingWindow(dialog.Dialog):
             if hd in self.max_prop_dict.keys():
                 self.header_max_labels[hdi].configure(text=str(self.max_prop_dict[hd]))
 
+        progressbar.step(lang.PROGRESS_DRAWING_SCALING)
         self.draw_objects()
 
         redraw = False
@@ -226,6 +291,8 @@ class ListingWindow(dialog.Dialog):
             self.bol_font['size'] = self.def_size
         if redraw:
             self.redraw()
+
+        progressbar.step(lang.PROGRESS_DONE)
 
     def get_age(self):
         birthday_split = self.gui.extractor.parser.facts_values['Geburtstag'].split('-')
