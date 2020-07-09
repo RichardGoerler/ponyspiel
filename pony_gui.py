@@ -68,7 +68,7 @@ class ProgressWindow(tk.Toplevel):
         self.pb['value'] = self.value
         if self.value > self.max_value-self.stepsize/2:
             self.destroy()
-        self.gui.root.update_idletasks()
+        self.gui.root.update()
 
     def close(self):
         self.destroy()
@@ -80,6 +80,9 @@ def argsort(seq):
     return sorted(range(len(seq)), key=seq.__getitem__)[::-1]
 
 class ListingWindow(dialog.Dialog):
+    def cancel(self, event=None):
+        self.gui.enable_buttons()
+        dialog.Dialog.cancel(self, event)
 
     def header(self, master):
         pass
@@ -454,6 +457,8 @@ class PonyGUI:
         self.exterior_search_requested = False
         self.exterior_search_ids = []
 
+        self.interactive_elements = []
+
         # Create gui elements here
         # banner
         self.imorg = Image.open("4logo-sm.png")
@@ -485,6 +490,7 @@ class PonyGUI:
         self.ownership_checkbutton = tk.Checkbutton(self.id_frame, text=lang.CHECK_OWN, font=self.default_font, variable=self.check_ownership_var, command=self.update_owned, bg=self.bg)
         self.ownership_checkbutton.grid(row=0, column=2, padx=int(self.default_size/2))
         self.ownership_checkbutton.configure(state=tk.DISABLED)
+        self.interactive_elements.append(self.ownership_checkbutton)
 
         self.a_button_frame = tk.Frame(self.root, bg=self.bg)
         self.a_button_frame.grid(row=2, column=1, columnspan=2, padx=self.default_size)
@@ -496,14 +502,18 @@ class PonyGUI:
                 _ = f.readline().strip()
         except IOError:
             self.request_button.configure(state=tk.DISABLED)
+        self.interactive_elements.append(self.request_button)
         self.login_button = tk.Button(self.a_button_frame, text=lang.LOGIN_BUTTON, command=self.enter_login, bg=self.bg)
         self.login_button.grid(row=0, column=1, padx=self.default_size//2, pady=int(self.default_size/2))
+        self.interactive_elements.append(self.login_button)
 
         self.export_button = tk.Button(self.a_button_frame, text=lang.EXPORT, command=self.export, bg=self.bg, state=tk.DISABLED)
         self.export_button.grid(row=1, column=0, padx=int(self.default_size/2), pady=int(self.default_size/2))
+        self.interactive_elements.append(self.export_button)
 
         self.description_button = tk.Button(self.a_button_frame, text=lang.DESCRIPTION, command=self.clipboard_description, bg=self.bg, state=tk.DISABLED)
         self.description_button.grid(row=1, column=1, padx=int(self.default_size / 2), pady=int(self.default_size / 2))
+        self.interactive_elements.append(self.description_button)
 
         self.radio_frame = tk.Frame(self.root, bg=self.bg)
         self.radio_frame.grid(row=4, column=1, columnspan=2, padx=self.default_size)
@@ -585,9 +595,11 @@ class PonyGUI:
 
         self.listing_button = tk.Button(self.listing_frame, text=lang.LISTING_BUTTON, command=self.make_listing, bg=self.bg)
         self.listing_button.grid(row=1, column=1, padx=int(self.default_size / 2))
+        self.interactive_elements.append(self.listing_button)
 
         self.own_button = tk.Button(self.root, text=lang.OWN_BUTTON, command=self.load_own_ponies, bg=self.bg)
         self.own_button.grid(row=7, column=0, padx=self.default_size)
+        self.interactive_elements.append(self.own_button)
 
         self.exterior_frame = tk.Frame(self.root, bg=self.bg)
         self.exterior_frame.grid(row=8, column=1, columnspan=2, padx=self.default_size, pady=self.default_size)
@@ -617,6 +629,7 @@ class PonyGUI:
 
         self.ext_button = tk.Button(self.exterior_frame, text=lang.EXTERIEUR_BUTTON, command=self.exterior_search, bg=self.bg)
         self.ext_button.grid(row=1, column=2, padx=int(self.default_size / 2))
+        self.interactive_elements.append(self.ext_button)
 
         tk.Label(self.exterior_frame, text=lang.N_PAGES_LABEL, font=self.default_font, bg=self.bg).grid(row=1, column=3, padx=int(self.default_size / 2))
 
@@ -629,12 +642,28 @@ class PonyGUI:
         self.cache_frame.grid(row=8, column=0, padx=self.default_size, pady=self.default_size)
 
         tk.Label(self.cache_frame, text=lang.CACHE_LABEL, font=self.bold_font, bg=self.bg).grid(row=0, column=1, padx=int(self.default_size / 2))
-        tk.Button(self.cache_frame, text=lang.CACHE_ALL_BUTTON, command=lambda: self.del_cache('all'), bg=self.bg).grid(row=1, column=0, padx=int(self.default_size / 2))
-        tk.Button(self.cache_frame, text=lang.CACHE_NOT_OWNED_BUTTON, command=lambda: self.del_cache('not_owned'), bg=self.bg).grid(row=1, column=1, padx=int(self.default_size / 2))
+        self.all_cache_button = tk.Button(self.cache_frame, text=lang.CACHE_ALL_BUTTON, command=lambda: self.del_cache('all'), bg=self.bg)
+        self.all_cache_button.grid(row=1, column=0, padx=int(self.default_size / 2))
+        self.not_owned_cache_button = tk.Button(self.cache_frame, text=lang.CACHE_NOT_OWNED_BUTTON, command=lambda: self.del_cache('not_owned'), bg=self.bg)
+        self.not_owned_cache_button.grid(row=1, column=1, padx=int(self.default_size / 2))
         self.this_cache_button = tk.Button(self.cache_frame, text=lang.CACHE_THIS_BUTTON, command=lambda: self.del_cache('this'), bg=self.bg, state=tk.DISABLED)
         self.this_cache_button.grid(row=1, column=2, padx=int(self.default_size / 2))
+        self.interactive_elements.append(self.all_cache_button)
+        self.interactive_elements.append(self.not_owned_cache_button)
+        self.interactive_elements.append(self.this_cache_button)
+
+        self.interactive_states = [0]*len(self.interactive_elements)
 
         self.root.mainloop()
+
+    def disable_buttons(self):
+        for i, el in enumerate(self.interactive_elements):
+            self.interactive_states[i] = el['state']
+            el['state'] = tk.DISABLED
+
+    def enable_buttons(self):
+        for i, el in enumerate(self.interactive_elements):
+            el['state'] = self.interactive_states[i]
 
     def clipboard_description(self):
         pony_id_str = self.id_label.cget('text')
@@ -733,6 +762,7 @@ class PonyGUI:
             messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
         else:
             self.exterior_search_requested = True
+            self.disable_buttons()
             _ = ListingWindow(self.root, self, lang.LISTING_TITLE)
 
     def del_cache(self, type='this'):
@@ -768,6 +798,7 @@ class PonyGUI:
 
     def make_listing(self):
         self.exterior_search_requested = False
+        self.disable_buttons()
         _ = ListingWindow(self.root, self, lang.LISTING_TITLE)
 
     def get_description_files(self):
