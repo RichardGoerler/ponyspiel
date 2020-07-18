@@ -276,8 +276,17 @@ class ListingWindow(dialog.Dialog):
                     self.sex.append(2)
 
                 if pony_years < 3:
-                    for el in object_row:
-                        el.configure(fg='red')
+                    if self.sex[-1] == 1:
+                        col = 'hot pink'
+                    else:
+                        col = 'dodger blue'
+                else:
+                    if self.sex[-1] == 1:
+                        col = 'red4'
+                    else:
+                        col = 'blue'
+                for el in object_row:
+                    el.configure(fg=col)
 
         for hdi, hd in enumerate(self.data_headers):
             if hd in self.max_prop_dict.keys():
