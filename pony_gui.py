@@ -116,10 +116,11 @@ class ListingWindow(dialog.Dialog):
                 config = f.read().splitlines()
             if self.gui.exterior_search_requested:
                 config[0] = self.gui.race_var.get()   # race to filter for always equals the race the market search was filtered for
-                config.append('=')
-                config.append('id')
+                # config.append('=')
+                # config.append('id')
         else:
-            config = [self.gui.race_var.get(), 'Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung', '=', 'id']
+            # config = [self.gui.race_var.get(), 'Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung', '=', 'id']
+            config = [self.gui.race_var.get(), 'Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung']
         races = [r.strip() for r in config[0].split(',')]
         if 'Alle'.strip("'") in races:
             races = list(self.gui.extractor.race_dict.keys())
@@ -213,14 +214,17 @@ class ListingWindow(dialog.Dialog):
                     im = self.gui.extractor.pony_image
                 object_row = []
                 table_row = []
+
                 dim = self.gui.dims_by_scale(0.001 * self.def_size)[0]
                 fac = float(dim) / im.size[0]
                 dim2 = int(im.size[1] * fac)
                 im = im.resize((dim, dim2), Image.ANTIALIAS)
                 self.images.append(im)
                 self.banners.append(ImageTk.PhotoImage(im))
-                object_row.append(tk.Label(self.table_frame, image=self.banners[-1], bg=self.gui.bg))
-                object_row.append(tk.Label(self.table_frame, text=self.gui.extractor.parser.name[:self.MAX_LEN_NAME], font=self.bol_font, bg=self.gui.bg))
+                object_row.append(tk.Label(self.table_frame, image=self.banners[-1], bg=self.gui.bg, cursor="hand2"))
+                object_row[-1].bind("<Button-1>", lambda e, pid=id: self.del_cache(e, pid))
+                object_row.append(tk.Label(self.table_frame, text=self.gui.extractor.parser.name[:self.MAX_LEN_NAME], font=self.bol_font, bg=self.gui.bg, cursor="hand2"))
+                object_row[-1].bind("<Button-1>", lambda e, url=self.gui.extractor.base_url + 'horse.php?id={}'.format(id): webbrowser.open(url))
                 table_row.append(self.gui.extractor.parser.name)
 
                 age = self.get_age()
@@ -306,6 +310,14 @@ class ListingWindow(dialog.Dialog):
 
         progressbar.step(lang.PROGRESS_DONE)
 
+    def del_cache(self, event, pid):
+        lab = event.widget
+        if lab['state'] == tk.NORMAL:
+            lab['state'] = tk.DISABLED
+            lab['cursor'] = ''
+            self.gui.del_cache(pid)
+
+
     def get_age(self):
         birthday_split = self.gui.extractor.parser.facts_values['Geburtstag'].split('-')
         date_str = birthday_split[0].strip()
@@ -371,7 +383,7 @@ class ListingWindow(dialog.Dialog):
             self.objects[ii][0].configure(image=self.banners[ii])
         self.table_frame.grid(row=1, column=0, padx=self.def_size)
         for ci, el in enumerate(self.header_objects):
-            el.grid(row=1, column=ci + 1, padx=int(self.def_size / 2))
+            el.grid(row=1, column=ci + 1, padx=int(self.def_size / 2))  # ci + 1 because is for header columns are without image.
         for ci, el in enumerate(self.header_max_labels):
             el.grid(row=0, column=ci + 1, padx=int(self.def_size / 2))
         self.draw_objects()
@@ -817,9 +829,17 @@ class PonyGUI:
             self.extractor.del_pony_cache_all(exclude=own_ids)
             if pony_id_str not in own_ids:
                 self.this_cache_button['state'] = tk.DISABLED
-        else:
+        elif type == 'all':
             self.extractor.del_pony_cache_all()
             self.this_cache_button['state'] = tk.DISABLED
+        elif str(type).isnumeric():
+            # here we suppose argument is the id
+            self.extractor.del_pony_cache(str(type))
+            if self.this_cache_button['text'] == str(type):
+                but_ind = self.interactive_elements.index(self.this_cache_button)
+                self.interactive_states[but_ind] = tk.DISABLED
+        else:
+            pass
 
 
     def load_own_ponies(self):
