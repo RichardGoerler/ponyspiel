@@ -264,7 +264,7 @@ class PonyExtractor:
         self.base_url = 'https://noblehorsechampion.com/inside/'
         self.payload = {'email': '', 'passwort': '', 'login': ''}
         self.race_dict = {'Alle': 0,
-                    'Hannoveraner': 1,
+                    'Trakehner': 1,
                      'Andalusier': 2,
                      'Holsteiner': 3,
                      'Englisches Vollblut': 4,

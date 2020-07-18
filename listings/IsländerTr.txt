@@ -1,0 +1,8 @@
+Isländer
+Tölt: Tölt, Töltrennen
+Pass: Rennpass, Passrennen
+Ausbildung
+=
+Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
+Gangarten: Tölt, Rennpass
+Rennen: Töltrennen, Passrennen
