@@ -511,28 +511,23 @@ class PonyGUI:
         self.export_button.grid(row=1, column=0, padx=int(self.default_size/2), pady=int(self.default_size/2))
         self.interactive_elements.append(self.export_button)
 
-        self.description_button = tk.Button(self.a_button_frame, text=lang.DESCRIPTION, command=self.clipboard_description, bg=self.bg, state=tk.DISABLED)
-        self.description_button.grid(row=1, column=1, padx=int(self.default_size / 2), pady=int(self.default_size / 2))
-        self.interactive_elements.append(self.description_button)
-
-        self.radio_frame = tk.Frame(self.root, bg=self.bg)
-        self.radio_frame.grid(row=4, column=1, columnspan=2, padx=self.default_size)
-        self.export_format_var = tk.IntVar()
-        self.export_format_var.set(0)
-        tk.Radiobutton(self.radio_frame, text=lang.RADIO_HTML, variable=self.export_format_var, value=0, bg=self.bg).grid(row=0, column=0, padx=int(self.default_size/2))
-        tk.Radiobutton(self.radio_frame, text=lang.RADIO_CSV, variable=self.export_format_var, value=1, bg=self.bg).grid(row=0, column=1, padx=int(self.default_size / 2))
-        self.export_method_var = tk.IntVar()
-        self.export_method_var.set(0)
-        tk.Radiobutton(self.radio_frame, text=lang.RADIO_CLIPBOARD, variable=self.export_method_var, value=0, bg=self.bg).grid(row=1, column=0, padx=int(self.default_size / 2))
-        tk.Radiobutton(self.radio_frame, text=lang.RADIO_FILE, variable=self.export_method_var, value=1, bg=self.bg).grid(row=1, column=1, padx=int(self.default_size / 2))
-
+        # self.radio_frame = tk.Frame(self.root, bg=self.bg)
+        # self.radio_frame.grid(row=4, column=1, columnspan=2, padx=self.default_size)
+        # self.export_format_var = tk.IntVar()
+        # self.export_format_var.set(0)
+        # tk.Radiobutton(self.radio_frame, text=lang.RADIO_HTML, variable=self.export_format_var, value=0, bg=self.bg).grid(row=0, column=0, padx=int(self.default_size/2))
+        # tk.Radiobutton(self.radio_frame, text=lang.RADIO_CSV, variable=self.export_format_var, value=1, bg=self.bg).grid(row=0, column=1, padx=int(self.default_size / 2))
+        # self.export_method_var = tk.IntVar()
+        # self.export_method_var.set(0)
+        # tk.Radiobutton(self.radio_frame, text=lang.RADIO_CLIPBOARD, variable=self.export_method_var, value=0, bg=self.bg).grid(row=1, column=0, padx=int(self.default_size / 2))
+        # tk.Radiobutton(self.radio_frame, text=lang.RADIO_FILE, variable=self.export_method_var, value=1, bg=self.bg).grid(row=1, column=1, padx=int(self.default_size / 2))
 
         self.checkbox_frame = tk.Frame(self.root, bg=self.bg)
-        self.checkbox_frame.grid(row=5, column=1, columnspan=2, padx=self.default_size)
+        self.checkbox_frame.grid(row=3, column=1, columnspan=2, padx=self.default_size)
         
         self.check_all_var = tk.IntVar()
         self.check_all_var.set(0)
-        tk.Checkbutton(self.checkbox_frame, text=lang.CHECK_ALL, font=self.bold_font, variable=self.check_all_var, command=self.toggle_all_var, bg=self.bg).grid(row=0, column=0,
+        tk.Checkbutton(self.a_button_frame, text=lang.CHECK_ALL, font=self.bold_font, variable=self.check_all_var, command=self.toggle_all_var, bg=self.bg).grid(row=1, column=1,
                                                                                                                                                                  padx=int(self.default_size/2))
         self.check_var_container = []
         self.check_gesundheit_var = tk.IntVar()
@@ -568,7 +563,7 @@ class PonyGUI:
                        bg=self.bg).grid(row=2, column=2, padx=int(self.default_size / 2))
 
         self.checkbox_frame2 = tk.Frame(self.root, bg=self.bg)
-        self.checkbox_frame2.grid(row=6, column=1, columnspan=2, padx=self.default_size)
+        self.checkbox_frame2.grid(row=4, column=1, columnspan=2, padx=self.default_size)
 
         self.check_table_headings_var = tk.IntVar()
         self.check_table_headings_var.set(0)
@@ -583,8 +578,19 @@ class PonyGUI:
         tk.Checkbutton(self.checkbox_frame2, text=lang.CHECK_COMPLETE_GESUNDHEIT, font=self.default_font, variable=self.check_complete_gesundheit_var, bg=self.bg).grid(row=1, column=0,
                                                                                                                                                                         padx=int(self.default_size / 2))
 
+        self.b_button_frame = tk.Frame(self.root, bg=self.bg)
+        self.b_button_frame.grid(row=5, column=1, columnspan=2, padx=self.default_size)
+
+        self.description_button = tk.Button(self.b_button_frame, text=lang.DESCRIPTION, command=self.clipboard_description, bg=self.bg, state=tk.DISABLED)
+        self.description_button.grid(row=0, column=0, padx=int(self.default_size / 2), pady=int(self.default_size / 2))
+        self.interactive_elements.append(self.description_button)
+
+        self.note_button = tk.Button(self.b_button_frame, text=lang.NOTE, command=self.clipboard_note, bg=self.bg, state=tk.DISABLED)
+        self.note_button.grid(row=0, column=1, padx=int(self.default_size / 2), pady=int(self.default_size / 2))
+        self.interactive_elements.append(self.note_button)
+
         self.listing_frame = tk.Frame(self.root, bg=self.bg)
-        self.listing_frame.grid(row=7, column=1, columnspan=2, padx=self.default_size, pady=self.default_size)
+        self.listing_frame.grid(row=6, column=1, columnspan=2, padx=self.default_size, pady=self.default_size)
 
         tk.Label(self.listing_frame, text=lang.LISTING_LABEL, font=self.bold_font, bg=self.bg).grid(row=0, column=0, padx=int(self.default_size/2))
 
@@ -664,6 +670,27 @@ class PonyGUI:
     def enable_buttons(self):
         for i, el in enumerate(self.interactive_elements):
             el['state'] = self.interactive_states[i]
+
+    def clipboard_note(self):
+        pony_id_str = self.id_label.cget('text')
+        if not self.extractor.get_pony_info(int(pony_id_str)):
+            messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+            return
+        p = self.extractor.parser
+        athmos = ['Halle', 'Arena', 'draußen']
+        gelaeuf = ['Sand', 'Gras', 'Erde', 'Schnee', 'Lehm', 'Späne']
+        haerte = ['sehr weich', 'weich', 'mittel', 'hart', 'sehr hart']
+        lists = [athmos, gelaeuf, haerte]
+        note = ''
+        for li, l in enumerate(lists):
+            for i, k in enumerate(l):
+                note += '{:s}: {:d}'.format(k, p.ausbildung_max[k])
+                if i < len(l)-1:
+                    note += ' | '
+            if li < len(lists)-1:
+                note += '\n'
+
+        self.text_to_clipboard(note)
 
     def clipboard_description(self):
         pony_id_str = self.id_label.cget('text')
@@ -875,6 +902,7 @@ class PonyGUI:
         self.id_label.configure(text=str(pony_id))
         self.export_button['state'] = tk.NORMAL
         self.description_button['state'] = tk.NORMAL
+        self.note_button['state'] = tk.NORMAL
         self.this_cache_button['state'] = tk.NORMAL
         self.this_cache_button.configure(text=str(pony_id))
         self.ownership_checkbutton['state'] = tk.NORMAL
@@ -924,54 +952,54 @@ class PonyGUI:
             write_dict.update({k: self.extractor.parser.facts_values[k] for k in list(self.extractor.parser.facts_values.keys())[int(delete_first):]})
         write_headers = write_dict.keys()
 
-        if self.export_format_var.get() == 1:  # csv
-            if self.export_method_var.get() == 1: # file
-                filename = filedialog.asksaveasfilename(initialdir="/", initialfile="{}-{}.csv".format(self.extractor.pony_id, self.extractor.parser.name),
-                                                        title=lang.SELECT_FILE, filetypes=[(lang.CSV_FILES, "*.csv")])
-                if not filename.endswith('.csv'):
-                    filename = filename + '.csv'
-                file_path = Path(filename)
-                try:
-                    with open(file_path, 'w') as csvfile:
-                        writer = csv.DictWriter(csvfile, fieldnames=write_headers)
-                        if self.check_table_headings_var.get():
-                            writer.writeheader()
-                        writer.writerow(write_dict)
-                except IOError:
-                    messagebox.showerror(title=lang.IO_ERROR, message=lang.CSV_WRITE_ERROR)
-            else: # clipboard
-                messagebox.showerror(title=lang.NOT_SUPPORTED_ERROR, message=lang.NOT_SUPPORTED_ERROR)
+        # if self.export_format_var.get() == 1:  # csv
+        #     if self.export_method_var.get() == 1: # file
+        #         filename = filedialog.asksaveasfilename(initialdir="/", initialfile="{}-{}.csv".format(self.extractor.pony_id, self.extractor.parser.name),
+        #                                                 title=lang.SELECT_FILE, filetypes=[(lang.CSV_FILES, "*.csv")])
+        #         if not filename.endswith('.csv'):
+        #             filename = filename + '.csv'
+        #         file_path = Path(filename)
+        #         try:
+        #             with open(file_path, 'w') as csvfile:
+        #                 writer = csv.DictWriter(csvfile, fieldnames=write_headers)
+        #                 if self.check_table_headings_var.get():
+        #                     writer.writeheader()
+        #                 writer.writerow(write_dict)
+        #         except IOError:
+        #             messagebox.showerror(title=lang.IO_ERROR, message=lang.CSV_WRITE_ERROR)
+        #     else: # clipboard
+        #         messagebox.showerror(title=lang.NOT_SUPPORTED_ERROR, message=lang.NOT_SUPPORTED_ERROR)
 
-        else: # html
+        # else: # html
             # example_data = "<tr><th>Firstname</th><th>Lastname</th><th>Age</th></tr><tr><td>Jill</td><td>Smith</td><td>50</td></tr>"
-            html_string = "\n\n<table>"
-            if self.check_table_headings_var.get():
-                html_string += "<tr>"
-                # html_string += "<col><tr>"
-                for header in write_headers:
-                    html_string += "<td>{}</td>\n\n".format(header)
-                html_string += "</tr>"
+        html_string = "\n\n<table>"
+        if self.check_table_headings_var.get():
             html_string += "<tr>"
-            for value in write_dict.values():
-                html_string += "<td>{}</td>\n\n".format(value)
-            if self.check_table_headings_var.get():
-                pass
-            html_string += "</tr><!--EndFragment--></table>   "
-            if self.export_method_var.get() == 1:  # file
-                filename = filedialog.asksaveasfilename(initialdir="/", initialfile="{}-{}.html".format(self.extractor.pony_id, self.extractor.parser.name),
-                                                        title=lang.SELECT_FILE, filetypes=[(lang.HTML_FILES, "*.html")])
-                if not filename.endswith('.html'):
-                    filename = filename + '.html'
-                file_path = Path(filename)
-                try:
-                    with open(file_path, 'w') as htmlfile:
-                        htmlfile.write(html_string)
-                except IOError:
-                    messagebox.showerror(title=lang.IO_ERROR, message=lang.HTML_WRITE_ERROR)
-            else: # clipboard
-                html_clipboard.PutHtml(html_string)
-                # with open("clip.txt", "w") as f:
-                #     f.write(html_clipboard.GetHtml())
+            # html_string += "<col><tr>"
+            for header in write_headers:
+                html_string += "<td>{}</td>\n\n".format(header)
+            html_string += "</tr>"
+        html_string += "<tr>"
+        for value in write_dict.values():
+            html_string += "<td>{}</td>\n\n".format(value)
+        if self.check_table_headings_var.get():
+            pass
+        html_string += "</tr><!--EndFragment--></table>   "
+        # if self.export_method_var.get() == 1:  # file
+        #     filename = filedialog.asksaveasfilename(initialdir="/", initialfile="{}-{}.html".format(self.extractor.pony_id, self.extractor.parser.name),
+        #                                             title=lang.SELECT_FILE, filetypes=[(lang.HTML_FILES, "*.html")])
+        #     if not filename.endswith('.html'):
+        #         filename = filename + '.html'
+        #     file_path = Path(filename)
+        #     try:
+        #         with open(file_path, 'w') as htmlfile:
+        #             htmlfile.write(html_string)
+        #     except IOError:
+        #         messagebox.showerror(title=lang.IO_ERROR, message=lang.HTML_WRITE_ERROR)
+        # else: # clipboard
+        html_clipboard.PutHtml(html_string)
+            # with open("clip.txt", "w") as f:
+            #     f.write(html_clipboard.GetHtml())
 
 
     def dims_by_scale(self, scale):
