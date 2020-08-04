@@ -19,7 +19,7 @@ class MyHTMLParser(HTMLParser):
         super(MyHTMLParser, self).__init__()
 
         # block management
-        self.block_types = ['none', 'name', 'facts', 'details', 'training', 'ausbildung', 'gangarten', 'dressur', 'springen', 'military', 'western', 'rennen', 'fahren']
+        self.block_types = ['none', 'name', 'facts', 'details', 'training', 'ausbildung', 'gangarten', 'dressur', 'springen', 'military', 'western', 'rennen', 'fahren', 'pedigree']
         self.training_block_types = ['training', 'ausbildung', 'gangarten', 'dressur', 'springen', 'military', 'western', 'rennen', 'fahren']
         self.block = 'none'
         self.tag_counter = 0
@@ -75,6 +75,8 @@ class MyHTMLParser(HTMLParser):
         self.ausbildung_max, self.gangarten_max, self.dressur_max, self.springen_max = dict(), dict(), dict(), dict()
         self.military_max, self.western_max, self.rennen_max, self.fahren_max = dict(), dict(), dict(), dict()
         self.image_urls = []
+        self.ancestors = []
+        self.pedigree_id_temp = 0
 
     def is_in_block(self):
         return self.block != 'none'
@@ -148,6 +150,9 @@ class MyHTMLParser(HTMLParser):
             elif attrs[0] == ('id', 'traintabfahren'):
                 self.enter_block('fahren')
 
+            elif attrs[0] == ('id', 'pedigree'):
+                self.enter_block('pedigree')
+
         # ============================ Incrementing tag counter ================================================================
         elif self.is_in_block():
             if tag == 'div':
@@ -165,6 +170,29 @@ class MyHTMLParser(HTMLParser):
                         if tup[0] == 'src' or tup[0] == 'data-src':
                             self.image_urls.append(tup[1])
                             break
+
+            if self.block == 'pedigree':
+                # Durch 'Sammeln der Eltern und Großeltern' gespeicherte id eintragen (nur bei Ponies mit Bild)
+                if tag == 'img' and self.pedigree_id_temp != 0:
+                    self.ancestors.append(self.pedigree_id_temp)
+                    self.pedigree_id_temp = 0
+                # Sammeln der Eltern und Großeltern
+                elif tag == 'a':
+                    for tup in attrs:
+                        if tup[0] == 'href':
+                            val = tup[1]
+                            search_string = 'horse.php?id='
+                            if search_string in val:
+                                index = val.index(search_string) + len(search_string)
+                                id_string = ''
+                                while index < len(val) and val[index].isnumeric():
+                                    id_string += val[index]
+                                    index += 1
+                                id = int(id_string)
+                                if not id in self.ancestors:
+                                    self.pedigree_id_temp = id
+                else:
+                    self.pedigree_id_temp = 0
 
     def handle_endtag(self, tag):
         # =========================== Decrementing tag counter and exiting block ================================================
@@ -503,7 +531,11 @@ class PonyExtractor:
                 return False
             for ind, url in enumerate(self.parser.image_urls):
                 full_url = self.base_url + url
-                ri = self.session.get(full_url)
+                try:
+                    ri = self.session.get(full_url)
+                except requests.exceptions.TooManyRedirects:
+                    self.log.append('Retrieving image at {} failed'.format(full_url))
+                    continue
                 if 'DOCTYPE html' in ri.text or len(ri.text) < 100:
                     self.log.append('Retrieving image at {} failed'.format(full_url))
                     # return False
