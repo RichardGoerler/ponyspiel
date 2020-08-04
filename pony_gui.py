@@ -329,7 +329,15 @@ class ListingWindow(dialog.Dialog):
         self.gui.extractor.get_pony_info(id)
         # Nur ersten und dritten Vorfahr wählen. Das sind Vater und Mutter. Vorfahren werden wie folgt eingelsen:
         # [Vater, Großvater(V), Großmutter(V), Mutter, Großvater(M), Großmutter(M)]
-        this_ancestors = list(self.gui.extractor.parser.ancestors[::3])
+        # Falls Vater Systempferd ist, wird der Vater als Großeltern wiederholt eingetragen. Beispiel:
+        # [System-Vater, Vater, Vater, Mutter, Großvater(M), Großmutter(M)]
+        # Die Liste ist also entweder leer, oder hat 6 Einträge oder 4 Einträge (Wenn beide Entern Systempferde).
+        anc_list = self.gui.extractor.parser.ancestors
+        if len(anc_list) == 6 or len(anc_list) == 0 or len(anc_list) == 4:
+            this_ancestors = list(anc_list[::3])
+        else:
+            messagebox.showerror(title='error', message='invalid ancestor list')
+            return []
         this_ancestors.append(id)
         for comp_id in self.gui.race_ids:
             comp_id = int(comp_id)
