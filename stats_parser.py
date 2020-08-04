@@ -77,6 +77,7 @@ class MyHTMLParser(HTMLParser):
         self.image_urls = []
         self.ancestors = []
         self.pedigree_id_temp = 0
+        self.pedigree_unknown_counter = 0
 
     def is_in_block(self):
         return self.block != 'none'
@@ -183,6 +184,13 @@ class MyHTMLParser(HTMLParser):
                             val = tup[1]
                             search_string = 'horse.php?id='
                             if search_string in val:
+                                # Nach einem Pony-Link folgen eventuell "unbekannt"-Einträge
+                                # Wenn der Vater ein Systempferd ist, sind es 14 Stück, ansonsten 12 oder weniger
+                                # In ersterem Fall wird der Vater wiederholt, damit an Index 0 und 3 die Eltern stehen
+                                if self.pedigree_unknown_counter == 14:
+                                    self.ancestors.append(self.ancestors[-1])
+                                    self.ancestors.append(self.ancestors[-1])
+                                self.pedigree_unknown_counter = 0
                                 index = val.index(search_string) + len(search_string)
                                 id_string = ''
                                 while index < len(val) and val[index].isnumeric():
@@ -278,6 +286,10 @@ class MyHTMLParser(HTMLParser):
                         except:
                             pass
                         block_max[self.next_data_type] = content_stripped
+
+        if self.block == 'pedigree':
+            if content.lower() == 'unbekannt':
+                self.pedigree_unknown_counter += 1
 
 
 class PonyExtractor:
