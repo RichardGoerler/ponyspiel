@@ -196,6 +196,7 @@ class ListingWindow(dialog.Dialog):
 
         self.objects = []
         self.data_table = []
+        self.object_colors = []
         self.sex = []
         self.banners = []
         self.images = []
@@ -225,6 +226,7 @@ class ListingWindow(dialog.Dialog):
                 object_row[-1].bind("<Button-1>", lambda e, pid=id: self.del_cache(e, pid))
                 object_row.append(tk.Label(self.table_frame, text=self.gui.extractor.parser.name[:self.MAX_LEN_NAME], font=self.bol_font, bg=self.gui.bg, cursor="hand2"))
                 object_row[-1].bind("<Button-1>", lambda e, url=self.gui.extractor.base_url + 'horse.php?id={}'.format(id): webbrowser.open(url))
+                object_row[-1].bind("<Button-3>", lambda e, hid=id: self.mark_relatives(hid))
                 table_row.append(self.gui.extractor.parser.name)
 
                 age = self.get_age()
@@ -291,6 +293,7 @@ class ListingWindow(dialog.Dialog):
                         col = 'blue'
                 for el in object_row:
                     el.configure(fg=col)
+                self.object_colors.append(col)
 
         for hdi, hd in enumerate(self.data_headers):
             if hd in self.max_prop_dict.keys():
@@ -309,6 +312,38 @@ class ListingWindow(dialog.Dialog):
             self.redraw()
 
         progressbar.step(lang.PROGRESS_DONE)
+
+    def mark_relatives(self, id):
+        rels = self.get_relatives(id)
+        for orow, ocol, oid in zip(self.objects, self.object_colors, self.gui.race_ids):
+            if int(oid) in rels:
+                col = 'Black'
+            else:
+                col = ocol
+            for o in orow:
+                o.configure(fg=col)
+
+    def get_relatives(self, id):
+        id = int(id)
+        result = [id]
+        self.gui.extractor.get_pony_info(id)
+        # Nur ersten und dritten Vorfahr wählen. Das sind Vater und Mutter. Vorfahren werden wie folgt eingelsen:
+        # [Vater, Großvater(V), Großmutter(V), Mutter, Großvater(M), Großmutter(M)]
+        this_ancestors = list(self.gui.extractor.parser.ancestors[::3])
+        this_ancestors.append(id)
+        for comp_id in self.gui.race_ids:
+            comp_id = int(comp_id)
+            if comp_id != id:
+                if comp_id in this_ancestors:
+                    result.append(comp_id)
+                    continue
+                self.gui.extractor.get_pony_info(comp_id)
+                comp_ancestors = self.gui.extractor.parser.ancestors[::3]
+                for comp_an in comp_ancestors:
+                    if comp_an in this_ancestors:
+                        result.append(comp_id)
+                        break
+        return result
 
     def del_cache(self, event, pid):
         lab = event.widget
@@ -407,15 +442,21 @@ class ListingWindow(dialog.Dialog):
             for ci, el in enumerate(object_row):
                 el.grid_forget()
         objects_sorted = []
+        object_colors_sorted = []
         table_sorted = []
         sex_sorted = []
+        race_ids_sorted = []
         for id in sorted_idx:
             objects_sorted.append(self.objects[id])
+            object_colors_sorted.append(self.object_colors[id])
             table_sorted.append(self.data_table[id])
             sex_sorted.append(self.sex[id])
+            race_ids_sorted.append(self.gui.race_ids[id])
         self.objects = objects_sorted
+        self.object_colors = object_colors_sorted
         self.data_table = table_sorted
         self.sex = sex_sorted
+        self.gui.race_ids = race_ids_sorted
         self.draw_objects()
 
 class LoginWindow(dialog.Dialog):
