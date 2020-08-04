@@ -262,7 +262,7 @@ class PonyExtractor:
         self.request_url_base = 'https://noblehorsechampion.com/inside/horse.php?id={}'
         self.organize_url_base = 'https://noblehorsechampion.com/inside/organizehorses.php?id={}'
         self.base_url = 'https://noblehorsechampion.com/inside/'
-        self.payload = {'email': '', 'passwort': '', 'login': ''}
+        self.payload = {'email': '', 'password': '', 'login': ''}
         self.race_dict = {'Alle': 0,
                     'Trakehner': 1,
                      'Andalusier': 2,
@@ -304,7 +304,7 @@ class PonyExtractor:
                 try:
                     with open('login', 'r') as f:
                         self.payload['email'] = f.readline().strip()
-                        self.payload['passwort'] = f.readline().strip()
+                        self.payload['password'] = f.readline().strip()
                 except IOError:
                     self.log.append('Login at {} failed. Email/Password combination wrong?'.format(self.post_login_url))
                     return False
