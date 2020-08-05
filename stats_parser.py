@@ -5,6 +5,7 @@ from PIL import Image
 import pickle
 import csv
 import shutil
+import traceback
 
 def add_margin(pil_img, top, right, bottom, left, color):
     width, height = pil_img.size
@@ -312,7 +313,8 @@ class PonyExtractor:
                      'American Paint Horse': 6,
                      'Araber': 7,
                      'Welsh Mountain Pony': 8,
-                     'Isländer': 9}
+                     'Isländer': 9,
+                     'Friese': 10}
         self.sort_by_dict = {'Neueste zuerst': 'firstnew',
                             'Jüngste zuerst': 'firstyoung',
                             'Älteste zuerst': 'firstold',
@@ -351,7 +353,12 @@ class PonyExtractor:
             self.session = requests.Session()
             self.session.max_redirects = 3
             # login
-            r1 = self.session.get(self.post_login_url)
+            try:
+                r1 = self.session.get(self.post_login_url)
+            except Exception:
+                traceback.print_exc()
+                self.log.append('Login at {} failed. Unexpected error. Exception was printed.'.format(self.post_login_url))
+                return False
             if len(r1.text) < self.loginpage_length_threshold:
                 self.log.append('Contacting login page at {} failed'.format(self.post_login_url))
                 self.session.close()
@@ -481,11 +488,16 @@ class PonyExtractor:
         try:
             r = self.session.get(request_url)
         except requests.exceptions.TooManyRedirects:
-            self.log.append('Retrieving pony page at {} failed'.format(request_url))
+            self.log.append('Retrieving pony page at {} failed. Too many redirects.'.format(request_url))
+            self.del_pony_cache(pony_id)
+            return False
+        except Exception:
+            traceback.print_exc()
+            self.log.append('Retrieving pony page at {} failed. Unexpected error. Exception was printed.'.format(request_url))
             self.del_pony_cache(pony_id)
             return False
         if len(r.text) < self.insidepage_length_threshold:
-            self.log.append('Retrieving pony page at {} failed'.format(request_url))
+            self.log.append('Retrieving pony page at {} failed. Server reply too short.'.format(request_url))
             self.del_pony_cache(pony_id)
             return False
         self.data = str(r.text)
@@ -546,10 +558,14 @@ class PonyExtractor:
                 try:
                     ri = self.session.get(full_url)
                 except requests.exceptions.TooManyRedirects:
-                    self.log.append('Retrieving image at {} failed'.format(full_url))
+                    self.log.append('Retrieving image at {} failed. Too many redirects.'.format(full_url))
+                    continue
+                except Exception:
+                    traceback.print_exc()
+                    self.log.append('Retrieving pony page at {} failed. Unexpected error. Exception was printed.'.format(full_url))
                     continue
                 if 'DOCTYPE html' in ri.text or len(ri.text) < 100:
-                    self.log.append('Retrieving image at {} failed'.format(full_url))
+                    self.log.append('Retrieving image at {} failed. Image file too short or not an image.'.format(full_url))
                     # return False
                 else:
                     with open('.cache/{}/img{:02d}.png'.format(self.pony_id, ind), 'wb') as out_file:
