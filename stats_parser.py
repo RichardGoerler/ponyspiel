@@ -20,7 +20,7 @@ class MyHTMLParser(HTMLParser):
         super(MyHTMLParser, self).__init__()
 
         # block management
-        self.block_types = ['none', 'name', 'facts', 'details', 'training', 'ausbildung', 'gangarten', 'dressur', 'springen', 'military', 'western', 'rennen', 'fahren', 'pedigree']
+        self.block_types = ['none', 'name', 'facts', 'details', 'training', 'ausbildung', 'gangarten', 'dressur', 'springen', 'military', 'western', 'rennen', 'fahren', 'pedigree', 'alert']
         self.training_block_types = ['training', 'ausbildung', 'gangarten', 'dressur', 'springen', 'military', 'western', 'rennen', 'fahren']
         self.block = 'none'
         self.tag_counter = 0
@@ -79,6 +79,7 @@ class MyHTMLParser(HTMLParser):
         self.ancestors = []
         self.pedigree_id_temp = 0
         self.pedigree_unknown_counter = 0
+        self.alert_type = ''
 
     def is_in_block(self):
         return self.block != 'none'
@@ -118,6 +119,11 @@ class MyHTMLParser(HTMLParser):
             if len(self.name) == 0 and attrs[0] == ('class', 'main'):
                 # Start des Seiteninhalts. Das nächste Stück Text (h2-Überschrift) beinhaltet den Namen des Pferdes
                 self.enter_block('name')
+
+            if ('role', 'alert') in attrs:
+                # grey alert area above name. Includes market price etc.
+                self.enter_block('alert')
+                self.alert_type = ''
 
             elif attrs[0] == ('id', 'facts'):
                 self.enter_block('facts')
@@ -227,6 +233,28 @@ class MyHTMLParser(HTMLParser):
                 self.name = content
                 self.in_name = False
                 self.tag_counter = 0
+
+        if self.block == 'alert':
+            def get_val():
+                s = ''
+                first_num = False
+                for c in content:
+                    if c.isnumeric():
+                        first_num = True
+                        s += c
+                    elif first_num:
+                        break
+                return s
+            if 'deckstation' in content.lower():
+                self.alert_type = 'deckstation'
+            elif 'verkauf' in content.lower():
+                self.alert_type = 'verkauf'
+            elif self.alert_type == 'deckstation':
+                self.facts_values['deckstation'] = int(get_val())
+                self.alert_type = ''
+            elif self.alert_type == 'verkauf':
+                self.facts_values['verkauf'] = int(get_val())
+                self.alert_type = ''
 
         if self.block == 'facts':
             # if len(self.next_data_type) == 0 and content in self.facts_headings:
