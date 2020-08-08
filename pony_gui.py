@@ -110,6 +110,7 @@ class ListingWindow(dialog.Dialog):
         self.bol_font = font.Font(family=self.gui.default_font['family'], size=self.def_size, weight='bold')
         self.show_sex = 0  # 0: all, 1: female, 2: male
         lname = self.gui.market_listing_var.get() if self.gui.exterior_search_requested else self.gui.option_var.get()
+        price_type = self.gui.horse_page_type_var.get() if self.gui.exterior_search_requested else ''
         if not lname == lang.EXTERIEUR_LISTING:
             lfile = self.gui.listing_files[self.gui.listing_names.index(lname)]
             with open(lfile, 'r', encoding='utf-8') as f:
@@ -118,9 +119,13 @@ class ListingWindow(dialog.Dialog):
                 config[0] = self.gui.race_var.get()   # race to filter for always equals the race the market search was filtered for
                 # config.append('=')
                 # config.append('id')
+                if len(price_type) != 0:
+                    config.extend(['=', lang.LISTING_HEADER_PRICE])
         else:
             # config = [self.gui.race_var.get(), 'Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung', '=', 'id']
             config = [self.gui.race_var.get(), 'Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung']
+            if len(price_type) != 0:
+                config.extend(['=', lang.LISTING_HEADER_PRICE])
         races = [r.strip() for r in config[0].split(',')]
         if 'Alle'.strip("'") in races:
             races = list(self.gui.extractor.race_dict.keys())
@@ -130,7 +135,7 @@ class ListingWindow(dialog.Dialog):
         self.additional = []
         p = self.gui.extractor.parser
         valid_keys = [p.gesundheit_headings, p.charakter_headings, p.exterieur_headings, p.ausbildung_headings, p.gangarten_headings, p.dressur_headings,
-                      p.springen_headings, p.military_headings, p.western_headings, p.rennen_headings, p.fahren_headings, ['id']]
+                      p.springen_headings, p.military_headings, p.western_headings, p.rennen_headings, p.fahren_headings, ['id', lang.LISTING_HEADER_PRICE]]
         for l in config[1:]:
             if '=' in l:
                 divider_found = True
@@ -246,6 +251,20 @@ class ListingWindow(dialog.Dialog):
                             normval = textval = id
                             object_row.append(tk.Label(self.table_frame, text=str(textval), font=self.def_font, bg=self.gui.bg, cursor="hand2"))
                             object_row[-1].bind("<Button-1>", lambda e, url=self.gui.extractor.base_url + 'horse.php?id={}'.format(id): webbrowser.open(url))
+                        elif prop[0] == lang.LISTING_HEADER_PRICE:
+                            if price_type == 'Deckstation':
+                                pkey = 'deckstation'
+                            elif price_type == 'Pferdehandel':
+                                pkey = 'verkauf'
+                            else:
+                                continue
+                            try:
+                                normval = textval = self.gui.extractor.parser.facts_values[pkey]
+                            except:
+                                normval = textval = 0
+                                tk.messagebox.showerror(title='error', message='could not read key {} from pony {}. '
+                                                                'Price was set to 0. Deleting Cache might help.'.format(pkey, id))
+                            object_row.append(tk.Label(self.table_frame, text=str(textval), font=self.def_font, bg=self.gui.bg))
                         else:
                             if len(prop) == 1:
                                 val, norm = self.gui.get_prop_value_and_count(prop[0])
