@@ -330,7 +330,10 @@ class PonyExtractor:
                              'Military': 'summaxmilitary',
                              'Western': 'summaxwestern',
                              'Rennen': 'summaxrennen',
-                             'Fahren': 'summaxfahren'}
+                             'Fahren': 'summaxfahren',
+                             'Gesundheit': 'sumhealth',
+                             'Charakter': 'sumchar',
+                             'Exterieur': 'sumext'}
         self.pony_id = 0
         self.log = []
         self.insidepage_length_threshold = 40000
