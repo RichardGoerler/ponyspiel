@@ -987,6 +987,8 @@ class PonyGUI:
 
     def request(self):
         pony_id = int(self.id_spin.get())
+        self.this_cache_button['state'] = tk.NORMAL
+        self.this_cache_button.configure(text=str(pony_id))
         if not self.extractor.get_pony_info(pony_id):
             messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
             return
@@ -1000,11 +1002,8 @@ class PonyGUI:
         self.export_button['state'] = tk.NORMAL
         self.description_button['state'] = tk.NORMAL
         self.note_button['state'] = tk.NORMAL
-        self.this_cache_button['state'] = tk.NORMAL
-        self.this_cache_button.configure(text=str(pony_id))
         self.ownership_checkbutton['state'] = tk.NORMAL
         self.check_ownership_var.set(int(self.is_owned()))
-
         qual = self.extractor.get_pony_quality()
         self.quality_label.configure(text='Qualität: {:.0f}%'.format(qual*100))
 
