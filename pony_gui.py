@@ -262,8 +262,7 @@ class ListingWindow(dialog.Dialog):
                                 normval = textval = self.gui.extractor.parser.facts_values[pkey]
                             except:
                                 normval = textval = 0
-                                tk.messagebox.showerror(title='error', message='could not read key {} from pony {}. '
-                                                                'Price was set to 0. Deleting Cache might help.'.format(pkey, id))
+                                print('could not read key {} from pony {}. Price was set to 0. Deleting Cache might help.'.format(pkey, id))
                             object_row.append(tk.Label(self.table_frame, text=str(textval), font=self.def_font, bg=self.gui.bg))
                         else:
                             if len(prop) == 1:
