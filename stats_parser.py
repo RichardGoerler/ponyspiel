@@ -39,7 +39,7 @@ class MyHTMLParser(HTMLParser):
         self.exterieur_headings = self.details_headings[self.details_headings.index('Exterieur'):]
         self.training_headings = ['Gesamtpotenzial', 'Ausbildung', 'Gangarten', 'Dressur', 'Springen', 'Military', 'Western', 'Rennen', 'Fahren']
         self.facts_headings = ['Rufname', 'Besitzer', 'Züchter', 'Rasse', 'Alter', 'Geburtstag', 'Stockmaß', 'Erwartetes Stockmaß', 'Fellfarbe']
-                                        # additionaly, there are 'Geschlecht' and 'Fohlen' which are extracted differently (handle_starttag)
+                                        # additionaly, there are 'Geschlecht' and 'Fohlen' which are extracted differently (handle_starttag), also 'deckstation' and 'verkauf' for price
         self.ausbildung_headings = ['Ausbildung', 'Stärke', 'Trittsicherheit', 'Ausdauer', 'Geschwindigkeit', 'Beschleunigung', 'Wendigkeit', 'Sprungkraft', 'taktrein', 'Geschicklichkeit',
                                     'Sand', 'Gras', 'Erde', 'Schnee', 'Lehm', 'Späne',
                                     'Halle', 'Arena', 'draußen', 'sehr weich', 'weich', 'mittel', 'hart', 'sehr hart']
@@ -450,9 +450,9 @@ class PonyExtractor:
 
 
     def browse_horses(self, type=0, race='Alle', sort_by='gp', pages=3):
-        if type == 0:
+        if type == 1:
             url = self.base_url + 'stud.php'
-        elif type == 1:
+        elif type == 0:
             url = self.base_url + 'horsetrade.php'
         elif type == 2:
             url = self.base_url + 'allhorses.php'
@@ -463,7 +463,7 @@ class PonyExtractor:
         if not self._login_if_required():
             return False
         form_data = {'rasse': race_num, 'filter': sort_by, 'submit': ''}
-        if type != 0:
+        if type != 1:
             form_data['geschlecht'] = 'gall'
         post = self.session.post(url, data=form_data)
         text = post.text
@@ -554,7 +554,7 @@ class PonyExtractor:
             p = cache_all_path.glob('**/*')
             for pa in p:
                 if pa.name not in exclude:
-                    shutil.rmtree(pa)
+                    shutil.rmtree(pa, ignore_errors=True)
 
     def get_pony_info(self, pony_id, cached=True):
         if self.pony_id == 0:
