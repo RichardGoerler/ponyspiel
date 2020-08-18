@@ -119,7 +119,7 @@ class ListingWindow(dialog.Dialog):
                 config[0] = self.gui.race_var.get()   # race to filter for always equals the race the market search was filtered for
                 # config.append('=')
                 # config.append('id')
-                if len(price_type) != 0:
+                if len(price_type) != 0 and price_type != lang.HORSE_PAGE_ALL and 'all' not in price_type:
                     config.extend(['=', lang.LISTING_HEADER_PRICE])
         else:
             # config = [self.gui.race_var.get(), 'Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung', '=', 'id']
@@ -252,9 +252,9 @@ class ListingWindow(dialog.Dialog):
                             object_row.append(tk.Label(self.table_frame, text=str(textval), font=self.def_font, bg=self.gui.bg, cursor="hand2"))
                             object_row[-1].bind("<Button-1>", lambda e, url=self.gui.extractor.base_url + 'horse.php?id={}'.format(id): webbrowser.open(url))
                         elif prop[0] == lang.LISTING_HEADER_PRICE:
-                            if price_type == 'Deckstation':
+                            if price_type == lang.HORSE_PAGE_STUD:
                                 pkey = 'deckstation'
-                            elif price_type == 'Pferdehandel':
+                            elif price_type == lang.HORSE_PAGE_TRADE:
                                 pkey = 'verkauf'
                             else:
                                 continue
@@ -700,7 +700,7 @@ class PonyGUI:
 
         tk.Label(self.exterior_frame, text=lang.EXTERIEUR_LABEL, font=self.bold_font, bg=self.bg).grid(row=0, column=0, columnspan=2, padx=int(self.default_size/2))
 
-        self.horse_pages = ['Pferdehandel', 'Deckstation']
+        self.horse_pages = [lang.HORSE_PAGE_TRADE, lang.HORSE_PAGE_STUD, lang.HORSE_PAGE_ALL]
         self.horse_page_type_var = tk.StringVar()
         self.horse_page_type_var.set(self.horse_pages[0])  # default value
         tk.OptionMenu(self.exterior_frame, self.horse_page_type_var, *self.horse_pages).grid(row=0, column=2, padx=int(self.default_size / 2))
@@ -872,7 +872,7 @@ class PonyGUI:
     def exterior_search(self):
         sort_by_key = self.sort_by_var.get()
         sort_by_value = self.extractor.sort_by_dict[sort_by_key]
-        self.exterior_search_ids = self.extractor.browse_horses(self.horse_page_type_var.get() == 'Deckstation', race=self.race_var.get(), sort_by=sort_by_value, pages=int(self.n_pages_var.get()))
+        self.exterior_search_ids = self.extractor.browse_horses(self.horse_pages.index(self.horse_page_type_var.get()), race=self.race_var.get(), sort_by=sort_by_value, pages=int(self.n_pages_var.get()))
         if self.exterior_search_ids == False:
             messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
         else:

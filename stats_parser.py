@@ -449,16 +449,21 @@ class PonyExtractor:
         return horse_ids
 
 
-    def browse_horses(self, deckstation=False, race='Alle', sort_by='gp', pages=3):
-        if deckstation:
+    def browse_horses(self, type=0, race='Alle', sort_by='gp', pages=3):
+        if type == 0:
             url = self.base_url + 'stud.php'
-        else:
+        elif type == 1:
             url = self.base_url + 'horsetrade.php'
+        elif type == 2:
+            url = self.base_url + 'allhorses.php'
+        else:
+            self.log.append('Invalid type-argument for browse_horses() function')
+            return False
         race_num = self.race_dict[race] if race in self.race_dict.keys() else 0
         if not self._login_if_required():
             return False
         form_data = {'rasse': race_num, 'filter': sort_by, 'submit': ''}
-        if not deckstation:
+        if type != 0:
             form_data['geschlecht'] = 'gall'
         post = self.session.post(url, data=form_data)
         text = post.text
