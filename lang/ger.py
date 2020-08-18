@@ -43,6 +43,10 @@ CACHE_ALL_BUTTON = 'Komplett'
 CACHE_NOT_OWNED_BUTTON = 'Nur fremde'
 CACHE_THIS_BUTTON = 'Aktuell'
 
+HORSE_PAGE_TRADE = 'Pferdehandel'
+HORSE_PAGE_STUD = 'Deckstation'
+HORSE_PAGE_ALL = 'Pferderegister'
+
 DIALOG_TITLE = 'Dialogfenster'
 DIALOG_OK = 'OK'
 DIALOG_CANCEL = 'Abbrechen'
