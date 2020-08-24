@@ -130,11 +130,11 @@ Linksklick auf das Bild des Pferdes in der Auflistung löscht den lokalen Cache 
 
 ### 9 - Markt-Suche
 
-Durchsuchen von Pferdehandel, Deckstation oder Pferderegister (auswählbar unter **a**). Das Filtert die Pferde aus dem Spiel nach Rasse (auswählbar unter **b**) und sortiert sie nach der unter **c** auswählbaren Methode.
+Durchsuchen von Pferdehandel, Deckstation oder Pferderegister (auswählbar unter **a**). Dies filtert die Pferde aus dem Spiel nach Rasse (auswählbar unter **b**) und sortiert sie nach der unter **c** auswählbaren Methode.
 
-Es wird die unter **e** ausgewählte Anzahl an Seiten angezeigt. Die Auflistung wird mithilfe der _listing_-Dateien, die auch für Funktion 8 verwendet werden, erstellt (auswählbar unter **d**).
+Es wird die unter **e** ausgewählte Anzahl an Seiten ausgewertet. Die Auflistung wird mithilfe der _listing_-Dateien, die auch für Funktion 8 verwendet werden, erstellt (auswählbar unter **d**).
 
-Zusätzlich wird der Preis angezeigt
+Zusätzlich wird der Preis angezeigt.
 
 ### 10 - Cache löschen
 
