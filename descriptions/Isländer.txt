@@ -1,0 +1,5 @@
+Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
+Gesamtpotenzial
+T_Tölt: Tölt, Töltrennen
+P_Pass: Rennpass, Passrennen
+A_Ausbildung
