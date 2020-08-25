@@ -332,6 +332,8 @@ class PonyExtractor:
         self.organize_url_base = 'https://noblehorsechampion.com/inside/organizehorses.php?id={}'
         self.base_url = 'https://noblehorsechampion.com/inside/'
         self.payload = {'email': '', 'password': '', 'login': ''}
+        self.telegram_id = ''
+        self.bot_token = '1331285354:AAHwXfiRyvrd4JFiSAw5SAB4C3YDlEpXXE8'
         self.race_dict = {'Alle': 0,
                     'Trakehner': 1,
                      'Andalusier': 2,
@@ -378,6 +380,8 @@ class PonyExtractor:
                     with open('login', 'r') as f:
                         self.payload['email'] = f.readline().strip()
                         self.payload['password'] = f.readline().strip()
+                        tel_id = f.readline().strip()
+                        self.telegram_id = tel_id
                 except IOError:
                     self.log.append('Login at {} failed. Email/Password combination wrong?'.format(self.post_login_url))
                     return False
@@ -702,6 +706,13 @@ class PonyExtractor:
             print(self.parser.rennen_max)
             print(self.parser.fahren_values)
             print(self.parser.fahren_max)
+
+    def telegram_bot_sendtext(self, bot_message):
+        send_text = 'https://api.telegram.org/bot' + self.bot_token + '/sendMessage?chat_id=' + self.telegram_id + '&parse_mode=Markdown&text=' + bot_message
+
+        response = requests.get(send_text)
+
+        return response.json()
 
 if __name__ == '__main__':
     PONY_ID = 106161

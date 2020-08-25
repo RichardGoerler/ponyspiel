@@ -11,6 +11,9 @@ import csv
 from datetime import datetime
 import win32clipboard
 import webbrowser
+import time
+import multiprocessing
+
 
 import lang
 import stats_parser
@@ -494,6 +497,7 @@ class LoginWindow(dialog.Dialog):
             with open('login', 'r') as f:
                 user_loaded = f.readline().strip()
                 pw_loaded = f.readline().strip()
+                tel_loaded = f.readline().strip()
         except IOError:
             user_loaded = ''
             pw_loaded = ''
@@ -507,12 +511,37 @@ class LoginWindow(dialog.Dialog):
         self.pw_var.set(pw_loaded)
         self.pw_entry = tk.Entry(master, textvariable=self.pw_var, bg=self.gui.bg)
         self.pw_entry.grid(row=1, column=1)
+        tk.Label(master, text=lang.TELEGRAM_LABEL, font=self.gui.default_font, bg=self.gui.bg).grid(row=2, column=0, padx=self.gui.default_size // 2)
+        self.tel_var = tk.StringVar()
+        self.tel_var.set(tel_loaded)
+        self.tel_entry = tk.Entry(master, textvariable=self.tel_var, bg=self.gui.bg)
+        self.tel_entry.grid(row=2, column=1)
 
     def apply(self):
         self.gui.user = self.user_var.get().strip()
         self.gui.pw = self.pw_var.get().strip()
+        self.gui.telegram_id = self.tel_var.get().strip()
         with open('login', 'w') as f:
-            f.write('{}\n{}'.format(self.gui.user, self.gui.pw))
+            f.write('{}\n{}\n{}'.format(self.gui.user, self.gui.pw, self.gui.telegram_id))
+
+
+def poll_function(id):
+    extractor = stats_parser.PonyExtractor()
+    done = False
+
+    while not done:
+        if extractor.get_pony_info(id, cached=False):
+            if 'deckstation' in extractor.parser.facts_values.keys():
+                print("Deckstation! ({})".format(id))
+                test = extractor.telegram_bot_sendtext(lang.TELEGRAM_NOTIFICATION.format(id))
+                print(test)
+                done = True
+            else:
+                print("Noch nicht... ({})".format(id))
+        else:
+            print("Request Failed for poll id {}".format(id))
+            print(extractor.log[-1])
+        time.sleep(60)
 
 
 class PonyGUI:
@@ -522,6 +551,9 @@ class PonyGUI:
         self.root.resizable(False, False)
         self.user = ''
         self.pw = ''
+        self.telegram_id = ''
+        self.poll_ids = []
+        self.poll_processes = []
         self.bg = "#EDEEF3"
         self.screenwidth = self.root.winfo_screenwidth()
         self.screenheight = self.root.winfo_screenheight()
@@ -530,6 +562,8 @@ class PonyGUI:
         self.default_size = int(round(15*self.hdfactor))
         self.default_font = font.nametofont("TkDefaultFont")
         self.default_font.configure(size=self.default_size)
+        self.small_font = self.default_font.copy()
+        self.small_font.configure(size=self.default_size//2)
         self.text_font = font.nametofont("TkTextFont")
         self.text_font.configure(size=self.default_size)
         self.bold_font = self.default_font.copy()
@@ -579,6 +613,12 @@ class PonyGUI:
         self.ownership_checkbutton.grid(row=0, column=2, padx=int(self.default_size/2))
         self.ownership_checkbutton.configure(state=tk.DISABLED)
         self.interactive_elements.append(self.ownership_checkbutton)
+        self.check_poll_var = tk.IntVar()
+        self.check_poll_var.set(0)
+        self.poll_checkbutton = tk.Checkbutton(self.id_frame, text=lang.DECKSTATION_POLL, font=self.small_font, wraplength=120, justify=tk.LEFT, variable=self.check_poll_var, command=self.deckstation_poll_toggle, bg=self.bg)
+        self.poll_checkbutton.grid(row=0, column=3, padx=int(self.default_size/2))
+        self.poll_checkbutton.configure(state=tk.DISABLED)
+        self.interactive_elements.append(self.poll_checkbutton)
 
         self.a_button_frame = tk.Frame(self.root, bg=self.bg)
         self.a_button_frame.grid(row=2, column=1, columnspan=2, padx=self.default_size)
@@ -749,6 +789,20 @@ class PonyGUI:
         self.interactive_states = [0]*len(self.interactive_elements)
 
         self.root.mainloop()
+
+    def deckstation_poll_toggle(self):
+        id = self.id_label.cget('text')
+        pollvar = self.check_poll_var.get()
+        if pollvar == 1 and id not in self.poll_ids:
+            t = multiprocessing.Process(target=poll_function, args=(id, ))
+            self.poll_ids.append(id)
+            self.poll_processes.append(t)
+            t.start()
+        if pollvar == 0 and id in self.poll_ids:
+            ind = self.poll_ids.index(id)
+            self.poll_processes[ind].terminate()
+            del self.poll_processes[ind]
+            del self.poll_ids[ind]
 
     def disable_buttons(self):
         for i, el in enumerate(self.interactive_elements):
@@ -1002,6 +1056,14 @@ class PonyGUI:
         self.description_button['state'] = tk.NORMAL
         self.note_button['state'] = tk.NORMAL
         self.ownership_checkbutton['state'] = tk.NORMAL
+        finished_proc_indices = [i for i in range(len(self.poll_processes)) if not self.poll_processes[i].is_alive()]
+        self.poll_processes = [self.poll_processes[i] for i in finished_proc_indices]
+        self.poll_ids = [self.poll_ids[i] for i in finished_proc_indices]
+        self.poll_checkbutton['state'] = tk.NORMAL
+        if str(pony_id) in self.poll_ids:
+            self.check_poll_var.set(1)
+        else:
+            self.check_poll_var.set(0)
         self.check_ownership_var.set(int(self.is_owned()))
         qual = self.extractor.get_pony_quality()
         self.quality_label.configure(text='Qualität: {:.0f}%'.format(qual*100))
