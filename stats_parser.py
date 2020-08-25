@@ -364,7 +364,7 @@ class PonyExtractor:
                              'Exterieur': 'sumext'}
         self.pony_id = 0
         self.log = []
-        self.insidepage_length_threshold = 40000
+        self.insidepage_length_threshold = 30000
         self.loginpage_length_threshold = 10000
 
     def __del__(self):
@@ -571,7 +571,7 @@ class PonyExtractor:
                     # Otherwise, wrong old data will be in data.
                     self.data = ''
                 return True
-        if not self._request_pony_file(pony_id):
+        if not self._request_pony_file(pony_id, cached=cached):
             return False
         self.pony_id = pony_id
         self.parser = MyHTMLParser()
