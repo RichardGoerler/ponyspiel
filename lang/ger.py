@@ -3,6 +3,7 @@
 MAIN_TITLE = 'Pony Dingen'
 PONY_ID = 'Pony-ID'
 CHECK_OWN = 'Meins!'
+DECKSTATION_POLL = 'Deckstation-       Benachrichtigung'
 REQUEST = 'Daten abfragen'
 LOGIN_BUTTON = 'Login-Daten'
 EXPORT = 'Daten-Export'
@@ -53,6 +54,7 @@ DIALOG_CANCEL = 'Abbrechen'
 LOGIN_TITLE = 'Login-Daten eingeben'
 USER_LABEL = 'Benutzer'
 PASSWORD_LABEL = 'Passwort'
+TELEGRAM_LABEL = 'Telegram ID (optional)'
 
 LISTING_TITLE = 'Auflistung'
 LISTING_HEADER_NAME = 'Name'
@@ -70,3 +72,5 @@ PROGRESS_READING_CONFIG = 'Konfiguration einlesen'
 PROGRESS_MAKING_HEADERS = 'Tabellenstruktur erzeugen'
 PROGRESS_DRAWING_SCALING = 'zeichnen und skalieren'
 PROGRESS_DONE = 'Maunzl ist dick'
+
+TELEGRAM_NOTIFICATION = "Pony mit ID {} steht nun in der Deckstation!"
