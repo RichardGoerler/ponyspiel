@@ -708,11 +708,17 @@ class PonyExtractor:
             print(self.parser.fahren_max)
 
     def telegram_bot_sendtext(self, bot_message):
-        send_text = 'https://api.telegram.org/bot' + self.bot_token + '/sendMessage?chat_id=' + self.telegram_id + '&parse_mode=Markdown&text=' + bot_message
+        if len(self.telegram_id) > 0:
+            send_text = 'https://api.telegram.org/bot' + self.bot_token + '/sendMessage?chat_id=' + self.telegram_id + '&parse_mode=Markdown&text=' + bot_message
 
-        response = requests.get(send_text)
-
-        return response.json()
+            response = requests.get(send_text)
+            resp = response.json()
+            self.log.append(resp)
+            return resp
+        else:
+            resp = 'No telegram id found. Message was not sent'
+            self.log.append(resp)
+            return 'No telegram id found. Message was not sent'
 
 if __name__ == '__main__':
     PONY_ID = 106161
