@@ -10,9 +10,11 @@ Tool zur Verwaltung von Pferden beim Browsergame noblehorsechampion.
 
 Eingabe der eigenen Login-Daten, damit das Tool sich im Spiel einloggen kann.
 
+Für Funktion 11 kann außerdem die eigene Telegram ID eingegeben werden. Diese gibt z.B. der Bot _@userinfobot_ aus, der über die Suche in der Telegram-App gefunden werden kann.
+
 ### 2 - Datenabruf
 
-Laden der Daten eines Pferdes nach ID. Anschließend können Funktionen 3-6 auf dieses Pferd angewendet werden.
+Laden der Daten eines Pferdes nach ID. Anschließend können Funktionen 3-6 und 11 auf dieses Pferd angewendet werden.
 Die Daten werden im lokalen Cache gespeichert, um den Ladevorgang beim nächsten Mal zu beschleunigen.
 
 ### 3 - Als eigenes Pferd registrieren
@@ -139,6 +141,16 @@ Zusätzlich wird der Preis angezeigt.
 ### 10 - Cache löschen
 
 Der lokale Cache kann komplett, nur für nicht-eigene Pferde oder für das aktuell geladene Pferd gelöscht werden. Dies ist z.B. sinnvoll, wenn sich Werte durch Training verändert haben.
+
+### 11 - Deckstation-Benachrichtigung
+
+Erhalte eine Benachrichtigung, sobald das Pferd in die Deckstation gestellt wird. Die Benachrichtigung wird
+ 
+1. im Programm selbst angezeigt und
+
+2. per Telegram versendet, falls im Login-Fenster (Funktion 1) eine gültige Telegram-ID eingegeben wurde.
+
+Um eine Telegram-Benachrichtigung zu erhalten, muss der Bot _@PonyspielBot_ auf dem Telefon aktiviert sein.
 
 ## Systemvoraussetzungen
 
