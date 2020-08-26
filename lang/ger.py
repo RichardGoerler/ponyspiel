@@ -18,6 +18,8 @@ NOT_SUPPORTED_ERROR = 'Funktion (noch) nicht unterstützt'
 IO_ERROR = "E/A-Fehler"
 CSV_WRITE_ERROR = "Fehler beim Schreiben der CSV-Datei"
 HTML_WRITE_ERROR = "Fehler beim Schreiben der HTML-Datei"
+QUIT_HEADING = "Schließen"
+QUIT_TEXT = "Deckstation-Benachrichtigung ist aktiv. Wirklich schließen?"
 RADIO_HTML = 'HTML-Tabelle'
 RADIO_CSV = 'CSV-Format'
 RADIO_CLIPBOARD = 'Zwischenablage'
@@ -73,4 +75,6 @@ PROGRESS_MAKING_HEADERS = 'Tabellenstruktur erzeugen'
 PROGRESS_DRAWING_SCALING = 'zeichnen und skalieren'
 PROGRESS_DONE = 'Maunzl ist dick'
 
-TELEGRAM_NOTIFICATION = "Pony mit ID {} steht nun in der Deckstation!"
+TELEGRAM_NOTIFICATION = "{}: {} steht nun in der Deckstation!"
+NOTIFICATION_TITLE = "Deckstation-Benachrichtigung"
+NOTIFICATION_TEXT = "{}: {} steht nun in der Deckstation!"

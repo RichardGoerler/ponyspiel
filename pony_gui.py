@@ -524,6 +524,38 @@ class LoginWindow(dialog.Dialog):
         with open('login', 'w') as f:
             f.write('{}\n{}\n{}'.format(self.gui.user, self.gui.pw, self.gui.telegram_id))
 
+class Notification:
+    def __init__(self, id, pony_name):
+        self.root = tk.Tk()
+        self.root.resizable(False, False)
+        self.bg = "#EDEEF3"
+        try:
+            self.root.iconbitmap("favicon.ico")
+        except:
+            pass
+        self.screenwidth = self.root.winfo_screenwidth()
+        self.screenheight = self.root.winfo_screenheight()
+        self.screen_resolution = [self.screenwidth, self.screenheight]
+        self.hdfactor = self.screenheight / 1080.
+        self.default_size = int(round(15 * self.hdfactor))
+        self.default_font = font.nametofont("TkDefaultFont")
+        self.default_font.configure(size=self.default_size)
+        self.root.title(lang.NOTIFICATION_TITLE)
+        self.root.configure(bg=self.bg)
+        self.frame = tk.Frame(self.root, bg=self.bg)
+        self.frame.grid(padx=self.default_size, pady=self.default_size)
+        tk.Label(self.frame, text=lang.NOTIFICATION_TEXT.format(id, pony_name), font=self.default_font, bg=self.bg).grid()
+        tk.Button(self.frame, text='OK', command=self.on_closing, bg=self.bg).grid()
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.root.lift()
+        self.root.attributes('-topmost', True)
+        self.root.attributes("-toolwindow", 1)
+        self.root.mainloop()
+
+    def on_closing(self):
+        self.root.quit()
+        self.root.destroy()
+        exit(0)
 
 def poll_function(id):
     extractor = stats_parser.PonyExtractor()
@@ -532,12 +564,16 @@ def poll_function(id):
     while not done:
         if extractor.get_pony_info(id, cached=False):
             if 'deckstation' in extractor.parser.facts_values.keys():
-                print("Deckstation! ({})".format(id))
-                test = extractor.telegram_bot_sendtext(lang.TELEGRAM_NOTIFICATION.format(id))
-                print(test)
+                # print("Deckstation! ({})".format(id))
+                pony_name = extractor.parser.name
+                _ = extractor.telegram_bot_sendtext(lang.TELEGRAM_NOTIFICATION.format(id, pony_name))
+                # print(test)
+                _ = Notification(id, pony_name)
+                # messagebox.showinfo(lang.NOTIFICATION_TITLE, lang.NOTIFICATION_TEXT.format(id, pony_name))
                 done = True
             else:
-                print("Noch nicht... ({})".format(id))
+                pass
+                # print("Noch nicht... ({})".format(id))
         else:
             print("Request Failed for poll id {}".format(id))
             print(extractor.log[-1])
@@ -788,7 +824,20 @@ class PonyGUI:
 
         self.interactive_states = [0]*len(self.interactive_elements)
 
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.mainloop()
+
+    def on_closing(self):
+        running_proc_indices = [i for i in range(len(self.poll_processes)) if self.poll_processes[i].is_alive()]
+        self.poll_processes = [self.poll_processes[i] for i in running_proc_indices]
+        self.poll_ids = [self.poll_ids[i] for i in running_proc_indices]
+        if len(self.poll_ids) > 0:
+            if messagebox.askokcancel(lang.QUIT_HEADING, lang.QUIT_TEXT):
+                for p in self.poll_processes:
+                    p.terminate()
+                self.root.destroy()
+        else:
+            self.root.destroy()
 
     def deckstation_poll_toggle(self):
         id = self.id_label.cget('text')
@@ -1056,9 +1105,9 @@ class PonyGUI:
         self.description_button['state'] = tk.NORMAL
         self.note_button['state'] = tk.NORMAL
         self.ownership_checkbutton['state'] = tk.NORMAL
-        finished_proc_indices = [i for i in range(len(self.poll_processes)) if not self.poll_processes[i].is_alive()]
-        self.poll_processes = [self.poll_processes[i] for i in finished_proc_indices]
-        self.poll_ids = [self.poll_ids[i] for i in finished_proc_indices]
+        running_proc_indices = [i for i in range(len(self.poll_processes)) if self.poll_processes[i].is_alive()]
+        self.poll_processes = [self.poll_processes[i] for i in running_proc_indices]
+        self.poll_ids = [self.poll_ids[i] for i in running_proc_indices]
         self.poll_checkbutton['state'] = tk.NORMAL
         if str(pony_id) in self.poll_ids:
             self.check_poll_var.set(1)
