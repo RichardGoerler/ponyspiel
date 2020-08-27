@@ -13,12 +13,13 @@ import win32clipboard
 import webbrowser
 import time
 import multiprocessing
-
+import sys
 
 import lang
 import stats_parser
 import html_clipboard
 import dialog
+
 
 class ProgressWindow(tk.Toplevel):
     def __init__(self, parent, gui, title=lang.PROGRESS, steps=100, initial_text=''):
@@ -555,7 +556,7 @@ class Notification:
     def on_closing(self):
         self.root.quit()
         self.root.destroy()
-        exit(0)
+        sys.exit(0)
 
 def poll_function(id):
     extractor = stats_parser.PonyExtractor()
@@ -767,9 +768,16 @@ class PonyGUI:
         self.listing_button.grid(row=1, column=1, padx=int(self.default_size / 2))
         self.interactive_elements.append(self.listing_button)
 
-        self.own_button = tk.Button(self.root, text=lang.OWN_BUTTON, command=self.load_own_ponies, bg=self.bg)
-        self.own_button.grid(row=7, column=0, padx=self.default_size)
+        self.left_frame = tk.Frame(self.root, bg=self.bg)
+        self.left_frame.grid(row=7, column=0)
+
+        self.own_button = tk.Button(self.left_frame, text=lang.OWN_BUTTON, command=self.load_own_ponies, bg=self.bg)
+        self.own_button.grid(row=0, column=0, padx=self.default_size)
         self.interactive_elements.append(self.own_button)
+        # self.train_button = tk.Button(self.left_frame, text='Train', command=self.train_this, bg=self.bg)
+        self.train_button = tk.Button(self.left_frame, text='Train', command=lambda: print('not yet implemented'), bg=self.bg)
+        self.train_button.grid(row=0, column=1, padx=self.default_size)
+        self.interactive_elements.append(self.train_button)
 
         self.exterior_frame = tk.Frame(self.root, bg=self.bg)
         self.exterior_frame.grid(row=8, column=1, columnspan=2, padx=self.default_size, pady=self.default_size)
@@ -826,6 +834,12 @@ class PonyGUI:
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.mainloop()
+
+    def train_this(self):
+        id = self.id_label.cget('text')
+        if not self.extractor.train_pony(id):
+            messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+            return
 
     def on_closing(self):
         running_proc_indices = [i for i in range(len(self.poll_processes)) if self.poll_processes[i].is_alive()]
@@ -1214,4 +1228,5 @@ class PonyGUI:
         return [int(el * scale) for el in self.screen_resolution]
 
 if __name__ == '__main__':
+    multiprocessing.freeze_support()
     ponyGUI = PonyGUI()
