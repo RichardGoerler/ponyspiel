@@ -46,7 +46,7 @@ class MyHTMLParser(HTMLParser):
                                     'Halle', 'Arena', 'draußen', 'sehr weich', 'weich', 'mittel', 'hart', 'sehr hart']
         self.ausbildung_codes = [3001 + i for i in range (7)] + [101 + i for i in range (9)] + [130 + i for i in range(6)] + [150 + i for i in range(3)] + [170 + i for i in range(5)]
         self.gangarten_headings = ['Gangarten', 'Schritt', 'Trab', 'leichter Galopp', 'Galopp', 'Rückwärts richten', 'Slow Gait',
-                                   'Tölt', 'Paso', 'Rack', 'Walk', 'Marcha Batida', 'Jog', 'Pass', 'Foxtrott', 'Marcha Picada', 'Rennpass', 'Single Foot', 'Saddle Gait',
+                                   'Tölt', 'Paso', 'Rack', 'Walk', 'Marcha Batida', 'Jog', 'Indian Shuffle', 'Foxtrott', 'Marcha Picada', 'Rennpass', 'Single Foot', 'Saddle Gait',
                                    'Trailwalk', 'Slow Canter', 'Lope', 'Running Walk', 'Flatfoot Walk', 'Sobreandando', 'Paso Llano', 'Termino', 'Classic Fino', 'Paso Corto', 'Paso Largo', 'Trocha', 'Trote Y Galope']
         self.gangarten_codes = [200 + i for i in range(31)]
         self.dressur_headings = ['Dressur', 'starker Schritt', 'starker Trab', 'starker Galopp', 'versammelter Schritt', 'versammelter Trab', 'versammelter Galopp',
@@ -72,7 +72,7 @@ class MyHTMLParser(HTMLParser):
         self.fahren_headings = ['Fahren', 'Dressurfahren', 'Geländefahren', 'Hindernisfahren', 'Kegelfahren',
                                 'Einspänner', 'Zweispänner', 'Tandem', 'Dreispänner', 'Random', 'Einhorn', 'Verkehrtes Einhorn', 'Quadriga', 'Vierspänner', 'Fünfspänner', 'Sechsspänner', 'Wildgang']
         self.fahren_codes = [801 + i for i in range(4)] + [850 + i for i in range(12)]
-        self.charakter_training_headings = ['Bodenarbeit', 'Spaziergang', 'Longenarbeit', 'Freitheitsdressur', 'Desensibilisierung', 'Zirzensik', 'Dualaktivierung', 'Gymnastikreihe',
+        self.charakter_training_headings = ['Bodenarbeit', 'Spaziergang', 'Longenarbeit', 'Freiheitsdressur', 'Desensibilisierung', 'Zirzensik', 'Dualaktivierung', 'Gymnastikreihe',
                                             'Freispringen', 'Liberty', 'Working Equitation', 'Handarbeit']
         self.charakter_training_codes = [2001 + i for i in range(12)]
 
@@ -324,9 +324,6 @@ class MyHTMLParser(HTMLParser):
             if content in block_headings:
                 self.next_data_type = content
             elif len(self.next_data_type) > 0 and len(content) > 0:
-                if self.next_data_type == 'Kopf streicheln':
-                    self.next_data_type = 'Kopf streicheln'
-                    print('blubb')
                 # We need to read either one value
                 # or multiple, if the first of them occured within a span tag
                 # It's multiple (two) values if there is one trained value and one max value
@@ -374,6 +371,7 @@ class PonyExtractor:
         self.base_url = 'https://noblehorsechampion.com/inside/'
         self.train_post_url = 'https://noblehorsechampion.com/inside/inc/horses/training/training.php'
         self.payload = {'email': '', 'password': '', 'login': ''}
+        self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36'}
         self.telegram_id = ''
         self.bot_token = '1331285354:AAHwXfiRyvrd4JFiSAw5SAB4C3YDlEpXXE8'
         self.race_dict = {'Alle': 0,
@@ -431,7 +429,7 @@ class PonyExtractor:
             self.session.max_redirects = 3
             # login
             try:
-                r1 = self.session.get(self.post_login_url)
+                r1 = self.session.get(self.post_login_url, headers=self.headers)
             except Exception:
                 traceback.print_exc()
                 self.log.append('Login at {} failed. Unexpected error. Exception was printed.'.format(self.post_login_url))
@@ -441,7 +439,7 @@ class PonyExtractor:
                 self.session.close()
                 self.session = None
                 return False
-            post = self.session.post(self.post_login_url, data=self.payload)
+            post = self.session.post(self.post_login_url, data=self.payload, headers=self.headers)
             if len(post.text) < self.insidepage_length_threshold:
                 self.log.append('Login at {} failed. Email/Password combination wrong?'.format(self.post_login_url))
                 self.session.close()
@@ -452,7 +450,7 @@ class PonyExtractor:
     def get_own_ponies(self):
         if not self._login_if_required():
             return False
-        r1 = self.session.get(self.base_url)
+        r1 = self.session.get(self.base_url, headers=self.headers)
         text = r1.text
         if len(text) < self.loginpage_length_threshold:
             self.log.append('Contacting start page at {} failed'.format(self.base_url))
@@ -468,7 +466,7 @@ class PonyExtractor:
             index += 1
         organize_id = int(id_string)
 
-        r2 = self.session.get(self.organize_url_base.format(organize_id))
+        r2 = self.session.get(self.organize_url_base.format(organize_id), headers=self.headers)
         text = r2.text
         if len(text) < self.loginpage_length_threshold:
             self.log.append('Contacting organize page at {} failed'.format(self.organize_url_base.format(organize_id)))
@@ -511,7 +509,7 @@ class PonyExtractor:
         form_data = {'rasse': race_num, 'filter': sort_by, 'submit': ''}
         if type != 1:
             form_data['geschlecht'] = 'gall'
-        post = self.session.post(url, data=form_data)
+        post = self.session.post(url, data=form_data, headers=self.headers)
         text = post.text
         if len(text) < self.insidepage_length_threshold:
             self.log.append('Posting to {} failed.'.format(url))
@@ -521,7 +519,7 @@ class PonyExtractor:
         horse_ids = []
         while page <= pages:
             if page > 1:
-                r = self.session.get(url + '?page={}'.format(page))
+                r = self.session.get(url + '?page={}'.format(page), headers=self.headers)
                 text = r.text
                 if len(text) < self.insidepage_length_threshold:
                     self.log.append('Retrieving {} failed.'.format(url))
@@ -568,7 +566,7 @@ class PonyExtractor:
             return False
         request_url = self.request_url_base.format(pony_id)
         try:
-            r = self.session.get(request_url)
+            r = self.session.get(request_url, headers=self.headers)
         except requests.exceptions.TooManyRedirects:
             self.log.append('Retrieving pony page at {} failed. Too many redirects.'.format(request_url))
             self.del_pony_cache(pony_id)
@@ -638,7 +636,7 @@ class PonyExtractor:
             for ind, url in enumerate(self.parser.image_urls):
                 full_url = self.base_url + url
                 try:
-                    ri = self.session.get(full_url)
+                    ri = self.session.get(full_url, headers=self.headers)
                 except requests.exceptions.TooManyRedirects:
                     self.log.append('Retrieving image at {} failed. Too many redirects.'.format(full_url))
                     continue
@@ -766,7 +764,7 @@ class PonyExtractor:
     def train_pony(self, pony_id):
         if not self.get_pony_info(pony_id, cached=False):
             return False
-        years = self.parser.facts_values['Alter'].split('Jahre')[0].strip() if 'Jahre' in self.parser.facts_values['Alter'] else 0
+        years = int(self.parser.facts_values['Alter'].split('Jahre')[0].strip()) if 'Jahre' in self.parser.facts_values['Alter'] else 0
         if years >= 3:
             all_dict_max = {**self.parser.ausbildung_max, **self.parser.gangarten_max, **self.parser.dressur_max, **self.parser.springen_max,
                         **self.parser.military_max, **self.parser.western_max, **self.parser.rennen_max, **self.parser.fahren_max, **self.parser.charakter_training_max}
@@ -792,11 +790,13 @@ class PonyExtractor:
                     if max > val:
                         code = all_codes[ind]
                         train_payload = {'id': pony_id, 'trainwert': code}
-                        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36'}
-                        post = self.session.post(self.train_post_url, data=train_payload, headers=headers)
+                        post = self.session.post(self.train_post_url, data=train_payload, headers=self.headers)
+                        all_dict_values[heading] += 1
                         energy -= 1
                     else:
-                        ind += 1
+                        ind += 1   # max = val -> next attribute
+                else:
+                    ind += 1    # heading not in dict (hopefully this is because heading is part of Fohlenerziehung or Charakter-Training)
             else:
                 self.log.append('Pony {} is fully trained'.format(pony_id))
                 energy = 0
