@@ -771,13 +771,17 @@ class PonyGUI:
         self.left_frame = tk.Frame(self.root, bg=self.bg)
         self.left_frame.grid(row=7, column=0)
 
-        self.own_button = tk.Button(self.left_frame, text=lang.OWN_BUTTON, command=self.load_own_ponies, bg=self.bg)
-        self.own_button.grid(row=0, column=0, padx=self.default_size)
+        tk.Label(self.left_frame, text=lang.OWN_AREA, font=self.bold_font, bg=self.bg).grid(row=0, column=0, padx=int(self.default_size / 2))
+        self.own_button = tk.Button(self.left_frame, text=lang.LOAD_OWN_BUTTON, command=self.load_own_ponies, bg=self.bg)
+        self.own_button.grid(row=0, column=1, padx=self.default_size)
         self.interactive_elements.append(self.own_button)
-        # self.train_button = tk.Button(self.left_frame, text='Train', command=self.train_this, bg=self.bg)
-        self.train_button = tk.Button(self.left_frame, text='Train', command=lambda: print('not yet implemented'), bg=self.bg)
-        self.train_button.grid(row=0, column=1, padx=self.default_size)
-        self.interactive_elements.append(self.train_button)
+        self.train_all_button = tk.Button(self.left_frame, text=lang.TRAIN_OWN_BUTTON, command=self.train_all, bg=self.bg)
+        self.train_all_button.grid(row=0, column=2, padx=int(self.default_size / 2))
+        self.interactive_elements.append(self.train_all_button)
+
+        self.train_individual_button = tk.Button(self.root, text=lang.TRAIN_INDIVIDUAL_BUTTON, command=self.train_this, bg=self.bg, state=tk.DISABLED)
+        self.train_individual_button.grid(row=7, column=1, padx=self.default_size, pady=self.default_size)
+        self.interactive_elements.append(self.train_individual_button)
 
         self.exterior_frame = tk.Frame(self.root, bg=self.bg)
         self.exterior_frame.grid(row=8, column=1, columnspan=2, padx=self.default_size, pady=self.default_size)
@@ -835,11 +839,25 @@ class PonyGUI:
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.mainloop()
 
+    def train_all(self):
+        own_file = Path('./owned_ponies')
+        all_ids = []
+        if own_file.is_file():
+            with open(own_file, 'r') as f:
+                all_ids = f.read().split()
+        progressbar = ProgressWindow(self.root, self, steps=len(all_ids), initial_text=str(all_ids[0]))
+        for id in all_ids:
+            if not self.extractor.train_pony(id):
+                messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+                return
+            progressbar.step(str(id))
+
     def train_this(self):
-        id = self.id_label.cget('text')
-        if not self.extractor.train_pony(id):
-            messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
-            return
+        id = self.id_label.cget('text').strip()
+        if len(id) > 0 and id.isnumeric():
+            if not self.extractor.train_pony(id):
+                messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+                return
 
     def on_closing(self):
         running_proc_indices = [i for i in range(len(self.poll_processes)) if self.poll_processes[i].is_alive()]
@@ -1119,6 +1137,7 @@ class PonyGUI:
         self.description_button['state'] = tk.NORMAL
         self.note_button['state'] = tk.NORMAL
         self.ownership_checkbutton['state'] = tk.NORMAL
+        self.train_individual_button['state'] = tk.NORMAL
         running_proc_indices = [i for i in range(len(self.poll_processes)) if self.poll_processes[i].is_alive()]
         self.poll_processes = [self.poll_processes[i] for i in running_proc_indices]
         self.poll_ids = [self.poll_ids[i] for i in running_proc_indices]
