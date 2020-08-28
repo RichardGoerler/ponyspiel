@@ -40,11 +40,13 @@ class MyHTMLParser(HTMLParser):
         self.training_headings = ['Gesamtpotenzial', 'Ausbildung', 'Gangarten', 'Dressur', 'Springen', 'Military', 'Western', 'Rennen', 'Fahren', 'Charakter-Training']
         self.facts_headings = ['Rufname', 'Besitzer', 'Züchter', 'Rasse', 'Alter', 'Geburtstag', 'Stockmaß', 'Erwartetes Stockmaß', 'Fellfarbe']
                                         # additionaly, there are 'Geschlecht' and 'Fohlen' which are extracted differently (handle_starttag), also 'deckstation' and 'verkauf' for price
-        self.ausbildung_headings = ['Ausbildung', 'Kopf streicheln', 'Körper berühren', 'Hufe anfassen', 'Halfter tragen', 'Führen', 'Putzen', 'Hufe geben',
+        self.fohlenerziehung_headings = ['Kopf streicheln', 'Körper berühren', 'Hufe anfassen', 'Halfter tragen', 'Führen', 'Putzen', 'Hufe geben']
+        self.fohlenerziehung_codes = [3001 + i for i in range(7)]
+        self.ausbildung_headings = ['Ausbildung',
                                     'Stärke', 'Trittsicherheit', 'Ausdauer', 'Geschwindigkeit', 'Beschleunigung', 'Wendigkeit', 'Sprungkraft', 'taktrein', 'Geschicklichkeit',
                                     'Sand', 'Gras', 'Erde', 'Schnee', 'Lehm', 'Späne',
                                     'Halle', 'Arena', 'draußen', 'sehr weich', 'weich', 'mittel', 'hart', 'sehr hart']
-        self.ausbildung_codes = [3001 + i for i in range (7)] + [101 + i for i in range (9)] + [130 + i for i in range(6)] + [150 + i for i in range(3)] + [170 + i for i in range(5)]
+        self.ausbildung_codes = [101 + i for i in range (9)] + [130 + i for i in range(6)] + [150 + i for i in range(3)] + [170 + i for i in range(5)]
         self.gangarten_headings = ['Gangarten', 'Schritt', 'Trab', 'leichter Galopp', 'Galopp', 'Rückwärts richten', 'Slow Gait',
                                    'Tölt', 'Paso', 'Rack', 'Walk', 'Marcha Batida', 'Jog', 'Indian Shuffle', 'Foxtrott', 'Marcha Picada', 'Rennpass', 'Single Foot', 'Saddle Gait',
                                    'Trailwalk', 'Slow Canter', 'Lope', 'Running Walk', 'Flatfoot Walk', 'Sobreandando', 'Paso Llano', 'Termino', 'Classic Fino', 'Paso Corto', 'Paso Largo', 'Trocha', 'Trote Y Galope']
@@ -86,11 +88,11 @@ class MyHTMLParser(HTMLParser):
         self.training_values = dict()
         self.ausbildung_values, self.gangarten_values, self.dressur_values, self.springen_values = dict(), dict(), dict(), dict()
         self.military_values, self.western_values, self.rennen_values, self.fahren_values = dict(), dict(), dict(), dict()
-        self.charakter_training_values = dict()
+        self.charakter_training_values, self.fohlenerziehung_values = dict(), dict()
         self.training_max = dict()
         self.ausbildung_max, self.gangarten_max, self.dressur_max, self.springen_max = dict(), dict(), dict(), dict()
         self.military_max, self.western_max, self.rennen_max, self.fahren_max = dict(), dict(), dict(), dict()
-        self.charakter_training_max = dict()
+        self.charakter_training_max, self.fohlenerziehung_max = dict(), dict()
         self.image_urls = []
         self.ancestors = []
         self.pedigree_id_temp = 0
@@ -314,7 +316,7 @@ class MyHTMLParser(HTMLParser):
 
         if self.block in self.training_block_types:
             list_index = self.training_block_types.index(self.block)
-            block_headings = [self.training_headings, self.ausbildung_headings, self.gangarten_headings, self.dressur_headings, self.springen_headings,
+            block_headings = [self.training_headings, self.fohlenerziehung_headings + self.ausbildung_headings, self.gangarten_headings, self.dressur_headings, self.springen_headings,
                               self.military_headings, self.western_headings, self.rennen_headings, self.fahren_headings, self.charakter_training_headings][list_index]
             block_values = [self.training_values, self.ausbildung_values, self.gangarten_values, self.dressur_values, self.springen_values,
                             self.military_values, self.western_values, self.rennen_values, self.fahren_values, self.charakter_training_values][list_index]
@@ -324,6 +326,9 @@ class MyHTMLParser(HTMLParser):
             if content in block_headings:
                 self.next_data_type = content
             elif len(self.next_data_type) > 0 and len(content) > 0:
+                if list_index == 1 and self.next_data_type in self.fohlenerziehung_headings:
+                    block_values = self.fohlenerziehung_values
+                    block_max = self.fohlenerziehung_max
                 # We need to read either one value
                 # or multiple, if the first of them occured within a span tag
                 # It's multiple (two) values if there is one trained value and one max value
@@ -768,17 +773,17 @@ class PonyExtractor:
         if years >= 3:
             all_dict_max = {**self.parser.ausbildung_max, **self.parser.gangarten_max, **self.parser.dressur_max, **self.parser.springen_max,
                         **self.parser.military_max, **self.parser.western_max, **self.parser.rennen_max, **self.parser.fahren_max, **self.parser.charakter_training_max}
-            all_dict_values = {**self.parser.ausbildung_values, **self.parser.gangarten_values, **self.parser.dressur_values, **self.parser.springen_values,
+            all_dict_values = { **self.parser.ausbildung_values, **self.parser.gangarten_values, **self.parser.dressur_values, **self.parser.springen_values,
                             **self.parser.military_values, **self.parser.western_values, **self.parser.rennen_values, **self.parser.fahren_values, **self.parser.charakter_training_values}
-            all_headings = self.parser.ausbildung_headings[1:] + self.parser.gangarten_headings[1:] + self.parser.dressur_headings[1:] + self.parser.springen_headings[1:] + self.parser.military_headings[1:] +\
-                           self.parser.western_headings[1:] + self.parser.rennen_headings[1:] + self.parser.fahren_headings[1:] + self.parser.charakter_training_headings
-            all_codes = self.parser.ausbildung_codes + self.parser.gangarten_codes + self.parser.dressur_codes + self.parser.springen_codes + self.parser.military_codes + \
-                           self.parser.western_codes + self.parser.rennen_codes + self.parser.fahren_codes + self.parser.charakter_training_codes
+            all_headings =  self.parser.ausbildung_headings[1:] + self.parser.gangarten_headings[1:] + self.parser.dressur_headings[1:] + self.parser.springen_headings[1:] +\
+                           self.parser.military_headings[1:] + self.parser.western_headings[1:] + self.parser.rennen_headings[1:] + self.parser.fahren_headings[1:] + self.parser.charakter_training_headings
+            all_codes = self.parser.ausbildung_codes + self.parser.gangarten_codes + self.parser.dressur_codes + self.parser.springen_codes +\
+                        self.parser.military_codes + self.parser.western_codes + self.parser.rennen_codes + self.parser.fahren_codes + self.parser.charakter_training_codes
         else:
-            all_dict_max = {**self.parser.ausbildung_max, **self.parser.gangarten_max}
-            all_dict_values = {**self.parser.ausbildung_values, **self.parser.gangarten_values}
-            all_headings = self.parser.ausbildung_headings[1:] + self.parser.gangarten_headings[1:]
-            all_codes = self.parser.ausbildung_codes + self.parser.gangarten_codes
+            all_dict_max = {**self.parser.fohlenerziehung_max, **self.parser.ausbildung_max, **self.parser.gangarten_max}
+            all_dict_values = {**self.parser.fohlenerziehung_values, **self.parser.ausbildung_values, **self.parser.gangarten_values}
+            all_headings = self.parser.fohlenerziehung_headings + self.parser.ausbildung_headings[1:] + self.parser.gangarten_headings[1:]
+            all_codes = self.parser.fohlenerziehung_codes + self.parser.ausbildung_codes + self.parser.gangarten_codes
         energy = self.parser.energy
         ind = 0
         while energy > 0:
