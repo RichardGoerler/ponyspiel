@@ -98,6 +98,7 @@ class MyHTMLParser(HTMLParser):
         self.pedigree_id_temp = 0
         self.pedigree_unknown_counter = 0
         self.alert_type = ''
+        self.has_box = True
 
     def is_in_block(self):
         return self.block != 'none'
@@ -289,6 +290,8 @@ class MyHTMLParser(HTMLParser):
                 self.alert_type = 'deckstation'
             elif 'verkauf' in content.lower():
                 self.alert_type = 'verkauf'
+            elif 'eigene box' in content.lower():
+                self.has_box = False
             elif self.alert_type == 'deckstation':
                 self.facts_values['deckstation'] = int(get_val())
                 self.alert_type = ''
@@ -349,15 +352,12 @@ class MyHTMLParser(HTMLParser):
                             # first span
                             block_values[self.next_data_type] = int(content)
                             self.span_value_entered = True
-                    elif len(content) > 1 and content.startswith('/'):
+                    elif len(content) > 1 and '/' in content:
                         # We are not in a span -> normally there is just a dash, which we don't want to store
                         # but sometimes they failed to put the second value in a span and it just follows the dash -> then we need to extract it
-                        content_stripped = content[1:].strip()
-                        try:
-                            content_stripped = int(content_stripped)
-                        except:
-                            pass
-                        block_max[self.next_data_type] = content_stripped
+                        cont = ''.join(c for c in content if c.isdigit())
+                        if len(cont) > 0:
+                            block_max[self.next_data_type] = int(cont)
 
         if self.block == 'pedigree':
             if content.lower() == 'unbekannt':
@@ -786,6 +786,9 @@ class PonyExtractor:
             all_codes = self.parser.fohlenerziehung_codes + self.parser.ausbildung_codes + self.parser.gangarten_codes
         energy = self.parser.energy
         ind = 0
+        if not self.parser.has_box:
+            self.log.append('Pony {} cannot be trained because it does not have a box'.format(pony_id))
+            energy = 0
         while energy > 0:
             if ind < len(all_headings):
                 heading = all_headings[ind]
