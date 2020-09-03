@@ -815,7 +815,7 @@ class PonyGUI:
 
         tk.Label(self.exterior_frame, text=lang.N_PAGES_LABEL, font=self.default_font, bg=self.bg).grid(row=1, column=3, padx=int(self.default_size / 2))
 
-        n_pages_list = ['1', '2', '3', '4']
+        n_pages_list = ['1', '2', '3', '4', '5', '6']
         self.n_pages_var = tk.StringVar()
         self.n_pages_var.set(n_pages_list[0])  # default value
         tk.OptionMenu(self.exterior_frame, self.n_pages_var, *n_pages_list).grid(row=1, column=4)
