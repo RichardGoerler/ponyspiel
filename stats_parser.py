@@ -6,6 +6,7 @@ import pickle
 import csv
 import shutil
 import traceback
+from datetime import datetime
 
 def add_margin(pil_img, top, right, bottom, left, color):
     width, height = pil_img.size
@@ -411,6 +412,7 @@ class PonyExtractor:
                              'Exterieur': 'sumext'}
         self.pony_id = 0
         self.log = []
+        self.last_login_time = None
         self.insidepage_length_threshold = 30000
         self.loginpage_length_threshold = 10000
 
@@ -419,6 +421,12 @@ class PonyExtractor:
             self.session.close()
 
     def _login_if_required(self):
+        # check whether cookie has expired
+        if self.session is not None:
+            cookie_age = datetime.now() - self.last_login_time
+            if cookie_age.seconds//3600 >= 30:  # if minutes > 30 we get a new cookie. I could not find a way to get the actual expiration time, so I assume it is at least 30 minutes
+                self.session.close()
+                self.session = None
         if self.session is None:
             if len(self.payload['email']) == 0:
                 try:
@@ -450,6 +458,8 @@ class PonyExtractor:
                 self.session.close()
                 self.session = None
                 return False
+            else:
+                self.last_login_time = datetime.now()
         return True
 
     def get_own_ponies(self):
