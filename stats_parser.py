@@ -424,7 +424,7 @@ class PonyExtractor:
         # check whether cookie has expired
         if self.session is not None:
             cookie_age = datetime.now() - self.last_login_time
-            if cookie_age.seconds//3600 >= 30:  # if minutes > 30 we get a new cookie. I could not find a way to get the actual expiration time, so I assume it is at least 30 minutes
+            if cookie_age.seconds//60 >= 30:  # if minutes > 30 we get a new cookie. I could not find a way to get the actual expiration time, so I assume it is at least 30 minutes
                 self.session.close()
                 self.session = None
         if self.session is None:
@@ -458,8 +458,8 @@ class PonyExtractor:
                 self.session.close()
                 self.session = None
                 return False
-            else:
-                self.last_login_time = datetime.now()
+
+            self.last_login_time = datetime.now()
         return True
 
     def get_own_ponies(self):

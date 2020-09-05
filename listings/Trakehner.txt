@@ -1,6 +1,7 @@
-Hannoveraner, Trakehner
-Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
+Trakehner
 Dressur
 Springen
 Military
 Ausbildung
+==
+Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
