@@ -1,9 +1,8 @@
-Trakehner
-Dressur
-Springen
-Military
+Welsh Mountain Pony
 Ausbildung
+Springen
 ==
 Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
+Gangarten: Galopp, leichter Galopp
 Charakter
 Gesundheit: Zufriedenheit, Robustheit

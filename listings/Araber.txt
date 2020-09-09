@@ -1,6 +1,7 @@
-Welsh Mountain Pony
+Araber
+Rennen
 Ausbildung
-Springen
-==
+=
 Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
-Gangarten: Galopp, leichter Galopp
+Charakter
+Gesundheit: Zufriedenheit, Robustheit

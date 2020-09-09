@@ -1,9 +1,7 @@
-Trakehner
+Andalusier
 Dressur
-Springen
-Military
 Ausbildung
-==
+=
 Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
 Charakter
 Gesundheit: Zufriedenheit, Robustheit

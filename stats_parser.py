@@ -21,7 +21,7 @@ class MyHTMLParser(HTMLParser):
         super(MyHTMLParser, self).__init__()
 
         # block management
-        self.block_types = ['none', 'name', 'facts', 'details', 'training', 'ausbildung', 'gangarten', 'dressur', 'springen', 'military', 'western', 'rennen', 'fahren', 'charakter-training', 'pedigree', 'alert', 'energy']
+        self.block_types = ['none', 'name', 'facts', 'details', 'training', 'ausbildung', 'gangarten', 'dressur', 'springen', 'military', 'western', 'rennen', 'fahren', 'charakter-training', 'pedigree', 'alert', 'energy', 'care']
         self.training_block_types = ['training', 'ausbildung', 'gangarten', 'dressur', 'springen', 'military', 'western', 'rennen', 'fahren', 'charakter-training']
         self.block = 'none'
         self.tag_counter = 0
@@ -30,6 +30,11 @@ class MyHTMLParser(HTMLParser):
         self.next_data_type = ''
         self.span_id = ''
         self.span_value_entered = False
+
+        self.energy_read_now = False
+        self.pedigree_id_temp = 0
+        self.pedigree_unknown_counter = 0
+        self.alert_type = ''
 
         # Query containers
         self.details_headings = ['Gesundheit', 'Zufriedenheit', 'Robustheit', 'Hufe', 'Zähne', 'Impfungen', 'Wurmkur',
@@ -79,10 +84,13 @@ class MyHTMLParser(HTMLParser):
                                             'Freispringen', 'Liberty', 'Working Equitation', 'Handarbeit']
         self.charakter_training_codes = [2001 + i for i in range(12)]
 
+        self.care_ids = ['brushpg', 'waterpg', 'langhaarpg', 'foodpg', 'hufpg', 'liebepg', 'ausmistenpg']
+        self.care_query_params = {'brushpg': 'brush', 'waterpg': 'water', 'langhaarpg': 'haar', 'foodpg': 'food', 'hufpg': 'hufe', 'liebepg': 'liebe', 'ausmistenpg': 'boxclean'}
+        self.care_query_pages = {'brushpg': 'brush', 'waterpg': 'water', 'langhaarpg': 'hair', 'foodpg': 'food', 'hufpg': 'hufe', 'liebepg': 'streicheln', 'ausmistenpg': 'ausmisten'}
+
         # result containers
         self.name = ''
         self.energy = -1
-        self.energy_read_now = False
         self.facts_values = dict()
         self.details_values = dict()
         self.gesundheit_values, self.charakter_values, self.exterieur_values = dict(), dict(), dict()
@@ -94,11 +102,9 @@ class MyHTMLParser(HTMLParser):
         self.ausbildung_max, self.gangarten_max, self.dressur_max, self.springen_max = dict(), dict(), dict(), dict()
         self.military_max, self.western_max, self.rennen_max, self.fahren_max = dict(), dict(), dict(), dict()
         self.charakter_training_max, self.fohlenerziehung_max = dict(), dict()
+        self.care_values = dict()
         self.image_urls = []
         self.ancestors = []
-        self.pedigree_id_temp = 0
-        self.pedigree_unknown_counter = 0
-        self.alert_type = ''
         self.has_box = True
 
     def is_in_block(self):
@@ -156,6 +162,9 @@ class MyHTMLParser(HTMLParser):
 
             elif attrs[0] == ('id', 'health'):
                 self.enter_block('details')
+
+            elif attrs[0] == ('id', 'care'):
+                self.enter_block('care')
 
             elif attrs[0] == ('id', 'traintab'):
                 self.enter_block('training')
@@ -245,6 +254,24 @@ class MyHTMLParser(HTMLParser):
                                     self.pedigree_id_temp = id
                 else:
                     self.pedigree_id_temp = 0
+
+            if self.block == 'care':
+                if tag == 'div' and len(attrs) > 0:
+                    if attrs[0][0] == 'id' and attrs[0][1] in self.care_ids:
+                        sty = [[]]
+                        for a in attrs:
+                            if a[0] == 'style':
+                                sty = a[1].split(':')
+                                break
+                        progress_value = 100
+                        if 'width' in sty[0]:
+                            num = sty[1].split('%')[0].strip()
+                            try:
+                                progress_value = float(num)
+                            except:
+                                pass
+                        self.care_values[attrs[0][1]] = progress_value
+
 
     def handle_endtag(self, tag):
         # =========================== Decrementing tag counter and exiting block ================================================
@@ -819,6 +846,24 @@ class PonyExtractor:
                 self.log.append('Pony {} is fully trained'.format(pony_id))
                 energy = 0
         return True
+
+
+    def care_pony(self, pony_id):
+        if not self.get_pony_info(pony_id, cached=False):
+            return False
+        for (k, v) in self.parser.care_values.items():
+            if v < 99:
+                query_param = self.parser.care_query_params[k]
+                query_page = self.parser.care_query_pages[k]
+                if query_param == 'food':
+                    query_numbers = [50, 30, 20]
+                else:
+                    query_numbers = [100]
+                for qnum in query_numbers:
+                    query_dict = {'id': pony_id, query_param: qnum}
+                    resp = self.session.get(self.base_url + 'inc/horses/care_php/{}.php'.format(query_page), params=query_dict, headers=self.headers)
+        return True
+
 
 if __name__ == '__main__':
     PONY_ID = 106161
