@@ -64,6 +64,7 @@ PASSWORD_LABEL = 'Passwort'
 TELEGRAM_LABEL = 'Telegram ID (optional)'
 
 LISTING_TITLE = 'Auflistung'
+CHECK_LISTING_SUM = 'Summen-Werte'
 LISTING_HEADER_NAME = 'Name'
 LISTING_HEADER_AGE = 'Alter'
 LISTING_HEADER_POTENTIAL = 'Potenzial'
