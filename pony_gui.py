@@ -507,17 +507,20 @@ class ListingWindow(dialog.Dialog):
         objects_sorted = []
         object_colors_sorted = []
         table_sorted = []
+        table_sorted_sum = []
         sex_sorted = []
         race_ids_sorted = []
         for id in sorted_idx:
             objects_sorted.append(self.objects[id])
             object_colors_sorted.append(self.object_colors[id])
             table_sorted.append(self.data_table[id])
+            table_sorted_sum.append(self.data_table_sum[id])
             sex_sorted.append(self.sex[id])
             race_ids_sorted.append(self.gui.race_ids[id])
         self.objects = objects_sorted
         self.object_colors = object_colors_sorted
         self.data_table = table_sorted
+        self.data_table_sum = table_sorted_sum
         self.sex = sex_sorted
         self.gui.race_ids = race_ids_sorted
         self.draw_objects()
