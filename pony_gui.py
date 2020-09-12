@@ -164,14 +164,26 @@ class ListingWindow(dialog.Dialog):
 
         progressbar.step(lang.PROGRESS_MAKING_HEADERS)
 
+        self.objects = []
+        self.data_table = []
+        self.data_table_sum = []
+        self.object_colors = []
+        self.sex = []
+        self.banners = []
+        self.images = []
+
         self.button_frame = tk.Frame(master, bg=self.gui.bg)
         self.button_frame.grid(row=0, column=0, padx=self.def_size, pady=self.def_size)
+        self.check_sum_var = tk.IntVar()  # Whether to show averaged values for attribute categories (0), or the sum values (1) (the latter are the numbers displayed on the HTML)
+        self.check_sum_var.set(0)
+        self.sum_checkbutton = tk.Checkbutton(self.button_frame, text=lang.CHECK_LISTING_SUM, font=self.def_font, variable=self.check_sum_var, command=self.toggle_show_sum, bg=self.gui.bg)
+        self.sum_checkbutton.grid(row=0, column=0, padx=int(self.def_size / 2))
         self.sex_all_button = tk.Button(self.button_frame, text=lang.LISTING_SEX_ALL, font=self.def_font, command=lambda: self.filter_sex(0), bg=self.gui.bg)
-        self.sex_all_button.grid(row=0, column=0, padx=int(self.def_size / 2))
+        self.sex_all_button.grid(row=0, column=1, padx=int(self.def_size / 2))
         self.sex_female_button = tk.Button(self.button_frame, text=lang.LISTING_SEX_FEMALE, font=self.def_font, command=lambda: self.filter_sex(1), bg=self.gui.bg)
-        self.sex_female_button.grid(row=0, column=1, padx=int(self.def_size / 2))
+        self.sex_female_button.grid(row=0, column=2, padx=int(self.def_size / 2))
         self.sex_male_button = tk.Button(self.button_frame, text=lang.LISTING_SEX_MALE, font=self.def_font, command=lambda: self.filter_sex(2), bg=self.gui.bg)
-        self.sex_male_button.grid(row=0, column=2, padx=int(self.def_size / 2))
+        self.sex_male_button.grid(row=0, column=3, padx=int(self.def_size / 2))
 
         self.gui.race_ids = []
         self.table_frame = tk.Frame(master, bg=self.gui.bg)
@@ -203,12 +215,6 @@ class ListingWindow(dialog.Dialog):
         for ci, el in enumerate(self.header_objects):
             el.grid(row=1, column=ci+1, padx=int(self.def_size / 2))   # ci + 1 because the image does not have a corresponding header!
 
-        self.objects = []
-        self.data_table = []
-        self.object_colors = []
-        self.sex = []
-        self.banners = []
-        self.images = []
         for id in all_ids:
             progressbar.step(str(id))
             if not self.gui.extractor.get_pony_info(id):
@@ -224,6 +230,7 @@ class ListingWindow(dialog.Dialog):
                     im = self.gui.extractor.pony_image
                 object_row = []
                 table_row = []
+                table_row_sum = []
 
                 dim = self.gui.dims_by_scale(0.001 * self.def_size)[0]
                 fac = float(dim) / im.size[0]
@@ -237,15 +244,18 @@ class ListingWindow(dialog.Dialog):
                 object_row[-1].bind("<Button-1>", lambda e, url=self.gui.extractor.base_url + 'horse.php?id={}'.format(id): webbrowser.open(url))
                 object_row[-1].bind("<Button-3>", lambda e, hid=id: self.mark_relatives(hid))
                 table_row.append(self.gui.extractor.parser.name)
+                table_row_sum.append(self.gui.extractor.parser.name)
 
                 age = self.get_age()
                 table_row.append(age)
+                table_row_sum.append(age)
                 pony_months = age.days
                 pony_years = pony_months // 12
                 pony_months %= 12
                 object_row.append(tk.Label(self.table_frame, text='{}/{}'.format(pony_years, pony_months), font=self.def_font, bg=self.gui.bg))
 
                 table_row.append(self.gui.extractor.parser.training_max['Gesamtpotenzial'])
+                table_row_sum.append(self.gui.extractor.parser.training_max['Gesamtpotenzial'])
                 object_row.append(tk.Label(self.table_frame, text=table_row[-1], font=self.bol_font, bg=self.gui.bg))
 
                 avg_done = False
@@ -283,6 +293,10 @@ class ListingWindow(dialog.Dialog):
                                 normval = textval = val
                             object_row.append(tk.Label(self.table_frame, text=textval, font=self.def_font, bg=self.gui.bg))
                         table_row.append(normval)
+                        if len(prop) == 1 and (prop[0] in ['Gesundheit', 'Charakter', 'Exterieur'] or prop[0] in self.gui.extractor.parser.training_headings):
+                            table_row_sum.append(val)      # referenced before assignment only if lang.LISTING_HEADER_PRICE in details_topheadings or training_headings, which is not the case
+                        else:
+                            table_row_sum.append(normval)
 
                     for key in self.max_prop_dict.keys():
                         this_val = self.gui.get_prop_value(key)
@@ -292,11 +306,13 @@ class ListingWindow(dialog.Dialog):
                     # total average - only done once
                     if not avg_done:
                         table_row.append(sum(table_row[NUM_NON_USER_PROP:])/(len(table_row)-NUM_NON_USER_PROP))
+                        table_row_sum.append(sum(table_row[NUM_NON_USER_PROP:]) / (len(table_row) - NUM_NON_USER_PROP))
                         object_row.append(tk.Label(self.table_frame, text=str(round(table_row[-1], 1)), font=self.bol_font, bg=self.gui.bg))
                         avg_done = True
 
                 self.objects.append(object_row)
                 self.data_table.append(table_row)
+                self.data_table_sum.append(table_row_sum)
 
                 if self.gui.extractor.parser.facts_values['Geschlecht'] == 'Stute':
                     self.sex.append(1)
@@ -344,6 +360,21 @@ class ListingWindow(dialog.Dialog):
                 col = ocol
             for o in orow:
                 o.configure(fg=col)
+
+    def toggle_show_sum(self):
+        show_sum = self.check_sum_var.get()
+        data_table = self.data_table_sum if show_sum else self.data_table
+        for ri, object_row in enumerate(self.objects):
+                for ci, el in enumerate(object_row):
+                    if ci < 4:
+                        continue   # objects begin with image, Name, age, Potential, which are never converted
+                    val = data_table[ri][ci-1]
+                    if type(val) == int:
+                        val = str(val)
+                    elif type(val) == float:
+                        val = str(round(val, 1))
+                    el.configure(text=val)
+        self.redraw()
 
     def get_relatives(self, id):
         id = int(id)
@@ -411,6 +442,7 @@ class ListingWindow(dialog.Dialog):
                 row_index += 1
 
     def redraw(self):
+        self.sum_checkbutton.grid_forget()
         self.sex_all_button.grid_forget()
         self.sex_female_button.grid_forget()
         self.sex_male_button.grid_forget()
@@ -436,9 +468,10 @@ class ListingWindow(dialog.Dialog):
         self.sex_female_button.configure(font=self.def_font)
         self.sex_male_button.configure(font=self.def_font)
         self.button_frame.grid(row=0, column=0, padx=self.def_size, pady=self.def_size)
-        self.sex_all_button.grid(row=0, column=0, padx=int(self.def_size / 2))
-        self.sex_female_button.grid(row=0, column=1, padx=int(self.def_size / 2))
-        self.sex_male_button.grid(row=0, column=2, padx=int(self.def_size / 2))
+        self.sum_checkbutton.grid(row=0, column=0, padx=int(self.def_size / 2))
+        self.sex_all_button.grid(row=0, column=1, padx=int(self.def_size / 2))
+        self.sex_female_button.grid(row=0, column=2, padx=int(self.def_size / 2))
+        self.sex_male_button.grid(row=0, column=3, padx=int(self.def_size / 2))
         for ii, im in enumerate(self.images):
             dim = self.gui.dims_by_scale(0.001 * self.def_size)[0]
             fac = float(dim) / im.size[0]
