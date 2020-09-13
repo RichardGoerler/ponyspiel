@@ -392,9 +392,63 @@ class MyHTMLParser(HTMLParser):
                 self.pedigree_unknown_counter += 1
 
 
+class BeautyParser(HTMLParser):
+    def __init__(self):
+        super(BeautyParser, self).__init__()
+        self.block_types = ['main']
+        self.competition_values = ['0a', '0b', '0c', '0d', '0e', '1a', '1b', '1c', '1d', '1e', '2a', '2b', '2c', '2d', '2e', '3a', '3b', '3c', '3d', '3e', '4a', '4b', '4c', '4d', '4e']
+        self.competition_found = False
+        self.value = None
+
+        self.block = 'none'
+        self.tag_counter = 0
+
+    def is_in_block(self):
+        return self.block != 'none'
+
+    def exit_block(self):
+        self.block = 'none'
+
+    def enter_block(self, block_type):
+        if block_type in self.block_types:
+            self.block = block_type
+            self.tag_counter = 1
+        else:
+            print("Exception: Invalid block type")
+            raise Exception()
+
+    def handle_starttag(self, tag, attrs):
+        if not self.is_in_block() and tag == 'div' and ('class', 'main') in attrs:
+            self.enter_block('main')
+
+        elif self.is_in_block():
+            if tag == 'div':
+                self.tag_counter += 1
+
+        if self.block == 'main':
+            if tag == 'input' and not self.competition_found:
+                for tup in attrs:
+                    if tup[0] == 'value' and tup[1] in self.competition_values:
+                        self.value = tup[1]
+                    elif tup[0] == 'disabled':
+                        self.value = None
+                        break
+                if self.value is not None:
+                    self.competition_found = True
+
+    def handle_endtag(self, tag):
+        # =========================== Decrementing tag counter and exiting block ================================================
+        if self.is_in_block():
+            if tag == 'div':
+                self.tag_counter -= 1
+                if self.tag_counter <= 0:
+                    self.exit_block()
+
+
 class PonyExtractor:
     def __init__(self):
         self.parser = MyHTMLParser()
+        self.beauty_parser = BeautyParser()
         self.pony_image = None
         self.data = ''
         self.session = None
@@ -403,6 +457,7 @@ class PonyExtractor:
         self.organize_url_base = 'https://noblehorsechampion.com/inside/organizehorses.php?id={}'
         self.base_url = 'https://noblehorsechampion.com/inside/'
         self.train_post_url = 'https://noblehorsechampion.com/inside/inc/horses/training/training.php'
+        self.beauty_url = 'https://noblehorsechampion.com/inside/loginbeauty.php'
         self.payload = {'email': '', 'password': '', 'login': ''}
         self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36'}
         self.telegram_id = ''
@@ -862,6 +917,32 @@ class PonyExtractor:
                 for qnum in query_numbers:
                     query_dict = {'id': pony_id, query_param: qnum}
                     resp = self.session.get(self.base_url + 'inc/horses/care_php/{}.php'.format(query_page), params=query_dict, headers=self.headers)
+        return True
+
+    def login_beauty(self, pony_id):
+        if not self._login_if_required():
+            return False
+        query_dict = {'id': pony_id}
+        try:
+            r = self.session.get(self.beauty_url, params=query_dict, headers=self.headers)
+        except requests.exceptions.TooManyRedirects:
+            self.log.append('Retrieving beauty page at {} failed. Too many redirects.'.format(self.beauty_url))
+            self.del_pony_cache(pony_id)
+            return False
+        except Exception:
+            traceback.print_exc()
+            self.log.append('Retrieving beauty page at {} failed. Unexpected error. Exception was printed.'.format(self.beauty_url))
+            self.del_pony_cache(pony_id)
+            return False
+        self.beauty_parser = BeautyParser()
+        self.beauty_parser.feed(r.text)
+        # print('competition found', self.beauty_parser.competition_found)
+        # print('value', self.beauty_parser.value)
+        if self.beauty_parser.competition_found:
+            formdata = {'participate[{}]'.format(self.beauty_parser.value): ''}
+            pos = self.session.post(self.beauty_url, params=query_dict, data=formdata, headers=self.headers)
+        else:
+            self.log.append('No available competition found for pony {}'.format(pony_id))
         return True
 
 

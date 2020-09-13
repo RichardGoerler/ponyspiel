@@ -101,6 +101,12 @@ class ListingWindow(dialog.Dialog):
         else:
             all_ids = self.gui.exterior_search_ids
 
+        beauty_file = Path('./beauty_ponies')
+        self.beauty_ids = []
+        if beauty_file.is_file():
+            with open(beauty_file, 'r') as f:
+                self.beauty_ids = f.read().split()
+
         progressbar = ProgressWindow(self, self.gui, steps=len(all_ids)+3, initial_text=lang.PROGRESS_READING_CONFIG)
         self.MAXROWS = 25
         self.MAX_LEN_NAME = 20
@@ -240,6 +246,8 @@ class ListingWindow(dialog.Dialog):
                 self.banners.append(ImageTk.PhotoImage(im))
                 object_row.append(tk.Label(self.table_frame, image=self.banners[-1], bg=self.gui.bg, cursor="hand2"))
                 object_row[-1].bind("<Button-1>", lambda e, pid=id: self.del_cache(e, pid))
+                object_row[-1].bind("<Button-3>", lambda e, pid=id: self.toggle_beauty(e, pid))
+                object_row[-1].configure(borderwidth=1*int(id in self.beauty_ids), relief="solid")
                 object_row.append(tk.Label(self.table_frame, text=self.gui.extractor.parser.name[:self.MAX_LEN_NAME], font=self.bol_font, bg=self.gui.bg, cursor="hand2"))
                 object_row[-1].bind("<Button-1>", lambda e, url=self.gui.extractor.base_url + 'horse.php?id={}'.format(id): webbrowser.open(url))
                 object_row[-1].bind("<Button-3>", lambda e, hid=id: self.mark_relatives(hid))
@@ -406,13 +414,25 @@ class ListingWindow(dialog.Dialog):
                         break
         return result
 
+    def toggle_beauty(self, event, pid):
+        lab = event.widget
+        if lab['borderwidth'] == 1:
+            lab['borderwidth'] = 0
+            self.beauty_ids.remove(pid)
+        else:
+            lab['borderwidth'] = 1
+            self.beauty_ids.append(pid)
+        beauty_file = Path('./beauty_ponies')
+        with open(beauty_file, 'w') as f:
+            for pid in self.beauty_ids:
+                f.write(str(pid) + '\n')
+
     def del_cache(self, event, pid):
         lab = event.widget
         if lab['state'] == tk.NORMAL:
             lab['state'] = tk.DISABLED
             lab['cursor'] = ''
             self.gui.del_cache(pid)
-
 
     def get_age(self):
         birthday_split = self.gui.extractor.parser.facts_values['Geburtstag'].split('-')
@@ -620,6 +640,14 @@ def poll_function(id):
 class PonyGUI:
     def __init__(self):
         self.extractor = stats_parser.PonyExtractor()
+        own_file = Path('./owned_ponies')
+        beauty_file = Path('./beauty_ponies')
+        if not own_file.is_file():
+            with open(own_file, 'w') as f:
+                pass
+        if not beauty_file.is_file():
+            with open(beauty_file, 'w') as f:
+                pass
         self.root = tk.Tk()
         self.root.resizable(False, False)
         self.user = ''
@@ -817,14 +845,23 @@ class PonyGUI:
         self.train_all_button = tk.Button(self.left_frame, text=lang.TRAIN_OWN_BUTTON, command=self.train_all, bg=self.bg)
         self.train_all_button.grid(row=0, column=3, padx=int(self.default_size / 2))
         self.interactive_elements.append(self.train_all_button)
+        self.beauty_all_button = tk.Button(self.left_frame, text=lang.BEAUTY_OWN_BUTTON, command=self.beauty_all, bg=self.bg)
+        self.beauty_all_button.grid(row=0, column=4, padx=int(self.default_size / 2))
+        self.interactive_elements.append(self.beauty_all_button)
 
-        self.train_individual_button = tk.Button(self.root, text=lang.TRAIN_INDIVIDUAL_BUTTON, command=self.train_this, bg=self.bg, state=tk.DISABLED)
+        self.individual_frame = tk.Frame(self.root, bg=self.bg)
+        self.individual_frame.grid(row=7, column=1, columnspan=2)
+        self.train_individual_button = tk.Button(self.individual_frame, text=lang.TRAIN_INDIVIDUAL_BUTTON, command=self.train_this, bg=self.bg, state=tk.DISABLED)
         self.train_individual_button.grid(row=7, column=1, padx=self.default_size, pady=self.default_size)
         self.interactive_elements.append(self.train_individual_button)
 
-        self.care_individual_button = tk.Button(self.root, text=lang.CARE_INDIVIDUAL_BUTTON, command=self.care_this, bg=self.bg, state=tk.DISABLED)
+        self.care_individual_button = tk.Button(self.individual_frame, text=lang.CARE_INDIVIDUAL_BUTTON, command=self.care_this, bg=self.bg, state=tk.DISABLED)
         self.care_individual_button.grid(row=7, column=2, padx=self.default_size, pady=self.default_size)
         self.interactive_elements.append(self.care_individual_button)
+
+        self.beauty_individual_button = tk.Button(self.individual_frame, text=lang.BEAUTY_INDIVIDUAL_BUTTON, command=self.beauty_this, bg=self.bg, state=tk.DISABLED)
+        self.beauty_individual_button.grid(row=7, column=3, padx=self.default_size, pady=self.default_size)
+        self.interactive_elements.append(self.beauty_individual_button)
 
         self.exterior_frame = tk.Frame(self.root, bg=self.bg)
         self.exterior_frame.grid(row=8, column=1, columnspan=2, padx=self.default_size, pady=self.default_size)
@@ -881,6 +918,34 @@ class PonyGUI:
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.mainloop()
+
+    def beauty_all(self):
+        own_file = Path('./owned_ponies')
+        all_ids = []
+        if own_file.is_file():
+            with open(own_file, 'r') as f:
+                all_ids = f.read().split()
+        beauty_ids = []
+        beauty_file = Path('./beauty_ponies')
+        if beauty_file.is_file():
+            with open(beauty_file, 'r') as f:
+                beauty_ids = f.read().split()
+        own_beauty = [pid for pid in all_ids if pid in beauty_ids]
+        if len(own_beauty) > 0:
+            progressbar = ProgressWindow(self.root, self, title=lang.BEAUTY_OWN_BUTTON, steps=len(own_beauty), initial_text=str(own_beauty[0]))
+            for pid in own_beauty:
+                if not self.extractor.login_beauty(pid):
+                    messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+                    return
+                progressbar.step(str(pid))
+        pass
+
+    def beauty_this(self):
+        pid = self.id_label.cget('text').strip()
+        if len(pid) > 0 and pid.isnumeric():
+            if not self.extractor.login_beauty(pid):
+                messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+                return
 
     def train_all(self):
         own_file = Path('./owned_ponies')
@@ -1202,6 +1267,7 @@ class PonyGUI:
         self.ownership_checkbutton['state'] = tk.NORMAL
         self.train_individual_button['state'] = tk.NORMAL
         self.care_individual_button['state'] = tk.NORMAL
+        self.beauty_individual_button['state'] = tk.NORMAL
         running_proc_indices = [i for i in range(len(self.poll_processes)) if self.poll_processes[i].is_alive()]
         self.poll_processes = [self.poll_processes[i] for i in running_proc_indices]
         self.poll_ids = [self.poll_ids[i] for i in running_proc_indices]
