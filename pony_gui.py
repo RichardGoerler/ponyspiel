@@ -179,7 +179,7 @@ class ListingWindow(dialog.Dialog):
         self.images = []
 
         self.button_frame = tk.Frame(master, bg=self.gui.bg)
-        self.button_frame.grid(row=0, column=0, padx=self.def_size, pady=self.def_size, sticky='W')
+        self.button_frame.grid(row=0, column=0, padx=self.def_size, pady=self.def_size, sticky=tk.W)
         self.check_sum_var = tk.IntVar()  # Whether to show averaged values for attribute categories (0), or the sum values (1) (the latter are the numbers displayed on the HTML)
         self.check_sum_var.set(1)
         self.sum_checkbutton = tk.Checkbutton(self.button_frame, text=lang.CHECK_LISTING_SUM, font=self.def_font, variable=self.check_sum_var, command=self.toggle_show_sum, bg=self.gui.bg)
@@ -488,7 +488,7 @@ class ListingWindow(dialog.Dialog):
         self.sex_all_button.configure(font=self.def_font)
         self.sex_female_button.configure(font=self.def_font)
         self.sex_male_button.configure(font=self.def_font)
-        self.button_frame.grid(row=0, column=0, padx=self.def_size, pady=self.def_size)
+        self.button_frame.grid(row=0, column=0, padx=self.def_size, pady=self.def_size, sticky=tk.W)
         self.sum_checkbutton.grid(row=0, column=0, padx=int(self.def_size / 2))
         self.sex_all_button.grid(row=0, column=1, padx=int(self.def_size / 2))
         self.sex_female_button.grid(row=0, column=2, padx=int(self.def_size / 2))
