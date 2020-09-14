@@ -958,6 +958,7 @@ class PonyGUI:
         for id in all_ids:
             if not self.extractor.train_pony(id):
                 messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+                progressbar.close()
                 return
             progressbar.step(str(id))
 

@@ -890,7 +890,12 @@ class PonyExtractor:
                     if max > val:
                         code = all_codes[ind]
                         train_payload = {'id': pony_id, 'trainwert': code}
-                        post = self.session.post(self.train_post_url, data=train_payload, headers=self.headers)
+                        try:
+                            post = self.session.post(self.train_post_url, data=train_payload, headers=self.headers)
+                        except:
+                            traceback.print_exc()
+                            self.log.append('Training failed. Unexpected error. Exception was printed.')
+                            return False
                         all_dict_values[heading] += 1
                         energy -= 1
                     else:
