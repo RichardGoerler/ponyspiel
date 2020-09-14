@@ -179,9 +179,9 @@ class ListingWindow(dialog.Dialog):
         self.images = []
 
         self.button_frame = tk.Frame(master, bg=self.gui.bg)
-        self.button_frame.grid(row=0, column=0, padx=self.def_size, pady=self.def_size)
+        self.button_frame.grid(row=0, column=0, padx=self.def_size, pady=self.def_size, sticky='W')
         self.check_sum_var = tk.IntVar()  # Whether to show averaged values for attribute categories (0), or the sum values (1) (the latter are the numbers displayed on the HTML)
-        self.check_sum_var.set(0)
+        self.check_sum_var.set(1)
         self.sum_checkbutton = tk.Checkbutton(self.button_frame, text=lang.CHECK_LISTING_SUM, font=self.def_font, variable=self.check_sum_var, command=self.toggle_show_sum, bg=self.gui.bg)
         self.sum_checkbutton.grid(row=0, column=0, padx=int(self.def_size / 2))
         self.sex_all_button = tk.Button(self.button_frame, text=lang.LISTING_SEX_ALL, font=self.def_font, command=lambda: self.filter_sex(0), bg=self.gui.bg)
@@ -346,6 +346,7 @@ class ListingWindow(dialog.Dialog):
                 self.header_max_labels[hdi].configure(text=str(self.max_prop_dict[hd]))
 
         progressbar.step(lang.PROGRESS_DRAWING_SCALING)
+        self.toggle_show_sum()
         self.draw_objects()
 
         redraw = False
