@@ -902,7 +902,6 @@ class PonyExtractor:
                 energy = 0
         return True
 
-
     def care_pony(self, pony_id):
         if not self.get_pony_info(pony_id, cached=False):
             return False
@@ -938,7 +937,9 @@ class PonyExtractor:
         self.beauty_parser.feed(r.text)
         # print('competition found', self.beauty_parser.competition_found)
         # print('value', self.beauty_parser.value)
-        if self.beauty_parser.competition_found:
+        if not self.parser.has_box:
+            self.log.append('Pony {} cannot be registered because it does not have a box'.format(pony_id))
+        elif self.beauty_parser.competition_found:
             formdata = {'participate[{}]'.format(self.beauty_parser.value): ''}
             pos = self.session.post(self.beauty_url, params=query_dict, data=formdata, headers=self.headers)
         else:
