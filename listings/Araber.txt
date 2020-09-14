@@ -2,6 +2,7 @@ Araber
 Rennen
 Ausbildung
 =
-Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
+Ex: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
+Exterieur
 Charakter
 Gesundheit: Zufriedenheit, Robustheit
