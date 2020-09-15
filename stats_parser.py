@@ -396,7 +396,8 @@ class BeautyParser(HTMLParser):
     def __init__(self):
         super(BeautyParser, self).__init__()
         self.block_types = ['main']
-        self.competition_values = ['0a', '0b', '0c', '0d', '0e', '1a', '1b', '1c', '1d', '1e', '2a', '2b', '2c', '2d', '2e', '3a', '3b', '3c', '3d', '3e', '4a', '4b', '4c', '4d', '4e']
+        self.competition_values = ['0a', '0b', '0c', '0d', '0e', '1a', '1b', '1c', '1d', '1e', '2a', '2b', '2c', '2d', '2e',
+                                   '3a', '3b', '3c', '3d', '3e', '4a', '4b', '4c', '4d', '4e', '5a', '5b', '5c', '5d', '5e']
         self.competition_found = False
         self.value = None
 
