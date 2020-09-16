@@ -647,19 +647,19 @@ class PonyExtractor:
 
 
     def _request_pony_file(self, pony_id, cached=True):
-        cache_path = Path('.cache/{}/'.format(pony_id))
-        cache_path.mkdir(parents=True, exist_ok=True)
-        write_file = Path('.cache/{}/ponyfile.html'.format(pony_id))
-        if cached:
-            if len(self.data) > 0 and self.pony_id == pony_id:
-                # we still have the data stored
-                return True
-            self.pony_id = pony_id
-            if write_file.exists():
+        # cache_path = Path('.cache/{}/'.format(pony_id))
+        # cache_path.mkdir(parents=True, exist_ok=True)
+        # write_file = Path('.cache/{}/ponyfile.html'.format(pony_id))
+        # if cached:
+        #     if len(self.data) > 0 and self.pony_id == pony_id:
+        #         we still have the data stored
+                # return True
+        self.pony_id = pony_id
+            # if write_file.exists():
                 # we can load the file from disk
-                with open(write_file, 'r') as f:
-                    self.data = f.read()
-                return True
+                # with open(write_file, 'r') as f:
+                #     self.data = f.read()
+                # return True
         if not self._login_if_required():
             return False
         request_url = self.request_url_base.format(pony_id)
@@ -680,8 +680,8 @@ class PonyExtractor:
             return False
         self.data = str(r.text)
         # store to disk
-        with open(write_file, 'w', encoding='utf-8') as f:
-            f.write(self.data)
+        # with open(write_file, 'w', encoding='utf-8') as f:
+        #     f.write(self.data)
         return True
 
     def del_pony_cache(self, pony_id):
