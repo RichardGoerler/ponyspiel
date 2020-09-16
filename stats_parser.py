@@ -401,6 +401,9 @@ class BeautyParser(HTMLParser):
         self.competition_found = False
         self.value = None
 
+        self.h2 = 0    # 0: First heading not yet found, 1: Now in first heading, 2: First heading was already processed
+        self.continue_parsing = True
+
         self.block = 'none'
         self.tag_counter = 0
 
@@ -426,7 +429,9 @@ class BeautyParser(HTMLParser):
             if tag == 'div':
                 self.tag_counter += 1
 
-        if self.block == 'main':
+        if self.continue_parsing and self.block == 'main':
+            if tag == 'h2' and self.h2 == 0:
+                self.h2 = 1
             if tag == 'input' and not self.competition_found:
                 for tup in attrs:
                     if tup[0] == 'value' and tup[1] in self.competition_values:
@@ -444,6 +449,13 @@ class BeautyParser(HTMLParser):
                 self.tag_counter -= 1
                 if self.tag_counter <= 0:
                     self.exit_block()
+
+    def handle_data(self, data):
+        if self.continue_parsing and self.block == 'main' and self.h2 == 1:
+            self.h2 = 2
+            if 'Schönheitswettbewerb' not in data:
+                # stop parsing if the first heading is not Schönheitswettbewerb heading
+                self.continue_parsing = False
 
 
 class PonyExtractor:
@@ -943,11 +955,14 @@ class PonyExtractor:
         self.beauty_parser.feed(r.text)
         # print('competition found', self.beauty_parser.competition_found)
         # print('value', self.beauty_parser.value)
-        if not self.parser.has_box:
-            self.log.append('Pony {} cannot be registered because it does not have a box'.format(pony_id))
-        elif self.beauty_parser.competition_found:
+        if self.beauty_parser.competition_found:
             formdata = {'participate[{}]'.format(self.beauty_parser.value): ''}
-            pos = self.session.post(self.beauty_url, params=query_dict, data=formdata, headers=self.headers)
+            try:
+                pos = self.session.post(self.beauty_url, params=query_dict, data=formdata, headers=self.headers)
+            except:
+                traceback.print_exc()
+                self.log.append('Beauty registration failed. Unexpected error. Exception was printed.')
+                return False
         else:
             self.log.append('No available competition found for pony {}'.format(pony_id))
         return True
