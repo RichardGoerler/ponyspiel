@@ -583,7 +583,7 @@ class LoginWindow(dialog.Dialog):
             f.write('{}\n{}\n{}'.format(self.gui.user, self.gui.pw, self.gui.telegram_id))
 
 class Notification:
-    def __init__(self, id, pony_name):
+    def __init__(self, id, pony_name, stud=True):
         self.root = tk.Tk()
         self.root.resizable(False, False)
         self.bg = "#EDEEF3"
@@ -602,7 +602,8 @@ class Notification:
         self.root.configure(bg=self.bg)
         self.frame = tk.Frame(self.root, bg=self.bg)
         self.frame.grid(padx=self.default_size, pady=self.default_size//2)
-        tk.Label(self.frame, text=lang.NOTIFICATION_TEXT.format(id, pony_name), font=self.default_font, bg=self.bg).grid(pady=self.default_size//2)
+        message_text = lang.NOTIFICATION_STUD if stud else lang.NOTIFICATION_TRADE
+        tk.Label(self.frame, text=message_text.format(id, pony_name), font=self.default_font, bg=self.bg).grid(pady=self.default_size//2)
         tk.Button(self.frame, text='OK', command=self.on_closing, bg=self.bg).grid(pady=self.default_size//2)
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.lift()
@@ -621,12 +622,18 @@ def poll_function(id):
 
     while not done:
         if extractor.get_pony_info(id, cached=False):
+            stud = None
             if 'deckstation' in extractor.parser.facts_values.keys():
+                stud = True
+            elif 'verkauf' in extractor.parser.facts_values.keys():
+                stud = False
+            if stud is not None:
                 # print("Deckstation! ({})".format(id))
                 pony_name = extractor.parser.name
-                _ = extractor.telegram_bot_sendtext(lang.TELEGRAM_NOTIFICATION.format(id, pony_name))
+                message_text = lang.NOTIFICATION_STUD.format(id, pony_name) if stud else lang.NOTIFICATION_TRADE.format(id, pony_name)
+                _ = extractor.telegram_bot_sendtext(message_text)
                 # print(test)
-                _ = Notification(id, pony_name)
+                _ = Notification(id, pony_name, stud=stud)
                 # messagebox.showinfo(lang.NOTIFICATION_TITLE, lang.NOTIFICATION_TEXT.format(id, pony_name))
                 done = True
             else:
@@ -666,6 +673,8 @@ class PonyGUI:
         self.default_font.configure(size=self.default_size)
         self.small_font = self.default_font.copy()
         self.small_font.configure(size=self.default_size//2)
+        self.small_bold_font = self.small_font.copy()
+        self.small_bold_font.configure(weight="bold")
         self.text_font = font.nametofont("TkTextFont")
         self.text_font.configure(size=self.default_size)
         self.bold_font = self.default_font.copy()
@@ -717,7 +726,8 @@ class PonyGUI:
         self.interactive_elements.append(self.ownership_checkbutton)
         self.check_poll_var = tk.IntVar()
         self.check_poll_var.set(0)
-        self.poll_checkbutton = tk.Checkbutton(self.id_frame, text=lang.DECKSTATION_POLL, font=self.small_font, wraplength=120, justify=tk.LEFT, variable=self.check_poll_var, command=self.deckstation_poll_toggle, bg=self.bg)
+        self.poll_checkbutton = tk.Checkbutton(self.id_frame, text=lang.AVAILABILITY_POLL, font=self.small_font, wraplength=120, justify=tk.LEFT, variable=self.check_poll_var, command=self.deckstation_poll_toggle, bg=self.bg)
+        self.poll_checkbutton.bind("<Button-3>", lambda e: self.deckstation_poll_cancel_all())
         self.poll_checkbutton.grid(row=0, column=3, padx=int(self.default_size/2))
         self.poll_checkbutton.configure(state=tk.DISABLED)
         self.interactive_elements.append(self.poll_checkbutton)
@@ -918,6 +928,8 @@ class PonyGUI:
         self.interactive_states = [0]*len(self.interactive_elements)
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+        self.start_poll_on_boot()
         self.root.mainloop()
 
     def beauty_all(self):
@@ -989,10 +1001,34 @@ class PonyGUI:
                 messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                 return
 
+    def start_poll_on_boot(self):
+        poll_file = Path('./avail_poll')
+        if poll_file.is_file():
+            with open(poll_file, 'r') as f:
+                self.poll_ids = f.read().split()
+            for pid in self.poll_ids:
+                t = multiprocessing.Process(target=poll_function, args=(pid,))
+                self.poll_processes.append(t)
+                t.start()
+            if len(self.poll_ids) > 0:
+                self.poll_checkbutton.configure(font=self.small_bold_font)
+            else:
+                self.poll_checkbutton.configure(font=self.small_font)
+
+    def _update_poll_file(self):
+        poll_file = Path('./avail_poll')
+        if len(self.poll_ids) > 0:
+            with open(poll_file, 'w') as f:
+                for pid in self.poll_ids:
+                    f.write(str(pid) + '\n')
+        elif poll_file.exists():
+            poll_file.unlink()
+
     def on_closing(self):
         running_proc_indices = [i for i in range(len(self.poll_processes)) if self.poll_processes[i].is_alive()]
         self.poll_processes = [self.poll_processes[i] for i in running_proc_indices]
         self.poll_ids = [self.poll_ids[i] for i in running_proc_indices]
+        self._update_poll_file()
         if len(self.poll_ids) > 0:
             if messagebox.askokcancel(lang.QUIT_HEADING, lang.QUIT_TEXT):
                 for p in self.poll_processes:
@@ -1002,18 +1038,34 @@ class PonyGUI:
             self.root.destroy()
 
     def deckstation_poll_toggle(self):
-        id = self.id_label.cget('text')
+        pid = self.id_label.cget('text')
         pollvar = self.check_poll_var.get()
-        if pollvar == 1 and id not in self.poll_ids:
-            t = multiprocessing.Process(target=poll_function, args=(id, ))
-            self.poll_ids.append(id)
+        if pollvar == 1 and pid not in self.poll_ids:
+            t = multiprocessing.Process(target=poll_function, args=(pid, ))
+            self.poll_ids.append(pid)
             self.poll_processes.append(t)
+            self._update_poll_file()
             t.start()
-        if pollvar == 0 and id in self.poll_ids:
-            ind = self.poll_ids.index(id)
+        if pollvar == 0 and pid in self.poll_ids:
+            ind = self.poll_ids.index(pid)
             self.poll_processes[ind].terminate()
             del self.poll_processes[ind]
             del self.poll_ids[ind]
+            self._update_poll_file()
+        if len(self.poll_ids) > 0:
+            self.poll_checkbutton.configure(font=self.small_bold_font)
+        else:
+            self.poll_checkbutton.configure(font=self.small_font)
+
+    def deckstation_poll_cancel_all(self):
+        if len(self.poll_processes) > 0:
+            if messagebox.askokcancel(lang.POLL_CANCEL_HEADING, lang.POLL_CANCEL_TEXT):
+                for p in self.poll_processes:
+                    p.terminate()
+                self.poll_ids = []
+                self._update_poll_file()
+                self.poll_checkbutton.configure(font=self.small_font)
+                self.check_poll_var.set(0)
 
     def disable_buttons(self):
         for i, el in enumerate(self.interactive_elements):

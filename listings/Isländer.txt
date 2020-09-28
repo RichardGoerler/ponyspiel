@@ -3,7 +3,8 @@ Tölt: Tölt, Töltrennen
 Pass: Rennpass, Passrennen
 Ausbildung
 =
-Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
+Ex: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
+Exterieur
 Gangarten: Tölt, Rennpass
 Rennen: Töltrennen, Passrennen
 Charakter
