@@ -4,7 +4,7 @@ Tool zur Verwaltung von Pferden beim Browsergame noblehorsechampion.
 
 ## Funktionen
 
-![main_window](https://beachomize.de/ponyspiel_image/main_with_numbers2.jpg)
+![main_window](https://beachomize.de/ponyspiel_image/main_with_numbers3.jpg)
 
 ### 1 - Login
 
@@ -142,15 +142,19 @@ Zusätzlich wird der Preis angezeigt.
 
 Der lokale Cache kann komplett, nur für nicht-eigene Pferde oder für das aktuell geladene Pferd gelöscht werden. Dies ist z.B. sinnvoll, wenn sich Werte durch Training verändert haben.
 
-### 11 - Deckstation-Benachrichtigung
+### 11 - Verfügbarkeits-Benachrichtigung
 
-Erhalte eine Benachrichtigung, sobald das Pferd in die Deckstation gestellt wird. Die Benachrichtigung wird
+Erhalte eine Benachrichtigung, sobald das Pferd in den Pferdehandel oder die Deckstation gestellt wird. Die Benachrichtigung wird
  
 1. im Programm selbst angezeigt und
 
 2. per Telegram versendet, falls im Login-Fenster (Funktion 1) eine gültige Telegram-ID eingegeben wurde.
 
 Um eine Telegram-Benachrichtigung zu erhalten, muss der Bot _@PonyspielBot_ auf dem Telefon aktiviert sein.
+
+Ist der Text "Verfügbarkeits-Benachrichtigung" an der Schaltfläche fettgedruckt, ist mindestens eine Benachrichtigung aktiviert. Rechtsklick auf die Schalfläche schaltet alle Benachrichtigungen aus. Es wird ein Dialogfenster angezeigt, um dies zu bestätigen.
+
+Wird das Programm geschlossen, werden alle laufenden Benachrichtigungen beendet. Beim nächsten Start des Programms werden sie automatisch wieder gestartet.
 
 ## Systemvoraussetzungen
 
