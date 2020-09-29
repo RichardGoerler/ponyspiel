@@ -583,7 +583,7 @@ class LoginWindow(dialog.Dialog):
             f.write('{}\n{}\n{}'.format(self.gui.user, self.gui.pw, self.gui.telegram_id))
 
 class Notification:
-    def __init__(self, id, pony_name, stud=True):
+    def __init__(self, pid, pony_name, stud=True):
         self.root = tk.Tk()
         self.root.resizable(False, False)
         self.bg = "#EDEEF3"
@@ -591,6 +591,7 @@ class Notification:
             self.root.iconbitmap("favicon.ico")
         except:
             pass
+        self.base_url = 'https://noblehorsechampion.com/inside/'
         self.screenwidth = self.root.winfo_screenwidth()
         self.screenheight = self.root.winfo_screenheight()
         self.screen_resolution = [self.screenwidth, self.screenheight]
@@ -603,7 +604,8 @@ class Notification:
         self.frame = tk.Frame(self.root, bg=self.bg)
         self.frame.grid(padx=self.default_size, pady=self.default_size//2)
         message_text = lang.NOTIFICATION_STUD if stud else lang.NOTIFICATION_TRADE
-        tk.Label(self.frame, text=message_text.format(id, pony_name), font=self.default_font, bg=self.bg).grid(pady=self.default_size//2)
+        lbl = tk.Label(self.frame, text=message_text.format(pid, pony_name), font=self.default_font, bg=self.bg, cursor="hand2").grid(pady=self.default_size//2)
+        lbl.bind("<Button-1>", lambda e, url=self.base_url + 'horse.php?id={}'.format(pid): webbrowser.open(url))
         tk.Button(self.frame, text='OK', command=self.on_closing, bg=self.bg).grid(pady=self.default_size//2)
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.lift()
