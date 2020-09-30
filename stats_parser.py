@@ -314,11 +314,12 @@ class MyHTMLParser(HTMLParser):
                     elif first_num:
                         break
                 return s
-            if 'deckstation' in content.lower():
+            cont_low = content.lower()
+            if 'deckstation' in cont_low and 'club' not in cont_low:
                 self.alert_type = 'deckstation'
-            elif 'verkauf' in content.lower():
+            elif 'verkauf' in cont_low and 'club' not in cont_low:
                 self.alert_type = 'verkauf'
-            elif 'eigene box' in content.lower():
+            elif 'eigene box' in cont_low:
                 self.has_box = False
             elif self.alert_type == 'deckstation':
                 self.facts_values['deckstation'] = int(get_val())
