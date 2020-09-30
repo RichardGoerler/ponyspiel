@@ -604,8 +604,9 @@ class Notification:
         self.frame = tk.Frame(self.root, bg=self.bg)
         self.frame.grid(padx=self.default_size, pady=self.default_size//2)
         message_text = lang.NOTIFICATION_STUD if stud else lang.NOTIFICATION_TRADE
-        lbl = tk.Label(self.frame, text=message_text.format(pid, pony_name), font=self.default_font, bg=self.bg, cursor="hand2").grid(pady=self.default_size//2)
-        lbl.bind("<Button-1>", lambda e, url=self.base_url + 'horse.php?id={}'.format(pid): webbrowser.open(url))
+        self.lbl = tk.Label(self.frame, text=message_text.format(pid, pony_name), font=self.default_font, bg=self.bg, cursor="hand2")
+        self.lbl.grid(pady=self.default_size//2)
+        self.lbl.bind("<Button-1>", lambda e, url=self.base_url + 'horse.php?id={}'.format(pid): webbrowser.open(url))
         tk.Button(self.frame, text='OK', command=self.on_closing, bg=self.bg).grid(pady=self.default_size//2)
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.lift()
