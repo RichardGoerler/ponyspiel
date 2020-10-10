@@ -13,5 +13,7 @@ if __name__ == '__main__':
     with open(p, 'wb') as f:
         f.write(r.content)
     time.sleep(2)
+    exe_path = Path('./pony_gui.exe').absolute()
     print('Restarting')
-    _ = subprocess.run([], executable='./pony_gui.exe')
+    # _ = subprocess.run([], executable='./pony_gui.exe')
+    _ = subprocess.run([str(exe_path)])
