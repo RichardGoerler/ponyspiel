@@ -74,6 +74,7 @@ LISTING_SEX_FEMALE = 'Stuten'
 LISTING_SEX_MALE = 'Hengste'
 LISTING_SEX_ALL = 'Alle'
 LISTING_DEL_CACHE = 'C'
+LISTING_DEAD = 'tot'
 
 PROGRESS = '...'
 PROGRESS_READING_CONFIG = 'Konfiguration einlesen'

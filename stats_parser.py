@@ -680,22 +680,31 @@ class PonyExtractor:
             r = self.session.get(request_url, headers=self.headers)
         except requests.exceptions.TooManyRedirects:
             self.log.append('Retrieving pony page at {} failed. Too many redirects.'.format(request_url))
-            self.del_pony_cache(pony_id)
+            # self.del_pony_cache(pony_id)
             return False
         except Exception:
             traceback.print_exc()
             self.log.append('Retrieving pony page at {} failed. Unexpected error. Exception was printed.'.format(request_url))
-            self.del_pony_cache(pony_id)
+            # self.del_pony_cache(pony_id)
             return False
         if len(r.text) < self.insidepage_length_threshold:
             self.log.append('Retrieving pony page at {} failed. Server reply too short.'.format(request_url))
-            self.del_pony_cache(pony_id)
+            # self.del_pony_cache(pony_id)
             return False
         self.data = str(r.text)
+        # get id of pony that was actually returned. If requested pony is foal that is still wih mother, a redirect would have happened to mother page.
+        # then cache must not be stored. Otherwise cached values of pony will be wrong once it has its own box.
+        search_string = 'horse.php?id='
+        id_ind = r.url.index(search_string) + len(search_string)
+        urllen = len(r.url)
+        new_id = ''
+        while id_ind < urllen and r.url[id_ind].isnumeric():
+            new_id += r.url[id_ind]
+            id_ind += 1
         # store to disk
         # with open(write_file, 'w', encoding='utf-8') as f:
         #     f.write(self.data)
-        return True
+        return int(new_id)
 
     def del_pony_cache(self, pony_id):
         cache_path = Path('.cache/{}/'.format(pony_id))
@@ -726,7 +735,8 @@ class PonyExtractor:
                     # Otherwise, wrong old data will be in data.
                     self.data = ''
                 return True
-        if not self._request_pony_file(pony_id, cached=cached):
+        new_id = self._request_pony_file(pony_id, cached=cached)
+        if not new_id:
             return False
         self.pony_id = pony_id
         self.parser = MyHTMLParser()
@@ -734,8 +744,9 @@ class PonyExtractor:
         self.parser.gesundheit_values = {k: self.parser.details_values[k] for k in self.parser.gesundheit_headings}
         self.parser.charakter_values = {k: self.parser.details_values[k] for k in self.parser.charakter_headings}
         self.parser.exterieur_values = {k: self.parser.details_values[k] for k in self.parser.exterieur_headings}
-        with open(write_file, 'wb') as f:
-            pickle.dump(self.parser, f)
+        if new_id == int(pony_id):   # if the parser was not redirected to a different page. If it was, the info usually belongs to the mother of the requested pony. We do not want to store that
+            with open(write_file, 'wb') as f:
+                pickle.dump(self.parser, f)
         return True
 
     def request_pony_images(self, cached=True):
