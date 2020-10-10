@@ -255,12 +255,16 @@ class ListingWindow(dialog.Dialog):
                 table_row_sum.append(self.gui.extractor.parser.name)
 
                 age = self.get_age()
+                if age is None:
+                    object_row.append(tk.Label(self.table_frame, text=lang.LISTING_DEAD, font=self.def_font, bg=self.gui.bg))
+                    age = datetime.timedelta()
+                else:
+                    pony_months = age.days
+                    pony_years = pony_months // 12
+                    pony_months %= 12
+                    object_row.append(tk.Label(self.table_frame, text='{}/{}'.format(pony_years, pony_months), font=self.def_font, bg=self.gui.bg))
                 table_row.append(age)
                 table_row_sum.append(age)
-                pony_months = age.days
-                pony_years = pony_months // 12
-                pony_months %= 12
-                object_row.append(tk.Label(self.table_frame, text='{}/{}'.format(pony_years, pony_months), font=self.def_font, bg=self.gui.bg))
 
                 table_row.append(self.gui.extractor.parser.training_max['Gesamtpotenzial'])
                 table_row_sum.append(self.gui.extractor.parser.training_max['Gesamtpotenzial'])
@@ -436,17 +440,23 @@ class ListingWindow(dialog.Dialog):
             self.gui.del_cache(pid)
 
     def get_age(self):
-        birthday_split = self.gui.extractor.parser.facts_values['Geburtstag'].split('-')
-        date_str = birthday_split[0].strip()
-        time_str = birthday_split[1].strip()
-        time_split = time_str.split(':')
-        hour = int(time_split[0])
-        minute = int(time_split[1])
-        date_split = date_str.split('.')
-        year = int(date_split[2])
-        month = int(date_split[1])
-        day = int(date_split[0])
-        return self.now - datetime(year, month, day, hour, minute)
+        if 'Geburtstag' in self.gui.extractor.parser.facts_values.keys():
+            birthday_split = self.gui.extractor.parser.facts_values['Geburtstag'].split('-')
+            date_str = birthday_split[0].strip()
+            time_str = birthday_split[1].strip()
+            time_split = time_str.split(':')
+            hour = int(time_split[0])
+            minute = int(time_split[1])
+            date_split = date_str.split('.')
+            year = int(date_split[2])
+            month = int(date_split[1])
+            day = int(date_split[0])
+            return self.now - datetime(year, month, day, hour, minute)
+        else:
+            if 'gestorben' in self.gui.extractor.parser.facts_values['Alter'].lower():
+                return None  # dead pony
+            else:
+                return datetime.timedelta()  # some error
 
     def draw_objects(self):
         if self.show_sex == 0:
