@@ -1018,7 +1018,7 @@ class PonyGUI:
                 progressbar.close()
                 return
             # check whether pony is fully trained
-            if this_id in self.extractor.log[-1] and 'fully trained' in self.extractor.log[-1] and self.extractor.parser.charakter_training_headings[0] in self.extractor.parser.charakter_training_values.keys():
+            if len(self.extractor.log) > 0 and this_id in self.extractor.log[-1] and 'fully trained' in self.extractor.log[-1] and self.extractor.parser.charakter_training_headings[0] in self.extractor.parser.charakter_training_values.keys():
                 flag = True
                 for k in self.extractor.parser.charakter_training_values.keys():
                     if self.extractor.parser.charakter_training_values[k] < self.extractor.parser.charakter_training_max[k]:
