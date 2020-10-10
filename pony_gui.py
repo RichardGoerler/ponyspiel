@@ -1011,7 +1011,7 @@ class PonyGUI:
             with open(no_train_file, 'r') as f:
                 no_train_ids = f.read().split()
         train_ids = [pid for pid in all_ids if pid not in no_train_ids]
-        progressbar = ProgressWindow(self.root, self, title=lang.TRAIN_OWN_BUTTON, steps=len(all_ids), initial_text=str(all_ids[0]))
+        progressbar = ProgressWindow(self.root, self, title=lang.TRAIN_OWN_BUTTON, steps=len(train_ids), initial_text=str(train_ids[0]))
         for this_id in train_ids:
             if not self.extractor.train_pony(this_id):
                 messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
