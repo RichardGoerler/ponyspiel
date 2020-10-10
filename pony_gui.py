@@ -19,6 +19,7 @@ import lang
 import stats_parser
 import html_clipboard
 import dialog
+import build_count
 
 
 class ProgressWindow(tk.Toplevel):
@@ -660,6 +661,7 @@ def poll_function(id):
 
 class PonyGUI:
     def __init__(self):
+        self.__version__ = build_count.__version__
         self.extractor = stats_parser.PonyExtractor()
         own_file = Path('./owned_ponies')
         beauty_file = Path('./beauty_ponies')
