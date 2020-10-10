@@ -55,6 +55,9 @@ HORSE_PAGE_TRADE = 'Pferdehandel'
 HORSE_PAGE_STUD = 'Deckstation'
 HORSE_PAGE_ALL = 'Pferderegister'
 
+UPDATE_TITLE = 'Update verfügbar'
+UPDATE_MESSAGE = 'Es ist ein Update verfügbar. Soll es heruntergeladen werden?'
+
 DIALOG_TITLE = 'Dialogfenster'
 DIALOG_OK = 'OK'
 DIALOG_CANCEL = 'Abbrechen'

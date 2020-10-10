@@ -14,13 +14,14 @@ import webbrowser
 import time
 import multiprocessing
 import sys
+import subprocess
+import requests
 
 import lang
 import stats_parser
 import html_clipboard
 import dialog
 import build_count
-
 
 class ProgressWindow(tk.Toplevel):
     def __init__(self, parent, gui, title=lang.PROGRESS, steps=100, initial_text=''):
@@ -944,8 +945,27 @@ class PonyGUI:
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
+        self.check_for_updates()
         self.start_poll_on_boot()
         self.root.mainloop()
+
+    def check_for_updates(self):
+        check_path = Path('./pony_gui.py')
+        if check_path.exists():    # if we are in script directory (means we are executing the script and not the exe), don't do anything
+            return
+        remote_version_url = 'https://raw.githubusercontent.com/RichardGoerler/ponyspiel/master/build_count.py'
+        r = requests.get(remote_version_url, allow_redirects=True)
+        f = r.text.splitlines()[0]
+        v = int(f.split('=')[1].strip())
+        if v > self.__version__:
+            if tk.YES == messagebox.askyesno(title=lang.UPDATE_TITLE, message=lang.UPDATE_MESSAGE):
+                remote_updater_url = 'https://github.com/RichardGoerler/ponyspiel/raw/master/dist/pony_gui.exe'
+                r = requests.get(remote_updater_url, allow_redirects=True)
+                p = Path('./updater.exe')
+                with open(p, 'wb') as f:
+                    f.write(r.content)
+                _ = subprocess.Popen([], executable="./updater.exe").pid
+                self.root.quit()
 
     def beauty_all(self):
         own_file = Path('./owned_ponies')
