@@ -658,7 +658,6 @@ class PonyExtractor:
 
         return horse_ids
 
-
     def _request_pony_file(self, pony_id, cached=True):
         # cache_path = Path('.cache/{}/'.format(pony_id))
         # cache_path.mkdir(parents=True, exist_ok=True)
