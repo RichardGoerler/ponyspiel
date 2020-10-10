@@ -979,13 +979,31 @@ class PonyGUI:
         if own_file.is_file():
             with open(own_file, 'r') as f:
                 all_ids = f.read().split()
+        no_train_ids = []
+        no_train_file = Path('./no_train')
+        if no_train_file.is_file():
+            with open(no_train_file, 'r') as f:
+                no_train_ids = f.read().split()
+        train_ids = [pid for pid in all_ids if pid not in no_train_ids]
         progressbar = ProgressWindow(self.root, self, title=lang.TRAIN_OWN_BUTTON, steps=len(all_ids), initial_text=str(all_ids[0]))
-        for id in all_ids:
-            if not self.extractor.train_pony(id):
+        for this_id in train_ids:
+            if not self.extractor.train_pony(this_id):
                 messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                 progressbar.close()
                 return
-            progressbar.step(str(id))
+            # check whether pony is fully trained
+            if this_id in self.extractor.log[-1] and 'fully trained' in self.extractor.log[-1] and self.extractor.parser.charakter_training_headings[0] in self.extractor.parser.charakter_training_values.keys():
+                flag = True
+                for k in self.extractor.parser.charakter_training_values.keys():
+                    if self.extractor.parser.charakter_training_values[k] < self.extractor.parser.charakter_training_max[k]:
+                        flag = False
+                        break
+                if flag:
+                    no_train_ids.append(this_id)
+                    with open(no_train_file, 'w') as f:
+                        for pid in no_train_ids:
+                            f.write(str(pid) + '\n')
+            progressbar.step(str(this_id))
 
     def train_this(self):
         id = self.id_label.cget('text').strip()
