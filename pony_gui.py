@@ -409,10 +409,10 @@ class ListingWindow(dialog.Dialog):
                     el.configure(text=val)
         self.redraw()
 
-    def get_relatives(self, pid):
-        pid = int(pid)
+    def get_relatives(self, pid_str):
+        pid = int(pid_str)
         result = [pid]
-        if self.cache_exists_for_row[self.gui.race_ids.index(pid)]:
+        if self.cache_exists_for_row[self.gui.race_ids.index(pid_str)]:
             self.gui.extractor.get_pony_info(pid)
             # Nur ersten und dritten Vorfahr wählen. Das sind Vater und Mutter. Vorfahren werden wie folgt eingelsen:
             # [Vater, Großvater(V), Großmutter(V), Mutter, Großvater(M), Großmutter(M)]
