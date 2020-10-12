@@ -9,6 +9,7 @@ from PIL import Image, ImageTk
 from pathlib import Path
 import csv
 from datetime import datetime
+from datetime import timedelta
 import win32clipboard
 import webbrowser
 import time
@@ -94,6 +95,7 @@ class ListingWindow(dialog.Dialog):
         pass
 
     def body(self, master):
+        too_many_redirects_ids = []
         if not self.gui.exterior_search_requested:
             own_file = Path('./owned_ponies')
             all_ids = []
@@ -226,6 +228,9 @@ class ListingWindow(dialog.Dialog):
         for id in all_ids:
             progressbar.step(str(id))
             if not self.gui.extractor.get_pony_info(id):
+                if 'too many redirects' in self.gui.extractor.log[-1].lower():
+                    too_many_redirects_ids.append(id)
+                    continue
                 messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.gui.extractor.log[-1])
                 progressbar.close()
                 return
@@ -259,7 +264,8 @@ class ListingWindow(dialog.Dialog):
                 age = self.get_age()
                 if age is None:
                     object_row.append(tk.Label(self.table_frame, text=lang.LISTING_DEAD, font=self.def_font, bg=self.gui.bg))
-                    age = datetime.timedelta()
+                    pony_years = -1
+                    age = timedelta()
                 else:
                     pony_months = age.days
                     pony_years = pony_months // 12
@@ -333,7 +339,9 @@ class ListingWindow(dialog.Dialog):
                 else:
                     self.sex.append(2)
 
-                if pony_years < 3:
+                if pony_years < 0:    # dead
+                    col = 'dim gray'
+                elif pony_years < 3:
                     if self.sex[-1] == 1:
                         col = 'hot pink'
                     else:
@@ -365,6 +373,12 @@ class ListingWindow(dialog.Dialog):
             self.redraw()
 
         progressbar.step(lang.PROGRESS_DONE)
+
+        if len(too_many_redirects_ids) > 0:
+            message = lang.REDIRECTS_WARNING_MESSAGE
+            for pid in too_many_redirects_ids:
+                message += ('\n' + str(pid))
+            messagebox.showwarning(title=lang.REDIRECTS_WARNING_TITLE, message=message)
 
     def mark_relatives(self, id):
         rels = self.get_relatives(id)
@@ -458,7 +472,7 @@ class ListingWindow(dialog.Dialog):
             if 'gestorben' in self.gui.extractor.parser.facts_values['Alter'].lower():
                 return None  # dead pony
             else:
-                return datetime.timedelta()  # some error
+                return timedelta()  # some error
 
     def draw_objects(self):
         if self.show_sex == 0:
@@ -952,7 +966,7 @@ class PonyGUI:
     def check_for_updates(self):
         check_path = Path('./pony_gui.py')
         if check_path.exists():    # if we are in script directory (means we are executing the script and not the exe), don't do anything
-            print('we are in script dir, return')
+            # print('we are in script dir, return')
             return False
         remote_version_url = 'https://raw.githubusercontent.com/RichardGoerler/ponyspiel/master/build_count.py'
         r = requests.get(remote_version_url, allow_redirects=True)
@@ -972,6 +986,7 @@ class PonyGUI:
         return False
 
     def beauty_all(self):
+        too_many_redirects_ids = []
         own_file = Path('./owned_ponies')
         all_ids = []
         if own_file.is_file():
@@ -987,10 +1002,18 @@ class PonyGUI:
             progressbar = ProgressWindow(self.root, self, title=lang.BEAUTY_OWN_BUTTON, steps=len(own_beauty), initial_text=str(own_beauty[0]))
             for pid in own_beauty:
                 if not self.extractor.login_beauty(pid):
+                    if 'too many redirects' in self.extractor.log[-1].lower():
+                        too_many_redirects_ids.append(id)
+                        continue
                     messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                     return
                 progressbar.step(str(pid))
-        pass
+
+        if len(too_many_redirects_ids) > 0:
+            message = lang.REDIRECTS_WARNING_MESSAGE
+            for pid in too_many_redirects_ids:
+                message += ('\n' + str(pid))
+            messagebox.showwarning(title=lang.REDIRECTS_WARNING_TITLE, message=message)
 
     def beauty_this(self):
         pid = self.id_label.cget('text').strip()
@@ -1000,6 +1023,7 @@ class PonyGUI:
                 return
 
     def train_all(self):
+        too_many_redirects_ids = []
         own_file = Path('./owned_ponies')
         all_ids = []
         if own_file.is_file():
@@ -1014,6 +1038,9 @@ class PonyGUI:
         progressbar = ProgressWindow(self.root, self, title=lang.TRAIN_OWN_BUTTON, steps=len(train_ids), initial_text=str(train_ids[0]))
         for this_id in train_ids:
             if not self.extractor.train_pony(this_id):
+                if 'too many redirects' in self.extractor.log[-1].lower():
+                    too_many_redirects_ids.append(id)
+                    continue
                 messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                 progressbar.close()
                 return
@@ -1031,6 +1058,12 @@ class PonyGUI:
                             f.write(str(pid) + '\n')
             progressbar.step(str(this_id))
 
+        if len(too_many_redirects_ids) > 0:
+            message = lang.REDIRECTS_WARNING_MESSAGE
+            for pid in too_many_redirects_ids:
+                message += ('\n' + str(pid))
+            messagebox.showwarning(title=lang.REDIRECTS_WARNING_TITLE, message=message)
+
     def train_this(self):
         id = self.id_label.cget('text').strip()
         if len(id) > 0 and id.isnumeric():
@@ -1039,6 +1072,7 @@ class PonyGUI:
                 return
 
     def care_all(self):
+        too_many_redirects_ids = []
         own_file = Path('./owned_ponies')
         all_ids = []
         if own_file.is_file():
@@ -1047,9 +1081,18 @@ class PonyGUI:
         progressbar = ProgressWindow(self.root, self, title=lang.CARE_OWN_BUTTON, steps=len(all_ids), initial_text=str(all_ids[0]))
         for id in all_ids:
             if not self.extractor.care_pony(id):
+                if 'too many redirects' in self.extractor.log[-1].lower():
+                    too_many_redirects_ids.append(id)
+                    continue
                 messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                 return
             progressbar.step(str(id))
+
+        if len(too_many_redirects_ids) > 0:
+            message = lang.REDIRECTS_WARNING_MESSAGE
+            for pid in too_many_redirects_ids:
+                message += ('\n' + str(pid))
+            messagebox.showwarning(title=lang.REDIRECTS_WARNING_TITLE, message=message)
 
     def care_this(self):
         id = self.id_label.cget('text').strip()

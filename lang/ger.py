@@ -92,3 +92,6 @@ QUIT_HEADING = "Schließen"
 QUIT_TEXT = "Verfügbarkeits-Benachrichtigung ist aktiv. Wirklich schließen? Die Benachrichtigung(en) werden beim nächsten Start des Programms automatisch wieder eingeschaltet."
 POLL_CANCEL_HEADING = "Bestätigen"
 POLL_CANCEL_TEXT = "Wirklich alle Verfügbarkeits-Benachrichtigungen ausschalten?"
+
+REDIRECTS_WARNING_TITLE = 'Ponies nicht aufrufbar'
+REDIRECTS_WARNING_MESSAGE = 'Einige Ponies sind nicht aufrufbar. Sie tauchen nicht in der Liste auf. Im Folgenden sind die zugehörigen IDs aufgelistet.'
