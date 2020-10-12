@@ -138,11 +138,12 @@ class ListingWindow(dialog.Dialog):
         else:
             # config = [self.gui.race_var.get(), 'Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung', '=', 'id']
             config = [self.gui.race_var.get(), 'Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung']
-            if len(price_type) != 0:
+            if len(price_type) != 0 and price_type != lang.HORSE_PAGE_ALL and 'all' not in price_type:
                 config.extend(['=', lang.LISTING_HEADER_PRICE])
         races = [r.strip() for r in config[0].split(',')]
         if 'Alle'.strip("'") in races:
             races = list(self.gui.extractor.race_dict.keys())
+            config.append('=')
             config.append('Rasse')
         self.props = []
         divider_found = False
