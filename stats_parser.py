@@ -507,6 +507,7 @@ class PonyExtractor:
                              'Charakter': 'sumchar',
                              'Exterieur': 'sumext'}
         self.pony_id = 0
+        self.cache_exists = False
         self.log = []
         self.last_login_time = None
         self.insidepage_length_threshold = 30000
@@ -733,9 +734,11 @@ class PonyExtractor:
                     # When loading parser from disk, we need to null data, because we are not overwriting it
                     # Otherwise, wrong old data will be in data.
                     self.data = ''
+                self.cache_exists = True
                 return True
         new_id = self._request_pony_file(pony_id, cached=cached)
         if not new_id:
+            self.cache_exists = False
             return False
         self.pony_id = pony_id
         self.parser = MyHTMLParser()
@@ -746,6 +749,9 @@ class PonyExtractor:
         if new_id == int(pony_id):   # if the parser was not redirected to a different page. If it was, the info usually belongs to the mother of the requested pony. We do not want to store that
             with open(write_file, 'wb') as f:
                 pickle.dump(self.parser, f)
+            self.cache_exists = True
+        else:
+            self.cache_exists = False
         return True
 
     def request_pony_images(self, cached=True):

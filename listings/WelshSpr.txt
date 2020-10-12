@@ -2,7 +2,8 @@ Welsh Mountain Pony
 Ausbildung
 Springen
 ==
-Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
+Ex: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
+Exterieur
 Gangarten: Galopp, leichter Galopp
 Charakter
 Gesundheit: Zufriedenheit, Robustheit

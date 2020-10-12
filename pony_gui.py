@@ -176,6 +176,8 @@ class ListingWindow(dialog.Dialog):
         progressbar.step(lang.PROGRESS_MAKING_HEADERS)
 
         self.objects = []
+        self.cache_exists_for_row = []    # after get_pony_info is called, extractor.cache_exists specifies whether a valid cache folder exists for that pony. If it doesn't, pony should be excluded
+                                          # when determining relatives
         self.data_table = []
         self.data_table_sum = []
         self.object_colors = []
@@ -237,6 +239,7 @@ class ListingWindow(dialog.Dialog):
                 return
             if self.gui.extractor.parser.facts_values['Rasse'] in races:
                 self.gui.race_ids.append(id)
+                self.cache_exists_for_row.append(self.gui.extractor.cache_exists)
                 if not self.gui.extractor.request_pony_images():
                     messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.gui.extractor.log[-1])
                     im = self.gui.imorg
@@ -406,34 +409,36 @@ class ListingWindow(dialog.Dialog):
                     el.configure(text=val)
         self.redraw()
 
-    def get_relatives(self, id):
-        id = int(id)
-        result = [id]
-        self.gui.extractor.get_pony_info(id)
-        # Nur ersten und dritten Vorfahr wählen. Das sind Vater und Mutter. Vorfahren werden wie folgt eingelsen:
-        # [Vater, Großvater(V), Großmutter(V), Mutter, Großvater(M), Großmutter(M)]
-        # Falls Vater Systempferd ist, wird der Vater als Großeltern wiederholt eingetragen. Beispiel:
-        # [System-Vater, Vater, Vater, Mutter, Großvater(M), Großmutter(M)]
-        # Die Liste ist also entweder leer, oder hat 6 Einträge oder 4 Einträge (Wenn beide Entern Systempferde).
-        anc_list = self.gui.extractor.parser.ancestors
-        if len(anc_list) == 6 or len(anc_list) == 0 or len(anc_list) == 4:
-            this_ancestors = list(anc_list[::3])
-        else:
-            messagebox.showerror(title='error', message='invalid ancestor list')
-            return []
-        this_ancestors.append(id)
-        for comp_id in self.gui.race_ids:
-            comp_id = int(comp_id)
-            if comp_id != id:
-                if comp_id in this_ancestors:
-                    result.append(comp_id)
-                    continue
-                self.gui.extractor.get_pony_info(comp_id)
-                comp_ancestors = self.gui.extractor.parser.ancestors[::3]
-                for comp_an in comp_ancestors:
-                    if comp_an in this_ancestors:
+    def get_relatives(self, pid):
+        pid = int(pid)
+        result = [pid]
+        if self.cache_exists_for_row[self.gui.race_ids.index(pid)]:
+            self.gui.extractor.get_pony_info(pid)
+            # Nur ersten und dritten Vorfahr wählen. Das sind Vater und Mutter. Vorfahren werden wie folgt eingelsen:
+            # [Vater, Großvater(V), Großmutter(V), Mutter, Großvater(M), Großmutter(M)]
+            # Falls Vater Systempferd ist, wird der Vater als Großeltern wiederholt eingetragen. Beispiel:
+            # [System-Vater, Vater, Vater, Mutter, Großvater(M), Großmutter(M)]
+            # Die Liste ist also entweder leer, oder hat 6 Einträge oder 4 Einträge (Wenn beide Entern Systempferde).
+            anc_list = self.gui.extractor.parser.ancestors
+            if len(anc_list) == 6 or len(anc_list) == 0 or len(anc_list) == 4:
+                this_ancestors = list(anc_list[::3])
+            else:
+                messagebox.showerror(title='error', message='invalid ancestor list')
+                return []
+            this_ancestors.append(pid)
+            for comp_id, cache_bool in zip(self.gui.race_ids, self.cache_exists_for_row):
+                comp_id = int(comp_id)
+                if comp_id != pid:
+                    if comp_id in this_ancestors:
                         result.append(comp_id)
-                        break
+                        continue
+                    if cache_bool:
+                        self.gui.extractor.get_pony_info(comp_id)
+                        comp_ancestors = self.gui.extractor.parser.ancestors[::3]
+                        for comp_an in comp_ancestors:
+                            if comp_an in this_ancestors:
+                                result.append(comp_id)
+                                break
         return result
 
     def toggle_beauty(self, event, pid):
@@ -558,19 +563,22 @@ class ListingWindow(dialog.Dialog):
         table_sorted_sum = []
         sex_sorted = []
         race_ids_sorted = []
-        for id in sorted_idx:
-            objects_sorted.append(self.objects[id])
-            object_colors_sorted.append(self.object_colors[id])
-            table_sorted.append(self.data_table[id])
-            table_sorted_sum.append(self.data_table_sum[id])
-            sex_sorted.append(self.sex[id])
-            race_ids_sorted.append(self.gui.race_ids[id])
+        cache_exists_for_row_sorted = []
+        for pid in sorted_idx:
+            objects_sorted.append(self.objects[pid])
+            object_colors_sorted.append(self.object_colors[pid])
+            table_sorted.append(self.data_table[pid])
+            table_sorted_sum.append(self.data_table_sum[pid])
+            sex_sorted.append(self.sex[pid])
+            race_ids_sorted.append(self.gui.race_ids[pid])
+            cache_exists_for_row_sorted.append(self.cache_exists_for_row[pid])
         self.objects = objects_sorted
         self.object_colors = object_colors_sorted
         self.data_table = table_sorted
         self.data_table_sum = table_sorted_sum
         self.sex = sex_sorted
         self.gui.race_ids = race_ids_sorted
+        self.cache_exists_for_row = cache_exists_for_row_sorted
         self.draw_objects()
 
 class LoginWindow(dialog.Dialog):
