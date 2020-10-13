@@ -981,7 +981,7 @@ class PonyGUI:
         r = requests.get(remote_version_url, allow_redirects=True)
         f = r.text.splitlines()[0]
         v = int(f.split('=')[1].strip())
-        # print('v', v, 'self.__version__', self.__version__)
+        print('v', v, 'self.__version__', self.__version__)
         if v > self.__version__:
             if tk.YES == messagebox.askyesno(title=lang.UPDATE_TITLE, message=lang.UPDATE_MESSAGE):
                 remote_updater_url = 'https://github.com/RichardGoerler/ponyspiel/raw/master/dist/pony_gui.exe'
