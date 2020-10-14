@@ -15,4 +15,5 @@ if __name__ == '__main__':
     time.sleep(2)
     print('Restarting')
     # _ = subprocess.run([], executable='./pony_gui.exe')
-    _ = subprocess.run([str(p.absolute())])
+    # _ = subprocess.run([str(p.absolute())])
+    _ = subprocess.Popen([str(p.absolute())], startupinfo=subprocess.CREATE_NEW_CONSOLE).pid
