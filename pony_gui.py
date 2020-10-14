@@ -984,7 +984,7 @@ class PonyGUI:
         print('v', v, 'self.__version__', self.__version__)
         if v > self.__version__:
             if tk.YES == messagebox.askyesno(title=lang.UPDATE_TITLE, message=lang.UPDATE_MESSAGE):
-                remote_updater_url = 'https://github.com/RichardGoerler/ponyspiel/raw/master/dist/pony_gui.exe'
+                remote_updater_url = 'https://github.com/RichardGoerler/ponyspiel/raw/master/dist/updater.exe'
                 r = requests.get(remote_updater_url, allow_redirects=True)
                 p = Path('./updater.exe')
                 with open(p, 'wb') as f:
