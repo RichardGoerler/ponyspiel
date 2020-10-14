@@ -10,8 +10,6 @@ if __name__ == '__main__':
     remote_exe_url = 'https://github.com/RichardGoerler/ponyspiel/raw/master/dist/pony_gui.exe'
     r = requests.get(remote_exe_url, allow_redirects=True)
     p = Path('./pony_gui.exe')
-    p.unlink()
-    time.sleep(2)
     with open(p, 'wb') as f:
         f.write(r.content)
     time.sleep(2)
