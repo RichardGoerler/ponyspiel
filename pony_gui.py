@@ -1012,10 +1012,10 @@ class PonyGUI:
             for pid in own_beauty:
                 if not self.extractor.login_beauty(pid):
                     if 'too many redirects' in self.extractor.log[-1].lower():
-                        too_many_redirects_ids.append(id)
-                        continue
-                    messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
-                    return
+                        too_many_redirects_ids.append(pid)
+                    else:
+                        messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+                        return
                 progressbar.step(str(pid))
 
         if len(too_many_redirects_ids) > 0:
@@ -1048,7 +1048,8 @@ class PonyGUI:
         for this_id in train_ids:
             if not self.extractor.train_pony(this_id):
                 if 'too many redirects' in self.extractor.log[-1].lower():
-                    too_many_redirects_ids.append(id)
+                    too_many_redirects_ids.append(this_id)
+                    progressbar.step(str(this_id))
                     continue
                 messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                 progressbar.close()
@@ -1088,14 +1089,15 @@ class PonyGUI:
             with open(own_file, 'r') as f:
                 all_ids = f.read().split()
         progressbar = ProgressWindow(self.root, self, title=lang.CARE_OWN_BUTTON, steps=len(all_ids), initial_text=str(all_ids[0]))
-        for id in all_ids:
-            if not self.extractor.care_pony(id):
+        for this_id in all_ids:
+            if not self.extractor.care_pony(this_id):
                 if 'too many redirects' in self.extractor.log[-1].lower():
-                    too_many_redirects_ids.append(id)
-                    continue
-                messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
-                return
-            progressbar.step(str(id))
+                    too_many_redirects_ids.append(this_id)
+                else:
+                    messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+                    progressbar.close()
+                    return
+            progressbar.step(str(this_id))
 
         if len(too_many_redirects_ids) > 0:
             message = lang.REDIRECTS_WARNING_MESSAGE
