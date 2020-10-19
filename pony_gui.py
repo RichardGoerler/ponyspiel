@@ -95,6 +95,8 @@ class ListingWindow(dialog.Dialog):
         pass
 
     def body(self, master):
+        quick_display = self.gui.quick_display
+        self.gui.quick_display = False
         too_many_redirects_ids = []
         if not self.gui.exterior_search_requested:
             own_file = Path('./owned_ponies')
@@ -228,19 +230,28 @@ class ListingWindow(dialog.Dialog):
         for ci, el in enumerate(self.header_objects):
             el.grid(row=1, column=ci+1, padx=int(self.def_size / 2))   # ci + 1 because the image does not have a corresponding header!
 
-        for id in all_ids:
+        for idx, id in enumerate(all_ids):
             progressbar.step(str(id))
-            if not self.gui.extractor.get_pony_info(id):
-                if 'too many redirects' in self.gui.extractor.log[-1].lower():
-                    too_many_redirects_ids.append(id)
-                    continue
-                messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.gui.extractor.log[-1])
-                progressbar.close()
-                return
-            if self.gui.extractor.parser.facts_values['Rasse'] in races:
+            if quick_display:
+                parser = stats_parser.FakeParser(self.gui.extractor.images[idx], self.gui.extractor.ponies[idx])
+            else:
+                if not self.gui.extractor.get_pony_info(id):
+                    if 'too many redirects' in self.gui.extractor.log[-1].lower():
+                        too_many_redirects_ids.append(id)
+                        continue
+                    messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.gui.extractor.log[-1])
+                    progressbar.close()
+                    return
+                parser = self.gui.extractor.parser
+            if parser.facts_values['Rasse'] in races:
                 self.gui.race_ids.append(id)
-                self.cache_exists_for_row.append(self.gui.extractor.cache_exists)
-                if not self.gui.extractor.request_pony_images():
+                if quick_display:
+                    self.cache_exists_for_row.append(False)   # No relatives display if we are in quick mode
+                else:
+                    self.cache_exists_for_row.append(self.gui.extractor.cache_exists)
+                if quick_display:
+                    im = self.gui.imorg
+                elif not self.gui.extractor.request_pony_images(urls=parser.image_urls, pony_id=id):
                     messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.gui.extractor.log[-1])
                     im = self.gui.imorg
                 else:
@@ -259,13 +270,13 @@ class ListingWindow(dialog.Dialog):
                 object_row[-1].bind("<Button-1>", lambda e, pid=id: self.del_cache(e, pid))
                 object_row[-1].bind("<Button-3>", lambda e, pid=id: self.toggle_beauty(e, pid))
                 object_row[-1].configure(borderwidth=1*int(id in self.beauty_ids), relief="solid")
-                object_row.append(tk.Label(self.table_frame, text=self.gui.extractor.parser.name[:self.MAX_LEN_NAME], font=self.bol_font, bg=self.gui.bg, cursor="hand2"))
+                object_row.append(tk.Label(self.table_frame, text=parser.name[:self.MAX_LEN_NAME], font=self.bol_font, bg=self.gui.bg, cursor="hand2"))
                 object_row[-1].bind("<Button-1>", lambda e, url=self.gui.extractor.base_url + 'horse.php?id={}'.format(id): webbrowser.open(url))
                 object_row[-1].bind("<Button-3>", lambda e, hid=id: self.mark_relatives(hid))
-                table_row.append(self.gui.extractor.parser.name)
-                table_row_sum.append(self.gui.extractor.parser.name)
+                table_row.append(parser.name)
+                table_row_sum.append(parser.name)
 
-                age = self.get_age()
+                age = self.get_age(parser)
                 if age is None:
                     object_row.append(tk.Label(self.table_frame, text=lang.LISTING_DEAD, font=self.def_font, bg=self.gui.bg))
                     pony_years = -1
@@ -278,8 +289,8 @@ class ListingWindow(dialog.Dialog):
                 table_row.append(age)
                 table_row_sum.append(age)
 
-                table_row.append(self.gui.extractor.parser.training_max['Gesamtpotenzial'])
-                table_row_sum.append(self.gui.extractor.parser.training_max['Gesamtpotenzial'])
+                table_row.append(parser.training_max['Gesamtpotenzial'])
+                table_row_sum.append(parser.training_max['Gesamtpotenzial'])
                 object_row.append(tk.Label(self.table_frame, text=table_row[-1], font=self.bol_font, bg=self.gui.bg))
 
                 avg_done = False
@@ -297,19 +308,19 @@ class ListingWindow(dialog.Dialog):
                             else:
                                 continue
                             try:
-                                normval = textval = self.gui.extractor.parser.facts_values[pkey]
+                                normval = textval = parser.facts_values[pkey]
                             except:
                                 normval = textval = 0
                                 print('could not read key {} from pony {}. Price was set to 0. Deleting Cache might help.'.format(pkey, id))
                             object_row.append(tk.Label(self.table_frame, text=str(textval), font=self.def_font, bg=self.gui.bg))
                         else:
                             if len(prop) == 1:
-                                val, norm = self.gui.get_prop_value_and_count(prop[0])
+                                val, norm = self.gui.get_prop_value_and_count(prop[0], parser=parser)
                             else:
                                 norm = len(prop[1])
                                 val = 0
                                 for subprop in prop[1]:
-                                    val += self.gui.get_prop_value(subprop)
+                                    val += self.gui.get_prop_value(subprop, parser=parser)
                             if isinstance(val, (int, float)):
                                 normval = val/norm
                                 textval = str(round(normval, 1))
@@ -317,13 +328,13 @@ class ListingWindow(dialog.Dialog):
                                 normval = textval = val
                             object_row.append(tk.Label(self.table_frame, text=textval, font=self.def_font, bg=self.gui.bg))
                         table_row.append(normval)
-                        if len(prop) == 1 and (prop[0] in ['Gesundheit', 'Charakter', 'Exterieur'] or prop[0] in self.gui.extractor.parser.training_headings):
+                        if len(prop) == 1 and (prop[0] in ['Gesundheit', 'Charakter', 'Exterieur'] or prop[0] in parser.training_headings):
                             table_row_sum.append(val)      # referenced before assignment only if lang.LISTING_HEADER_PRICE in details_topheadings or training_headings, which is not the case
                         else:
                             table_row_sum.append(normval)
 
                     for key in self.max_prop_dict.keys():
-                        this_val = self.gui.get_prop_value(key)
+                        this_val = self.gui.get_prop_value(key, parser=parser)
                         if self.max_prop_dict[key] < this_val:
                             self.max_prop_dict[key] = this_val
 
@@ -338,7 +349,7 @@ class ListingWindow(dialog.Dialog):
                 self.data_table.append(table_row)
                 self.data_table_sum.append(table_row_sum)
 
-                if self.gui.extractor.parser.facts_values['Geschlecht'] == 'Stute':
+                if parser.facts_values['Geschlecht'] == 'Stute':
                     self.sex.append(1)
                 else:
                     self.sex.append(2)
@@ -461,9 +472,9 @@ class ListingWindow(dialog.Dialog):
             lab['cursor'] = ''
             self.gui.del_cache(pid)
 
-    def get_age(self):
-        if 'Geburtstag' in self.gui.extractor.parser.facts_values.keys():
-            birthday_split = self.gui.extractor.parser.facts_values['Geburtstag'].split('-')
+    def get_age(self, parser):
+        if 'Geburtstag' in parser.facts_values.keys() and parser.facts_values['Geburtstag'] != 0:
+            birthday_split = parser.facts_values['Geburtstag'].split('-')
             date_str = birthday_split[0].strip()
             time_str = birthday_split[1].strip()
             time_split = time_str.split(':')
@@ -475,8 +486,26 @@ class ListingWindow(dialog.Dialog):
             day = int(date_split[0])
             return self.now - datetime(year, month, day, hour, minute)
         else:
-            if 'gestorben' in self.gui.extractor.parser.facts_values['Alter'].lower():
-                return None  # dead pony
+            if 'Alter' in parser.facts_values.keys():
+                if 'gestorben' in parser.facts_values['Alter'].lower():
+                    return None  # dead pony
+                else:
+                    age = parser.facts_values['Alter']
+                    agesplit = age.split()
+                    years = 0
+                    months = 0
+                    # probably quick mode, extract timedelta from format [1 Monat / 6 Monate / 1 Jahr / 1 Jahr 1 Monat / 1 Jahr 6 Monate / 2 Jahre / 2 Jahre 1 Monat / 2 Jahre 6 Monate]
+                    if 'Monat' in age:
+                        if 'Jahr' in age:
+                            years = int(agesplit[0])
+                            months = int(agesplit[2])
+                        else:
+                            months = int(agesplit[0])
+                    else:
+                        if 'Jahr' in age:
+                            years = int(agesplit[0])
+                    # a month is one day
+                    return timedelta(days=years*12+months)
             else:
                 return timedelta()  # some error
 
@@ -727,6 +756,7 @@ class PonyGUI:
         self.root.title(lang.MAIN_TITLE)
         self.root.configure(bg=self.bg)
         self.exterior_search_requested = False
+        self.quick_display = False
         self.exterior_search_ids = []
 
         self.interactive_elements = []
@@ -916,7 +946,10 @@ class PonyGUI:
         self.exterior_frame = tk.Frame(self.root, bg=self.bg)
         self.exterior_frame.grid(row=8, column=1, columnspan=2, padx=self.default_size, pady=self.default_size)
 
-        tk.Label(self.exterior_frame, text=lang.EXTERIEUR_LABEL, font=self.bold_font, bg=self.bg).grid(row=0, column=0, columnspan=2, padx=int(self.default_size/2))
+        tk.Label(self.exterior_frame, text=lang.EXTERIEUR_LABEL, font=self.bold_font, bg=self.bg).grid(row=0, column=0, padx=int(self.default_size/2))
+        self.quick_display_var = tk.IntVar()
+        self.quick_display_var.set(0)
+        tk.Checkbutton(self.exterior_frame, variable=self.quick_display_var, font=self.default_font, text=lang.QUICK_DISPLAY, bg=self.bg).grid(row=0, column=1, padx=(int(self.default_size/2)))
 
         self.horse_pages = [lang.HORSE_PAGE_TRADE, lang.HORSE_PAGE_STUD, lang.HORSE_PAGE_ALL]
         self.horse_page_type_var = tk.StringVar()
@@ -1279,8 +1312,11 @@ class PonyGUI:
         finally:
             win32clipboard.CloseClipboard()
 
-    def get_prop_value_and_count(self, prop):
-        p = self.extractor.parser
+    def get_prop_value_and_count(self, prop, parser=None):
+        if parser is None:
+            p = self.extractor.parser
+        else:
+            p = parser
         l = [p.facts_values, p.gesundheit_values, p.charakter_values, p.exterieur_values, p.ausbildung_max, p.gangarten_max, p.dressur_max,
              p.springen_max, p.military_max, p.western_max, p.rennen_max, p.fahren_max]
         for l_list in l:
@@ -1288,8 +1324,11 @@ class PonyGUI:
                 return (l_list[prop], len(l_list)-1)
         return (0,1)
 
-    def get_prop_value(self, prop):
-        p = self.extractor.parser
+    def get_prop_value(self, prop, parser=None):
+        if parser is None:
+            p = self.extractor.parser
+        else:
+            p = parser
         l = [p.gesundheit_values, p.charakter_values, p.exterieur_values, p.ausbildung_max, p.gangarten_max, p.dressur_max,
              p.springen_max, p.military_max, p.western_max, p.rennen_max, p.fahren_max]
         for l_list in l:
@@ -1300,7 +1339,8 @@ class PonyGUI:
     def exterior_search(self):
         sort_by_key = self.sort_by_var.get()
         sort_by_value = self.extractor.sort_by_dict[sort_by_key]
-        self.exterior_search_ids = self.extractor.browse_horses(self.horse_pages.index(self.horse_page_type_var.get()), race=self.race_var.get(), sort_by=sort_by_value, pages=int(self.n_pages_var.get()))
+        self.quick_display = bool(self.quick_display_var.get())
+        self.exterior_search_ids = self.extractor.browse_horses(self.horse_pages.index(self.horse_page_type_var.get()), race=self.race_var.get(), sort_by=sort_by_value, pages=int(self.n_pages_var.get()), quick=self.quick_display)
         if self.exterior_search_ids == False:
             messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
         else:
