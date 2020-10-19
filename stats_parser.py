@@ -459,6 +459,249 @@ class BeautyParser(HTMLParser):
                 self.continue_parsing = False
 
 
+class FakeParser(MyHTMLParser):
+    def __init__(self, image_urls, pony_dict):
+        super(FakeParser, self).__init__()
+        for head in self.facts_headings:
+            self.facts_values[head] = 0
+        for head in self.details_headings:
+            self.details_values[head] = 0
+        for head in self.training_headings:
+            self.training_max[head] = 0
+            self.training_values[head] = 0
+        for head in self.ausbildung_headings:
+            self.ausbildung_max[head] = 0
+            self.ausbildung_values[head] = 0
+        for head in self.gangarten_headings:
+            self.gangarten_max[head] = 0
+            self.gesundheit_values[head] = 0
+        for head in self.dressur_headings:
+            self.dressur_max[head] = 0
+            self.dressur_values[head] = 0
+        for head in self.springen_headings:
+            self.springen_max[head] = 0
+            self.springen_values[head] = 0
+        for head in self.military_headings:
+            self.military_max[head] = 0
+            self.military_values[head] = 0
+        for head in self.western_headings:
+            self.western_max[head] = 0
+            self.western_values[head] = 0
+        for head in self.rennen_headings:
+            self.rennen_max[head] = 0
+            self.rennen_values[head] = 0
+        for head in self.fahren_headings:
+            self.fahren_max[head] = 0
+            self.fahren_values[head] = 0
+            
+        self.image_urls = image_urls
+        if len(pony_dict) > 0:
+            self.name = pony_dict['Name']
+            self.facts_values['Geschlecht'] = pony_dict['Geschlecht']
+            self.facts_values['Rasse'] = pony_dict['Rasse']
+            self.facts_values['Alter'] = pony_dict['Alter']
+            self.facts_values['Fellfarbe'] = pony_dict['Fellfarbe']
+            self.details_values['Gesundheit'] = pony_dict['Gesundheit']
+            self.details_values['Charakter'] = pony_dict['Charakter']
+            self.details_values['Exterieur'] = pony_dict['Exterieur']
+            self.training_max['Ausbildung'] = pony_dict['Ausbildung']
+            self.training_max['Gesamtpotenzial'] = pony_dict['Gesamtpotenzial']
+            self.ausbildung_max['Ausbildung'] = pony_dict['Ausbildung']
+            self.training_max['Gangarten'] = pony_dict['Gangarten']
+            self.gangarten_max['Gangarten'] = pony_dict['Gangarten']
+            self.training_max['Dressur'] = pony_dict['Dressur']
+            self.dressur_max['Dressur'] = pony_dict['Dressur']
+            self.training_max['Springen'] = pony_dict['Springen']
+            self.springen_max['Springen'] = pony_dict['Springen']
+            self.training_max['Military'] = pony_dict['Military']
+            self.military_max['Military'] = pony_dict['Military']
+            self.training_max['Western'] = pony_dict['Western']
+            self.western_max['Western'] = pony_dict['Western']
+            self.training_max['Rennen'] = pony_dict['Rennen']
+            self.rennen_max['Rennen'] = pony_dict['Rennen']
+            self.training_max['Fahren'] = pony_dict['Fahren']
+            self.fahren_max['Fahren'] = pony_dict['Fahren']
+            if 'Preis' in pony_dict.keys():
+                self.facts_values['verkauf'] = pony_dict['Preis']
+                self.facts_values['deckstation'] = pony_dict['Preis']
+        
+
+class ListParser(HTMLParser):
+    def __init__(self):
+        super(ListParser, self).__init__()
+        self.in_main = False
+        self.main_tag_counter = 0
+        self.images_done = False
+
+        self.in_a = False
+
+        self.in_price = False
+
+        self.in_values = False
+        self.values_tag_counter = 0
+        self.values_checkpoint = 0
+
+        self.block_types = ['row']
+
+        self.block = 'none'
+        self.tag_counter = 0
+
+        self.ponies = [dict()]
+        self.images = [[]]
+
+    def is_in_block(self):
+        return self.block != 'none'
+
+    def exit_block(self):
+        self.block = 'none'
+
+    def enter_block(self, block_type):
+        if block_type in self.block_types:
+            self.block = block_type
+            self.tag_counter = 1
+        else:
+            print("Exception: Invalid block type")
+            raise Exception()
+
+    def handle_starttag(self, tag, attrs):
+        if not self.in_main and tag == 'div' and ('class', 'main') in attrs:
+            self.in_main = True
+            self.main_tag_counter = 1
+        elif self.in_main and tag == 'div':
+            self.main_tag_counter += 1
+
+        if self.in_main and not self.is_in_block() and tag == 'div' and ('class', 'row') in attrs:
+            self.enter_block('row')
+            self.images_done = False
+            if len(self.ponies[-1]) > 0:
+                self.ponies.append(dict())
+            if len(self.images[-1]) > 0:
+                self.images.append([])
+        elif self.is_in_block():
+            if tag == 'div':
+                self.tag_counter += 1
+
+        if self.block == 'row':
+            if tag == 'a':
+                self.in_a = True
+            elif self.in_a and tag == 'img':
+                for tup in attrs:
+                    if tup[0] == 'src' or tup[0] == 'data-src':
+                        self.images[-1].append(tup[1])
+                        break
+            elif self.images_done:
+                if not self.in_values and tag == 'div':
+                    self.in_values = True
+                    self.values_tag_counter = 1
+                elif self.in_values and tag == 'div':
+                    self.values_tag_counter += 1
+                    if ('class', 'row') in attrs and 'Preis' not in self.ponies[-1].keys():
+                        self.in_price = True
+                elif self.in_values and tag == 'button' and not ('class', 'tooltipover') in attrs and 'Preis' not in self.ponies[-1].keys():
+                    self.in_price = True
+                elif self.in_values and tag == 'i' and 'Geschlecht' not in self.ponies[-1].keys():
+                    for tup in attrs:
+                        if tup[0] == 'title':
+                            self.ponies[-1]['Geschlecht'] = tup[1]
+                            break
+
+
+    def handle_endtag(self, tag):
+        # =========================== Decrementing tag counter and exiting block ================================================
+        if self.is_in_block():
+            if tag == 'div':
+                self.tag_counter -= 1
+                if self.tag_counter <= 0:
+                    self.exit_block()
+        if self.in_main:
+            if tag == 'div':
+                self.main_tag_counter -= 1
+                if self.main_tag_counter <= 0:
+                    self.in_main = False
+        if self.in_a and tag == 'a':
+            self.in_a = False
+            self.images_done = True
+        if self.in_values and tag == 'div':
+            self.values_tag_counter -= 1
+            if self.values_tag_counter <= 0:
+                self.in_values = False
+
+    def handle_data(self, data):
+        if self.in_values:
+            keys = self.ponies[-1].keys()
+            strp = data.strip()
+            if len(strp) > 0:
+                if self.in_price:
+                    self.ponies[-1]['Preis'] = strp
+                    self.in_price = False
+                else:
+                    if 'Name' not in keys:
+                        self.ponies[-1]['Name'] = strp
+                    elif 'Rasse' not in keys:
+                        self.ponies[-1]['Rasse'] = strp
+                    elif 'Alter' not in keys:
+                        if len(strp) > 0:
+                            if 'Gesundheit' in strp:  # Ponies that are below 6 month show up in allhorses, but have no age
+                                self.ponies[-1]['Alter'] = '1 Monat'
+                                if 'Gesundheit' not in keys:
+                                    splt = strp.split()
+                                    if 'Gesundheit' in splt[0]:
+                                        self.ponies[-1]['Gesundheit'] = int(splt[1])
+                            else:
+                                self.ponies[-1]['Alter'] = strp
+                    elif 'Gesundheit' not in keys:
+                        splt = strp.split()
+                        if 'Gesundheit' in splt[0]:
+                            self.ponies[-1]['Gesundheit'] = int(splt[1])
+                    elif 'Charakter' not in keys:
+                        splt = strp.split()
+                        if 'Charakter' in splt[0]:
+                            self.ponies[-1]['Charakter'] = int(splt[1])
+                    elif 'Exterieur' not in keys:
+                        splt = strp.split()
+                        if 'Exterieur' in splt[0]:
+                            self.ponies[-1]['Exterieur'] = int(splt[1])
+                    elif 'Fellfarbe' not in keys:
+                        self.ponies[-1]['Fellfarbe'] = strp
+                    # third column
+                    elif 'Gesamtpotenzial' not in keys:
+                        splt = strp.split()
+                        if 'Gesamtpotenzial' in splt[0]:
+                            self.ponies[-1]['Gesamtpotenzial'] = int(splt[1])
+                    elif 'Ausbildung' not in keys:
+                        splt = strp.split()
+                        if 'Ausbildung' in splt[0]:
+                            self.ponies[-1]['Ausbildung'] = int(splt[1])
+                    elif 'Gangarten' not in keys:
+                        splt = strp.split()
+                        if 'Gangarten' in splt[0]:
+                            self.ponies[-1]['Gangarten'] = int(splt[1])
+                    elif 'Dressur' not in keys:
+                        splt = strp.split()
+                        if 'Dressur' in splt[0]:
+                            self.ponies[-1]['Dressur'] = int(splt[1])
+                    elif 'Springen' not in keys:
+                        splt = strp.split()
+                        if 'Springen' in splt[0]:
+                            self.ponies[-1]['Springen'] = int(splt[1])
+                    elif 'Military' not in keys:
+                        splt = strp.split()
+                        if 'Military' in splt[0]:
+                            self.ponies[-1]['Military'] = int(splt[1])
+                    elif 'Western' not in keys:
+                        splt = strp.split()
+                        if 'Western' in splt[0]:
+                            self.ponies[-1]['Western'] = int(splt[1])
+                    elif 'Rennen' not in keys:
+                        splt = strp.split()
+                        if 'Rennen' in splt[0]:
+                            self.ponies[-1]['Rennen'] = int(splt[1])
+                    elif 'Fahren' not in keys:
+                        splt = strp.split()
+                        if 'Fahren' in splt[0]:
+                            self.ponies[-1]['Fahren'] = int(splt[1])
+
+
 class PonyExtractor:
     def __init__(self):
         self.parser = MyHTMLParser()
@@ -512,6 +755,10 @@ class PonyExtractor:
         self.last_login_time = None
         self.insidepage_length_threshold = 30000
         self.loginpage_length_threshold = 10000
+
+        self.images = []
+        self.ponies = []
+        self.empty_img = Image.new('RGBA', (428, 251), (0, 0, 0, 0))
 
     def __del__(self):
         if self.session is not None:
@@ -604,8 +851,10 @@ class PonyExtractor:
             text = text[index:]
         return horse_ids
 
-
-    def browse_horses(self, type=0, race='Alle', sort_by='gp', pages=3):
+    def browse_horses(self, type=0, race='Alle', sort_by='gp', pages=3, quick=False):
+        if quick:
+            self.images = []
+            self.ponies = []
         if type == 1:
             url = self.base_url + 'stud.php'
         elif type == 0:
@@ -636,6 +885,12 @@ class PonyExtractor:
                 if len(text) < self.insidepage_length_threshold:
                     self.log.append('Retrieving {} failed.'.format(url))
                     return False
+
+            if quick:
+                list_parser = ListParser()
+                list_parser.feed(text)
+                self.images.extend(list_parser.images)
+                self.ponies.extend(list_parser.ponies)
 
             search_string = 'class="main"'
             if not search_string in text:
@@ -754,13 +1009,22 @@ class PonyExtractor:
             self.cache_exists = False
         return True
 
-    def request_pony_images(self, cached=True):
-        Path('.cache/{}/'.format(self.pony_id)).mkdir(parents=True, exist_ok=True)
-        write_file = Path('.cache/{}/{}_image.png'.format(self.pony_id, self.pony_id))
+    def request_pony_images(self, cached=True, urls=None, pony_id=None):
+        if urls is not None:
+            if pony_id is None:
+                self.log.append('Image URLS were given but no corresponding pony id when calling request_pony_images')
+                return False
+            image_urls = urls
+            pid = pony_id
+        else:
+            image_urls = self.parser.image_urls
+            pid = self.pony_id
+        Path('.cache/{}/'.format(pid)).mkdir(parents=True, exist_ok=True)
+        write_file = Path('.cache/{}/{}_image.png'.format(pid, pid))
         if not (write_file.exists() and cached):
             if not self._login_if_required():
                 return False
-            for ind, url in enumerate(self.parser.image_urls):
+            for ind, url in enumerate(image_urls):
                 full_url = self.base_url + url
                 try:
                     ri = self.session.get(full_url, headers=self.headers)
@@ -775,15 +1039,16 @@ class PonyExtractor:
                     self.log.append('Retrieving image at {} failed. Image file too short or not an image.'.format(full_url))
                     # return False
                 else:
-                    with open('.cache/{}/img{:02d}.png'.format(self.pony_id, ind), 'wb') as out_file:
+                    with open('.cache/{}/img{:02d}.png'.format(pid, ind), 'wb') as out_file:
                         out_file.write(ri.content)
                 del ri
 
         if write_file.exists():
             write_file.unlink()   # delete file so it is not in the mixture. In the end it is overwritten anyway
-        imlist = sorted(Path('.cache/{}/'.format(self.pony_id)).glob('*.png'))
+        imlist = sorted(Path('.cache/{}/'.format(pid)).glob('*.png'))
         if len(imlist) == 0:
-            return False
+            self.pony_image = self.empty_img
+            return True
         last_im = None
         for im in imlist:
             try:
