@@ -4,7 +4,7 @@ Tool zur Verwaltung von Pferden beim Browsergame noblehorsechampion.
 
 ## Funktionen
 
-![main_window](https://beachomize.de/ponyspiel_image/main_with_numbers3.jpg)
+![main_window](https://beachomize.de/ponyspiel_image/main_with_numbers4.jpg)
 
 ### 1 - Login
 
@@ -136,7 +136,10 @@ Durchsuchen von Pferdehandel, Deckstation oder Pferderegister (auswählbar unter
 
 Es wird die unter **e** ausgewählte Anzahl an Seiten ausgewertet. Die Auflistung wird mithilfe der _listing_-Dateien, die auch für Funktion 8 verwendet werden, erstellt (auswählbar unter **d**).
 
-Zusätzlich wird der Preis angezeigt.
+Zusätzlich wird bei Pferdehandel und Deckstation der Preis angezeigt.
+
+Die Schnelloption **f** beschleunigt die Suche stark, allerdings können dann nur noch die Werte angezeigt werden, die im Web auf der Liste selbst angezeigt werden (Name, Alter, Geschlecht, Fellfarbe, Preis, Gesundheit, Charakter, Exterieur, Gesamtpotenzial, Ausbildung, Gangarten, Dressur, Springen, Military, Western, Rennen, Fahren).
+Ohne die Schnelloption wird die Seite jedes Pferdes einzeln aufgerufen - so können Einzelwerte wie z.B. Tölt, Rennpass abgerufen werden. Diese Werte werden bei Verwendung der Schnelloption automatisch auf 0 gesetzt.
 
 ### 10 - Cache löschen
 
