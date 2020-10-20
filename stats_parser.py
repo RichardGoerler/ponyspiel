@@ -466,6 +466,12 @@ class FakeParser(MyHTMLParser):
             self.facts_values[head] = 0
         for head in self.details_headings:
             self.details_values[head] = 0
+        for head in self.gesundheit_headings:
+            self.gesundheit_values[head] = 0
+        for head in self.charakter_headings:
+            self.charakter_values[head] = 0
+        for head in self.exterieur_headings:
+            self.exterieur_values[head] = 0
         for head in self.training_headings:
             self.training_max[head] = 0
             self.training_values[head] = 0
@@ -502,8 +508,11 @@ class FakeParser(MyHTMLParser):
             self.facts_values['Alter'] = pony_dict['Alter']
             self.facts_values['Fellfarbe'] = pony_dict['Fellfarbe']
             self.details_values['Gesundheit'] = pony_dict['Gesundheit']
+            self.gesundheit_values['Gesundheit'] = pony_dict['Gesundheit']
             self.details_values['Charakter'] = pony_dict['Charakter']
+            self.charakter_values['Charakter'] = pony_dict['Charakter']
             self.details_values['Exterieur'] = pony_dict['Exterieur']
+            self.exterieur_values['Exterieur'] = pony_dict['Exterieur']
             self.training_max['Ausbildung'] = pony_dict['Ausbildung']
             self.training_max['Gesamtpotenzial'] = pony_dict['Gesamtpotenzial']
             self.ausbildung_max['Ausbildung'] = pony_dict['Ausbildung']
