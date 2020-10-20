@@ -548,7 +548,7 @@ class ListParser(HTMLParser):
 
         self.in_values = False
         self.values_tag_counter = 0
-        self.values_checkpoint = 0
+        self.values_column_counter = 0
 
         self.block_types = ['row']
 
@@ -582,6 +582,7 @@ class ListParser(HTMLParser):
         if self.in_main and not self.is_in_block() and tag == 'div' and ('class', 'row') in attrs:
             self.enter_block('row')
             self.images_done = False
+            self.values_column_counter = 0
             if len(self.ponies[-1]) > 0:
                 self.ponies.append(dict())
             if len(self.images[-1]) > 0:
@@ -602,6 +603,7 @@ class ListParser(HTMLParser):
                 if not self.in_values and tag == 'div':
                     self.in_values = True
                     self.values_tag_counter = 1
+                    self.values_column_counter += 1
                 elif self.in_values and tag == 'div':
                     self.values_tag_counter += 1
                     if ('class', 'row') in attrs and 'Preis' not in self.ponies[-1].keys():
@@ -640,40 +642,43 @@ class ListParser(HTMLParser):
             keys = self.ponies[-1].keys()
             strp = data.strip()
             if len(strp) > 0:
-                if self.in_price:
-                    self.ponies[-1]['Preis'] = strp
-                    self.in_price = False
-                else:
-                    if 'Name' not in keys:
-                        self.ponies[-1]['Name'] = strp
-                    elif 'Rasse' not in keys:
-                        self.ponies[-1]['Rasse'] = strp
-                    elif 'Alter' not in keys:
-                        if len(strp) > 0:
-                            if 'Gesundheit' in strp:  # Ponies that are below 6 month show up in allhorses, but have no age
-                                self.ponies[-1]['Alter'] = '1 Monat'
-                                if 'Gesundheit' not in keys:
-                                    splt = strp.split()
-                                    if 'Gesundheit' in splt[0]:
-                                        self.ponies[-1]['Gesundheit'] = int(splt[1])
-                            else:
-                                self.ponies[-1]['Alter'] = strp
-                    elif 'Gesundheit' not in keys:
-                        splt = strp.split()
-                        if 'Gesundheit' in splt[0]:
-                            self.ponies[-1]['Gesundheit'] = int(splt[1])
-                    elif 'Charakter' not in keys:
-                        splt = strp.split()
-                        if 'Charakter' in splt[0]:
-                            self.ponies[-1]['Charakter'] = int(splt[1])
-                    elif 'Exterieur' not in keys:
-                        splt = strp.split()
-                        if 'Exterieur' in splt[0]:
-                            self.ponies[-1]['Exterieur'] = int(splt[1])
-                    elif 'Fellfarbe' not in keys:
-                        self.ponies[-1]['Fellfarbe'] = strp
+                # second column
+                if self.values_column_counter == 1:
+                    if self.in_price:
+                        self.ponies[-1]['Preis'] = strp
+                        self.in_price = False
+                    else:
+                        if 'Name' not in keys:
+                            self.ponies[-1]['Name'] = strp
+                        elif 'Rasse' not in keys:
+                            self.ponies[-1]['Rasse'] = strp
+                        elif 'Alter' not in keys:
+                            if len(strp) > 0:
+                                if 'Gesundheit' in strp:  # Ponies that are below 6 month show up in allhorses, but have no age
+                                    self.ponies[-1]['Alter'] = '1 Monat'
+                                    if 'Gesundheit' not in keys:
+                                        splt = strp.split()
+                                        if 'Gesundheit' in splt[0]:
+                                            self.ponies[-1]['Gesundheit'] = int(splt[1])
+                                else:
+                                    self.ponies[-1]['Alter'] = strp
+                        elif 'Gesundheit' not in keys:
+                            splt = strp.split()
+                            if 'Gesundheit' in splt[0]:
+                                self.ponies[-1]['Gesundheit'] = int(splt[1])
+                        elif 'Charakter' not in keys:
+                            splt = strp.split()
+                            if 'Charakter' in splt[0]:
+                                self.ponies[-1]['Charakter'] = int(splt[1])
+                        elif 'Exterieur' not in keys:
+                            splt = strp.split()
+                            if 'Exterieur' in splt[0]:
+                                self.ponies[-1]['Exterieur'] = int(splt[1])
+                        elif 'Fellfarbe' not in keys:
+                            self.ponies[-1]['Fellfarbe'] = strp
+                elif self.values_column_counter == 2:
                     # third column
-                    elif 'Gesamtpotenzial' not in keys:
+                    if 'Gesamtpotenzial' not in keys:
                         splt = strp.split()
                         if 'Gesamtpotenzial' in splt[0]:
                             self.ponies[-1]['Gesamtpotenzial'] = int(splt[1])
@@ -709,7 +714,6 @@ class ListParser(HTMLParser):
                         splt = strp.split()
                         if 'Fahren' in splt[0]:
                             self.ponies[-1]['Fahren'] = int(splt[1])
-
 
 class PonyExtractor:
     def __init__(self):
