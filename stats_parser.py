@@ -1254,6 +1254,10 @@ class PonyExtractor:
             formdata = {'participate[{}]'.format(self.beauty_parser.value): ''}
             try:
                 pos = self.session.post(self.beauty_url, params=query_dict, data=formdata, headers=self.headers)
+            except requests.exceptions.TooManyRedirects:
+                self.log.append('Registering for beauty contest failed for {}. Too many redirects.'.format(self.beauty_url))
+                self.del_pony_cache(pony_id)
+                return False
             except:
                 traceback.print_exc()
                 self.log.append('Beauty registration failed. Unexpected error. Exception was printed.')
