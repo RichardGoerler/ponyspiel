@@ -7,5 +7,6 @@ Ex: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
 Exterieur
 Gangarten: Tölt, Rennpass
 Rennen: Töltrennen, Passrennen
+Gänge: Tölt, Rennpass, Töltrennen, Passrennen
 Charakter
 Gesundheit: Zufriedenheit, Robustheit
