@@ -24,6 +24,8 @@ import html_clipboard
 import dialog
 import build_count
 
+HALLOWEEN = False
+
 class ProgressWindow(tk.Toplevel):
     def __init__(self, parent, gui, title=lang.PROGRESS, steps=100, initial_text=''):
 
@@ -711,6 +713,34 @@ def poll_function(id):
             print(extractor.log[-1])
         time.sleep(60)
 
+def halloween_poll():
+    extractor = stats_parser.PonyExtractor()
+    done = False
+    found_counter = 1
+
+    URLS = ['https://noblehorsechampion.com/inside/index.php',
+            'https://noblehorsechampion.com/inside/contests.php',
+            'https://noblehorsechampion.com/inside/estate.php',
+            'https://noblehorsechampion.com/inside/competitions.php',
+            'https://noblehorsechampion.com/inside/wiki.php']
+    url_index = 0
+
+    while not done:
+        url = URLS[url_index]
+        # print('Checking URL {}'.format(url))
+        text = extractor.open_page_in_browser(url)
+        if text:
+            if 'Belohnungen einzutauschen' in text:
+                print('Halloween-Item gefunden nach {} Aufrufen'.format(found_counter))
+                found_counter = 1
+                # Gefunden!
+                time.sleep(61)
+            else:
+                found_counter += 1
+                time.sleep(1)
+        url_index += 1
+        url_index %= len(URLS)
+
 
 class PonyGUI:
     def __init__(self):
@@ -731,6 +761,8 @@ class PonyGUI:
         self.telegram_id = ''
         self.poll_ids = []
         self.poll_processes = []
+        self.halloween_process = None
+        # self.chromedriver_process = None
         self.bg = "#EDEEF3"
         self.screenwidth = self.root.winfo_screenwidth()
         self.screenheight = self.root.winfo_screenheight()
@@ -987,6 +1019,8 @@ class PonyGUI:
         self.cache_frame.grid(row=8, column=0, padx=self.default_size, pady=self.default_size)
 
         tk.Label(self.cache_frame, text=lang.CACHE_LABEL, font=self.bold_font, bg=self.bg).grid(row=0, column=1, padx=int(self.default_size / 2))
+        self.halloween_button = tk.Button(self.cache_frame, text='Halloween Start', command=self.halloween_toggle, bg=self.bg)
+        self.halloween_button.grid(row=1, column=3, padx=self.default_size)
         self.all_cache_button = tk.Button(self.cache_frame, text=lang.CACHE_ALL_BUTTON, command=lambda: self.del_cache('all'), bg=self.bg)
         self.all_cache_button.grid(row=1, column=0, padx=int(self.default_size / 2))
         self.not_owned_cache_button = tk.Button(self.cache_frame, text=lang.CACHE_NOT_OWNED_BUTTON, command=lambda: self.del_cache('not_owned'), bg=self.bg)
@@ -1145,6 +1179,22 @@ class PonyGUI:
                 messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                 return
 
+    def halloween_toggle(self):
+        if self.halloween_process is None:
+            # driver_path = Path('./chromedriver.exe').absolute()
+            # self.chromedriver_process = subprocess.Popen([str(driver_path)], startupinfo=subprocess.CREATE_NEW_CONSOLE)
+
+            self.halloween_process = multiprocessing.Process(target=halloween_poll)
+            self.halloween_process.start()
+
+            self.halloween_button['text'] = 'Halloween Stopp'
+        else:
+            self.halloween_process.terminate()
+            self.halloween_process = None
+            # if self.chromedriver_process is not None:
+            #     self.chromedriver_process.terminate()
+            self.halloween_button['text'] = 'Halloween Start'
+
     def start_poll_on_boot(self):
         poll_file = Path('./avail_poll')
         if poll_file.is_file():
@@ -1159,6 +1209,13 @@ class PonyGUI:
             else:
                 self.poll_checkbutton.configure(font=self.small_font)
 
+        if HALLOWEEN:
+            # driver_path = Path('./chromedriver.exe').absolute()
+            # self.chromedriver_process = subprocess.Popen([str(driver_path)], startupinfo=subprocess.CREATE_NEW_CONSOLE)
+
+            self.halloween_process = multiprocessing.Process(target=halloween_poll)
+            self.halloween_process.start()
+
     def _update_poll_file(self):
         poll_file = Path('./avail_poll')
         if len(self.poll_ids) > 0:
@@ -1169,6 +1226,10 @@ class PonyGUI:
             poll_file.unlink()
 
     def on_closing(self):
+        if self.halloween_process is not None:
+            self.halloween_process.terminate()
+        # if self.chromedriver_process is not None:
+        #     self.chromedriver_process.terminate()
         running_proc_indices = [i for i in range(len(self.poll_processes)) if self.poll_processes[i].is_alive()]
         self.poll_processes = [self.poll_processes[i] for i in running_proc_indices]
         self.poll_ids = [self.poll_ids[i] for i in running_proc_indices]

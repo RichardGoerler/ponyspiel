@@ -7,6 +7,7 @@ import csv
 import shutil
 import traceback
 from datetime import datetime
+from selenium import webdriver
 
 def add_margin(pil_img, top, right, bottom, left, color):
     width, height = pil_img.size
@@ -719,6 +720,7 @@ class PonyExtractor:
     def __init__(self):
         self.parser = MyHTMLParser()
         self.beauty_parser = BeautyParser()
+        self.driver = None
         self.pony_image = None
         self.data = ''
         self.session = None
@@ -818,6 +820,48 @@ class PonyExtractor:
 
             self.last_login_time = datetime.now()
         return True
+
+    def get_page_content(self, url):
+        if not self._login_if_required():
+            return False
+        r1 = self.session.get(url, headers=self.headers)
+        return r1.text
+
+    def _login_in_browser(self):
+        if self.driver is not None:
+            return True
+        if len(self.payload['email']) == 0:
+            try:
+                with open('login', 'r') as f:
+                    self.payload['email'] = f.readline().strip()
+                    self.payload['password'] = f.readline().strip()
+                    tel_id = f.readline().strip()
+                    self.telegram_id = tel_id
+            except IOError:
+                self.log.append('Login at {} failed. Email/Password combination wrong?'.format(self.post_login_url))
+                return False
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument("--headless")
+        driver_path = Path('./chromedriver.exe').absolute()
+        self.driver = webdriver.Chrome(str(driver_path), chrome_options=chrome_options)
+        # self.driver = webdriver.Chrome()
+        self.driver.get(self.post_login_url)
+        # assert "noblehorsechampion" in driver.title
+
+        username = self.driver.find_element_by_name("email")
+        username.clear()
+        username.send_keys(self.payload['email'])
+
+        password = self.driver.find_element_by_name("password")
+        password.clear()
+        password.send_keys(self.payload['password'])
+
+        self.driver.find_element_by_name("login").click()
+
+    def open_page_in_browser(self, url):
+        if self._login_in_browser():
+            self.driver.get(url)
+        return self.driver.page_source
 
     def get_own_ponies(self):
         if not self._login_if_required():
