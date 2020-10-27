@@ -713,33 +713,35 @@ def poll_function(id):
             print(extractor.log[-1])
         time.sleep(60)
 
+
 def halloween_poll():
-    extractor = stats_parser.PonyExtractor()
-    done = False
-    found_counter = 1
+    with stats_parser.PonyExtractor() as extractor:
+    # extractor = stats_parser.PonyExtractor()
+        done = False
+        found_counter = 1
 
-    URLS = ['https://noblehorsechampion.com/inside/index.php',
-            'https://noblehorsechampion.com/inside/contests.php',
-            'https://noblehorsechampion.com/inside/estate.php',
-            'https://noblehorsechampion.com/inside/competitions.php',
-            'https://noblehorsechampion.com/inside/wiki.php']
-    url_index = 0
+        URLS = ['https://noblehorsechampion.com/inside/index.php',
+                'https://noblehorsechampion.com/inside/contests.php',
+                'https://noblehorsechampion.com/inside/estate.php',
+                'https://noblehorsechampion.com/inside/competitions.php',
+                'https://noblehorsechampion.com/inside/wiki.php']
+        url_index = 0
 
-    while not done:
-        url = URLS[url_index]
-        # print('Checking URL {}'.format(url))
-        text = extractor.open_page_in_browser(url)
-        if text:
-            if 'Belohnungen einzutauschen' in text:
-                print('Halloween-Item gefunden nach {} Aufrufen'.format(found_counter))
-                found_counter = 1
-                # Gefunden!
-                time.sleep(61)
-            else:
-                found_counter += 1
-                time.sleep(1)
-        url_index += 1
-        url_index %= len(URLS)
+        while not done:
+            url = URLS[url_index]
+            # print('Checking URL {}'.format(url))
+            text = extractor.open_page_in_browser(url)
+            if text:
+                if 'Belohnungen einzutauschen' in text:
+                    print('Halloween-Item gefunden nach {} Aufrufen'.format(found_counter))
+                    found_counter = 1
+                    # Gefunden!
+                    time.sleep(61)
+                else:
+                    found_counter += 1
+                    time.sleep(3)
+            url_index += 1
+            url_index %= len(URLS)
 
 
 class PonyGUI:
