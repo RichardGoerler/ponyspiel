@@ -778,6 +778,17 @@ class PonyExtractor:
     def __del__(self):
         if self.session is not None:
             self.session.close()
+        if self.driver is not None:
+            self.driver.quit()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.session is not None:
+            self.session.close()
+        if self.driver is not None:
+            self.driver.quit()
 
     def _login_if_required(self):
         # check whether cookie has expired
