@@ -739,7 +739,7 @@ def halloween_poll():
                     time.sleep(61)
                 else:
                     found_counter += 1
-                    time.sleep(3)
+                    time.sleep(1)
             url_index += 1
             url_index %= len(URLS)
 
@@ -1235,7 +1235,7 @@ class PonyGUI:
         running_proc_indices = [i for i in range(len(self.poll_processes)) if self.poll_processes[i].is_alive()]
         self.poll_processes = [self.poll_processes[i] for i in running_proc_indices]
         self.poll_ids = [self.poll_ids[i] for i in running_proc_indices]
-        self._update_poll_file()
+        # self._update_poll_file()    # deactivated to keep ponies in the file because they are supposed to be used multiple times
         if len(self.poll_ids) > 0:
             if messagebox.askokcancel(lang.QUIT_HEADING, lang.QUIT_TEXT):
                 for p in self.poll_processes:
