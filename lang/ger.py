@@ -39,6 +39,7 @@ LOAD_OWN_BUTTON = 'ermitteln'
 TRAIN_OWN_BUTTON = 'trainieren'
 CARE_OWN_BUTTON = 'verpflegen'
 BEAUTY_OWN_BUTTON = 'Schönheit'
+DECKSTATION_LOGIN_BUTTON = 'Deckstation'
 TRAIN_INDIVIDUAL_BUTTON = 'Training einzeln'
 CARE_INDIVIDUAL_BUTTON = 'Pflege einzeln'
 BEAUTY_INDIVIDUAL_BUTTON = 'Schönheit einzeln'
@@ -96,3 +97,6 @@ POLL_CANCEL_TEXT = "Wirklich alle Verfügbarkeits-Benachrichtigungen ausschalten
 
 REDIRECTS_WARNING_TITLE = 'Ponies nicht aufrufbar'
 REDIRECTS_WARNING_MESSAGE = 'Einige Ponies sind nicht aufrufbar. Sie tauchen nicht in der Liste auf. Im Folgenden sind die zugehörigen IDs aufgelistet.'
+
+STUDFEE_LABEL = 'Decktaxe'
+STUDFEE_TITLE = 'Dextaxe eintragen'
