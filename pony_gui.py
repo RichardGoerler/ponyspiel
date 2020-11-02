@@ -96,12 +96,12 @@ class StudfeeWindow(dialog.Dialog):
         if self.stud_file.is_file():
             with open(self.stud_file, 'r') as f:
                 self.stud_lines = f.read().splitlines()
-        fee = 0
+        self.gui.stud_fee = 0
         del_ind = None
         for li, l in enumerate(self.stud_lines):
             spl = l.split()
             if int(spl[0]) == int(self.pony_id):
-                fee = int(spl[1])
+                self.gui.stud_fee = int(spl[1])
                 del_ind = li
                 break
         if del_ind is not None:
@@ -111,14 +111,13 @@ class StudfeeWindow(dialog.Dialog):
         tk.Label(master, bg=self.gui.bg, text=lang.STUDFEE_LABEL).grid(row=0, column=0, padx=int(self.gui.default_size/2))
         self.spin = tk.Spinbox(master, width=6, from_=0, to=999999, bg=self.gui.bg)
         self.spin.delete(0, "end")
-        self.spin.insert(0, fee)
+        self.spin.insert(0, self.gui.stud_fee)
         self.spin.grid(row=0, column=1, padx=int(self.gui.default_size/2))
 
     def header(self, master):
         pass
 
     def apply(self):
-        self.gui.stud_fee = int(self.spin.get())
         if self.gui.stud_fee > 0:
             self.stud_lines.append('{} {}'.format(self.pony_id, self.gui.stud_fee))
             with open(self.stud_file, 'w') as f:
