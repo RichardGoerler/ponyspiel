@@ -69,7 +69,6 @@ class ProgressWindow(tk.Toplevel):
             text = text.ljust(PAD_TO)
         return text
 
-
     def step(self, text=None):
         if text is not None:
             self.pb_text.configure(text=self.pad_str(text))
@@ -87,6 +86,45 @@ def argsort(seq):
     #http://stackoverflow.com/questions/3382352/equivalent-of-numpy-argsort-in-basic-python/3382369#3382369
     #by unutbu
     return sorted(range(len(seq)), key=seq.__getitem__)[::-1]
+
+
+class StudfeeWindow(dialog.Dialog):
+    def body(self, master):
+        self.pony_id = self.gui.stud_id
+        self.stud_file = Path('./studs')
+        self.stud_lines = []
+        if self.stud_file.is_file():
+            with open(self.stud_file, 'r') as f:
+                self.stud_lines = f.read().splitlines()
+        fee = 0
+        del_ind = None
+        for li, l in enumerate(self.stud_lines):
+            spl = l.split()
+            if int(spl[0]) == int(self.pony_id):
+                fee = int(spl[1])
+                del_ind = li
+                break
+        if del_ind is not None:
+            del self.stud_lines[del_ind]
+        if len(self.stud_lines) > 0 and len(self.stud_lines[-1]) < 4:
+            del self.stud_lines[-1]
+        tk.Label(master, bg=self.gui.bg, text=lang.STUDFEE_LABEL).grid(row=0, column=0, padx=int(self.gui.default_size/2))
+        self.spin = tk.Spinbox(master, width=6, from_=0, to=999999, bg=self.gui.bg)
+        self.spin.delete(0, "end")
+        self.spin.insert(0, fee)
+        self.spin.grid(row=0, column=1, padx=int(self.gui.default_size/2))
+
+    def header(self, master):
+        pass
+
+    def apply(self):
+        self.gui.stud_fee = int(self.spin.get())
+        if self.gui.stud_fee > 0:
+            self.stud_lines.append('{} {}'.format(self.pony_id, self.gui.stud_fee))
+            with open(self.stud_file, 'w') as f:
+                for l in self.stud_lines:
+                    f.write(str(l) + '\n')
+
 
 class ListingWindow(dialog.Dialog):
     def cancel(self, event=None):
@@ -114,6 +152,14 @@ class ListingWindow(dialog.Dialog):
         if beauty_file.is_file():
             with open(beauty_file, 'r') as f:
                 self.beauty_ids = f.read().split()
+
+        stud_file = Path('./studs')
+        stud_lines = []
+        if stud_file.is_file():
+            with open(stud_file, 'r') as f:
+                stud_lines = f.read().splitlines()
+        self.studs = [l.split()[0] for l in stud_lines]
+
 
         progressbar = ProgressWindow(self, self.gui, steps=len(all_ids)+3, initial_text=lang.PROGRESS_READING_CONFIG)
         self.MAXROWS = 25
@@ -275,6 +321,8 @@ class ListingWindow(dialog.Dialog):
                 object_row.append(tk.Label(self.table_frame, text=parser.name[:self.MAX_LEN_NAME], font=self.bol_font, bg=self.gui.bg, cursor="hand2"))
                 object_row[-1].bind("<Button-1>", lambda e, url=self.gui.extractor.base_url + 'horse.php?id={}'.format(id): webbrowser.open(url))
                 object_row[-1].bind("<Button-3>", lambda e, hid=id: self.mark_relatives(hid))
+                object_row[-1].bind("<Button-2>", lambda e, hid=id: self.enter_stud_fee(e, hid))
+                object_row[-1].configure(borderwidth=1 * int(id in self.studs), relief="solid")
                 table_row.append(parser.name)
                 table_row_sum.append(parser.name)
 
@@ -453,6 +501,22 @@ class ListingWindow(dialog.Dialog):
                                 result.append(comp_id)
                                 break
         return result
+
+    def enter_stud_fee(self, event, pid):
+        idx = self.gui.race_ids.index(pid)
+        age = self.data_table[idx][1]
+        pony_months = age.days
+        pony_years = pony_months // 12
+        if self.sex[idx] == 2 and pony_years >= 3:   # Hengst
+            self.gui.stud_id = pid
+            lab = event.widget
+            _ = StudfeeWindow(self, self.gui, lang.STUDFEE_TITLE)
+            if self.gui.stud_fee == 0:
+                if lab['borderwidth'] == 1:
+                    lab['borderwidth'] = 0
+            else:
+                if lab['borderwidth'] == 0:
+                    lab['borderwidth'] = 1
 
     def toggle_beauty(self, event, pid):
         lab = event.widget
@@ -764,6 +828,7 @@ class PonyGUI:
         self.poll_ids = []
         self.poll_processes = []
         self.halloween_process = None
+        self.stud_id = 0
         # self.chromedriver_process = None
         self.bg = "#EDEEF3"
         self.screenwidth = self.root.winfo_screenwidth()
@@ -949,19 +1014,22 @@ class PonyGUI:
         self.left_frame = tk.Frame(self.root, bg=self.bg)
         self.left_frame.grid(row=7, column=0)
 
-        tk.Label(self.left_frame, text=lang.OWN_AREA, font=self.bold_font, bg=self.bg).grid(row=0, column=0, padx=int(self.default_size / 2))
+        # tk.Label(self.left_frame, text=lang.OWN_AREA, font=self.bold_font, bg=self.bg).grid(row=0, column=0, padx=int(self.default_size / 2))
         self.own_button = tk.Button(self.left_frame, text=lang.LOAD_OWN_BUTTON, command=self.load_own_ponies, bg=self.bg)
-        self.own_button.grid(row=0, column=1, padx=int(self.default_size / 2))
+        self.own_button.grid(row=0, column=0, padx=int(self.default_size / 2))
         self.interactive_elements.append(self.own_button)
         self.care_all_button = tk.Button(self.left_frame, text=lang.CARE_OWN_BUTTON, command=self.care_all, bg=self.bg)
-        self.care_all_button.grid(row=0, column=2, padx=int(self.default_size / 2))
+        self.care_all_button.grid(row=0, column=1, padx=int(self.default_size / 2))
         self.interactive_elements.append(self.care_all_button)
         self.train_all_button = tk.Button(self.left_frame, text=lang.TRAIN_OWN_BUTTON, command=self.train_all, bg=self.bg)
-        self.train_all_button.grid(row=0, column=3, padx=int(self.default_size / 2))
+        self.train_all_button.grid(row=0, column=2, padx=int(self.default_size / 2))
         self.interactive_elements.append(self.train_all_button)
         self.beauty_all_button = tk.Button(self.left_frame, text=lang.BEAUTY_OWN_BUTTON, command=self.beauty_all, bg=self.bg)
-        self.beauty_all_button.grid(row=0, column=4, padx=int(self.default_size / 2))
+        self.beauty_all_button.grid(row=0, column=3, padx=int(self.default_size / 2))
         self.interactive_elements.append(self.beauty_all_button)
+        self.deckstation_login_all_button = tk.Button(self.left_frame, text=lang.DECKSTATION_LOGIN_BUTTON, command=self.deckstation_login_all, bg=self.bg)
+        self.deckstation_login_all_button.grid(row=0, column=4, padx=int(self.default_size / 2))
+        self.interactive_elements.append(self.deckstation_login_all_button)
 
         self.individual_frame = tk.Frame(self.root, bg=self.bg)
         self.individual_frame.grid(row=7, column=1, columnspan=2)
@@ -1062,6 +1130,38 @@ class PonyGUI:
                 _ = subprocess.Popen([str(updater_path)], startupinfo=subprocess.CREATE_NEW_CONSOLE).pid
                 return True
         return False
+
+    def deckstation_login_all(self):
+        too_many_redirects_ids = []
+        own_file = Path('./owned_ponies')
+        all_ids = []
+        if own_file.is_file():
+            with open(own_file, 'r') as f:
+                all_ids = f.read().split()
+        stud_lines = []
+        stud_file = Path('./studs')
+        if stud_file.is_file():
+            with open(stud_file, 'r') as f:
+                stud_lines = f.read().splitlines()
+        stud_ids = [l.split()[0] for l in stud_lines]
+        own_stud_lines = [stud_lines[i].split() for i, pid in enumerate(stud_ids) if pid in all_ids]
+        if len(own_stud_lines) > 0:
+            progressbar = ProgressWindow(self.root, self, title=lang.DECKSTATION_LOGIN_BUTTON, steps=len(own_stud_lines), initial_text=str(own_stud_lines[0][0]))
+            for pid, fee in own_stud_lines:
+                if not self.extractor.login_deckstation(pid, fee):
+                    if 'too many redirects' in self.extractor.log[-1].lower():
+                        too_many_redirects_ids.append(pid)
+                    else:
+                        messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+                        return
+                progressbar.step(str(pid))
+
+        if len(too_many_redirects_ids) > 0:
+            message = lang.REDIRECTS_WARNING_MESSAGE
+            for pid in too_many_redirects_ids:
+                message += ('\n' + str(pid))
+            messagebox.showwarning(title=lang.REDIRECTS_WARNING_TITLE, message=message)
+
 
     def beauty_all(self):
         too_many_redirects_ids = []

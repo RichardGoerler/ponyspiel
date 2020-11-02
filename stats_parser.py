@@ -617,7 +617,6 @@ class ListParser(HTMLParser):
                             self.ponies[-1]['Geschlecht'] = tup[1]
                             break
 
-
     def handle_endtag(self, tag):
         # =========================== Decrementing tag counter and exiting block ================================================
         if self.is_in_block():
@@ -716,10 +715,57 @@ class ListParser(HTMLParser):
                         if 'Fahren' in splt[0]:
                             self.ponies[-1]['Fahren'] = int(splt[1])
 
+
+class DeckstationLoginParser(HTMLParser):
+    def __init__(self):
+        super(DeckstationLoginParser, self).__init__()
+        self.in_main = False
+        self.in_h2 = False
+        self.page_title = ''
+        self.current_fee = ''
+        self.textarea_type = None
+        self.short_description = ''
+        self.notes = ''
+        self.h2 = None
+
+    def handle_starttag(self, tag, attrs):
+        if not self.in_main and tag == 'div':
+            if ('class', 'main') in attrs:
+                self.in_main = True
+        elif self.in_main:
+            if tag == 'h2' and self.h2 is None:
+                self.in_h2 = True
+            elif tag == 'input' and ('name', 'studfee'):
+                for (t, v) in attrs:
+                    if t == 'value':
+                        self.current_fee = v
+            elif tag == 'textarea':
+                if ('name', 'newshort') in attrs:
+                    self.lasttag = 'newshort'
+                if ('name', 'newnotes') in attrs:
+                    self.lasttag = 'newnotes'
+
+    def handle_endtag(self, tag):
+        if self.in_main:
+            if tag == 'textarea' and self.lasttag is not None:
+                self.lasttag = None
+            elif tag == 'h2':
+                self.in_h2 = False
+
+    def handle_data(self, data):
+        if self.in_h2:
+            self.page_title = data
+        if self.lasttag == 'newshort':
+            self.short_description = str(data)
+        elif self.lasttag == 'newnotes':
+            self.notes = str(data)
+
+
 class PonyExtractor:
     def __init__(self):
         self.parser = MyHTMLParser()
         self.beauty_parser = BeautyParser()
+        self.deckstation_login_parser = DeckstationLoginParser()
         self.driver = None
         self.pony_image = None
         self.data = ''
@@ -729,6 +775,7 @@ class PonyExtractor:
         self.organize_url_base = 'https://noblehorsechampion.com/inside/organizehorses.php?id={}'
         self.base_url = 'https://noblehorsechampion.com/inside/'
         self.train_post_url = 'https://noblehorsechampion.com/inside/inc/horses/training/training.php'
+        self.deckstation_login_url = 'https://noblehorsechampion.com/inside/loginstud.php?id={}'
         self.beauty_url = 'https://noblehorsechampion.com/inside/loginbeauty.php'
         self.payload = {'email': '', 'password': '', 'login': ''}
         self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36'}
@@ -1284,6 +1331,42 @@ class PonyExtractor:
                 for qnum in query_numbers:
                     query_dict = {'id': pony_id, query_param: qnum}
                     resp = self.session.get(self.base_url + 'inc/horses/care_php/{}.php'.format(query_page), params=query_dict, headers=self.headers)
+        return True
+
+    def login_deckstation(self, pony_id, fee):
+        if not self._login_if_required():
+            return False
+        deckstation_login_payload = {'studfee': fee, 'newshort': '', 'newnotes': ''}
+        url = self.deckstation_login_url.format(pony_id)
+        try:
+            r = self.session.get(url, headers=self.headers)
+        except requests.exceptions.TooManyRedirects:
+            self.log.append('Retrieving deckstation login page at {} failed. Too many redirects.'.format(url))
+            return False
+        except Exception:
+            traceback.print_exc()
+            self.log.append('Retrieving deckstation login page at {} failed. Unexpected error. Exception was printed.'.format(url))
+            return False
+        self.deckstation_login_parser.feed(r.text)
+        lowertitle = self.deckstation_login_parser.page_title.lower()
+        if 'deckstation' in lowertitle:    # If deckstation login is not possible, get redirects to pony page. So we check whether Deckstation is in Page title
+            if len(self.deckstation_login_parser.current_fee) > 0 and int(self.deckstation_login_parser.current_fee) == int(fee):
+                return True
+            deckstation_login_payload['newshort'] = self.deckstation_login_parser.short_description
+            deckstation_login_payload['newnotes'] = self.deckstation_login_parser.notes
+            if 'verwalten' in lowertitle:
+                deckstation_login_payload['changestudfee'] = ''    # Stud fee change
+            else:
+                deckstation_login_payload['checkin'] = ''          # Stud fee new
+            try:
+                pos = self.session.post(url, data=deckstation_login_payload, headers=self.headers)
+            except requests.exceptions.TooManyRedirects:
+                self.log.append('Deckstation login failed for {}. Too many redirects.'.format(url))
+                return False
+            except:
+                traceback.print_exc()
+                self.log.append('Deckstation login failed. Unexpected error. Exception was printed.')
+                return False
         return True
 
     def login_beauty(self, pony_id):
