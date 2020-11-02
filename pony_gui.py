@@ -118,11 +118,12 @@ class StudfeeWindow(dialog.Dialog):
         pass
 
     def apply(self):
+        self.gui.stud_fee = int(self.spin.get())
         if self.gui.stud_fee > 0:
             self.stud_lines.append('{} {}'.format(self.pony_id, self.gui.stud_fee))
-            with open(self.stud_file, 'w') as f:
-                for l in self.stud_lines:
-                    f.write(str(l) + '\n')
+        with open(self.stud_file, 'w') as f:
+            for l in self.stud_lines:
+                f.write(str(l) + '\n')
 
 
 class ListingWindow(dialog.Dialog):
