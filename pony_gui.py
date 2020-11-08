@@ -252,12 +252,18 @@ class ListingWindow(dialog.Dialog):
         self.table_frame = tk.Frame(master, bg=self.gui.bg)
         self.table_frame.grid(row=1, column=0, padx=self.def_size)
         self.header_objects = [tk.Button(self.table_frame, text=lang.LISTING_HEADER_NAME[:self.MAX_LEN_NAME], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_NAME: self.sort(p), bg=self.gui.bg)]
+        self.header_objects_copy = [tk.Button(self.table_frame, text=lang.LISTING_HEADER_NAME[:self.MAX_LEN_NAME], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_NAME: self.sort(p), bg=self.gui.bg)]
+        self.header_objects_copy2 = [tk.Button(self.table_frame, text=lang.LISTING_HEADER_NAME[:self.MAX_LEN_NAME], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_NAME: self.sort(p), bg=self.gui.bg)]
         self.header_max_labels = [tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg)]
         self.data_headers = [lang.LISTING_HEADER_NAME]
         self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AGE[:self.MAX_LEN_PROP], command=lambda p=lang.LISTING_HEADER_AGE: self.sort(p), bg=self.gui.bg))
+        self.header_objects_copy.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AGE[:self.MAX_LEN_PROP], command=lambda p=lang.LISTING_HEADER_AGE: self.sort(p), bg=self.gui.bg))
+        self.header_objects_copy2.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AGE[:self.MAX_LEN_PROP], command=lambda p=lang.LISTING_HEADER_AGE: self.sort(p), bg=self.gui.bg))
         self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
         self.data_headers.append(lang.LISTING_HEADER_AGE)
         self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_POTENTIAL[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_POTENTIAL: self.sort(p), bg=self.gui.bg))
+        self.header_objects_copy.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_POTENTIAL[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_POTENTIAL: self.sort(p), bg=self.gui.bg))
+        self.header_objects_copy2.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_POTENTIAL[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_POTENTIAL: self.sort(p), bg=self.gui.bg))
         self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
         self.data_headers.append(lang.LISTING_HEADER_POTENTIAL)
         NUM_NON_USER_PROP = 3  # number of entries in the data table that is not defined by the user (and which the average is calculated over). Does not include the image!
@@ -265,10 +271,14 @@ class ListingWindow(dialog.Dialog):
         for prop_list in [self.props, self.additional]:
             for prop in prop_list:
                 self.header_objects.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
+                self.header_objects_copy.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
+                self.header_objects_copy2.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
                 self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
                 self.data_headers.append(prop[0])
             if not avg_done:
                 self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_AVERAGE: self.sort(p), bg=self.gui.bg))
+                self.header_objects_copy.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_AVERAGE: self.sort(p), bg=self.gui.bg))
+                self.header_objects_copy2.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_AVERAGE: self.sort(p), bg=self.gui.bg))
                 self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
                 self.data_headers.append(lang.LISTING_HEADER_AVERAGE)
                 self.BOLD_COLUMNS = [0, 2, len(self.data_headers) - 1]
@@ -588,6 +598,12 @@ class ListingWindow(dialog.Dialog):
                     cindex = ci + len(object_row) * (row_index // self.MAXROWS)
                     el.grid(row=rindex+2, column=cindex, padx=int(self.def_size/2))
                 row_index += 1
+        if len(self.objects) > self.MAXROWS:
+            for ci, el in enumerate(self.header_objects_copy):
+                el.grid(row=1, column=ci + len(self.header_objects) + 2, padx=int(self.def_size / 2))
+        if len(self.objects) > 2*self.MAXROWS:
+                    for ci, el in enumerate(self.header_objects_copy2):
+                        el.grid(row=1, column=ci + 2*len(self.header_objects) + 3, padx=int(self.def_size / 2))
 
     def redraw(self):
         self.sum_checkbutton.grid_forget()
@@ -602,6 +618,20 @@ class ListingWindow(dialog.Dialog):
                 h.configure(font=self.bol_font)
             else:
                 h.configure(font=self.def_font)
+        if len(self.objects) > self.MAXROWS:
+            for i, h in enumerate(self.header_objects_copy):
+                h.grid_forget()
+                if i in self.BOLD_COLUMNS:
+                    h.configure(font=self.bol_font)
+                else:
+                    h.configure(font=self.def_font)
+        if len(self.objects) > 2*self.MAXROWS:
+            for i, h in enumerate(self.header_objects_copy2):
+                h.grid_forget()
+                if i in self.BOLD_COLUMNS:
+                    h.configure(font=self.bol_font)
+                else:
+                    h.configure(font=self.def_font)
         for i, h in enumerate(self.header_max_labels):
             h.grid_forget()
             h.configure(font=self.def_font)
@@ -632,6 +662,12 @@ class ListingWindow(dialog.Dialog):
             el.grid(row=1, column=ci + 1, padx=int(self.def_size / 2))  # ci + 1 because is for header columns are without image.
         for ci, el in enumerate(self.header_max_labels):
             el.grid(row=0, column=ci + 1, padx=int(self.def_size / 2))
+        if len(self.objects) > self.MAXROWS:
+            for ci, el in enumerate(self.header_objects_copy):
+                el.grid(row=1, column=ci + len(self.header_objects) + 2, padx=int(self.def_size / 2))
+        if len(self.objects) > 2*self.MAXROWS:
+            for ci, el in enumerate(self.header_objects_copy2):
+                el.grid(row=1, column=ci + 2*len(self.header_objects) + 3, padx=int(self.def_size / 2))
         self.draw_objects()
 
     def filter_sex(self, sex_identifier):
