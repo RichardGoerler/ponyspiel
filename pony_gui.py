@@ -82,10 +82,13 @@ class ProgressWindow(tk.Toplevel):
         self.destroy()
 
 
-def argsort(seq):
+def argsort(seq, ascending=False):
     #http://stackoverflow.com/questions/3382352/equivalent-of-numpy-argsort-in-basic-python/3382369#3382369
     #by unutbu
-    return sorted(range(len(seq)), key=seq.__getitem__)[::-1]
+    if ascending:
+        return sorted(range(len(seq)), key=seq.__getitem__)
+    else:
+        return sorted(range(len(seq)), key=seq.__getitem__)[::-1]
 
 
 class StudfeeWindow(dialog.Dialog):
@@ -160,6 +163,7 @@ class ListingWindow(dialog.Dialog):
                 stud_lines = f.read().splitlines()
         self.studs = [l.split()[0] for l in stud_lines]
 
+        self.last_column_sorted = -1   # index of the column that was last sorted. If -1, column sort will be always descending, if >= 0, sort of that specific column will be descending
 
         progressbar = ProgressWindow(self, self.gui, steps=len(all_ids)+3, initial_text=lang.PROGRESS_READING_CONFIG)
         self.MAXROWS = 25
@@ -684,7 +688,12 @@ class ListingWindow(dialog.Dialog):
             disp_sex = [self.show_sex]
         row_to_sort_by = self.data_headers.index(prop)
         avgs = [row[row_to_sort_by] for row in self.data_table]
-        sorted_idx = argsort(avgs)
+        if self.last_column_sorted == row_to_sort_by:
+            sorted_idx = argsort(avgs, ascending=True)
+            self.last_column_sorted = -1
+        else:
+            sorted_idx = argsort(avgs, ascending=False)
+            self.last_column_sorted = row_to_sort_by
         for ri, object_row in enumerate(self.objects):
             for ci, el in enumerate(object_row):
                 el.grid_forget()
@@ -1125,8 +1134,8 @@ class PonyGUI:
         self.cache_frame.grid(row=8, column=0, padx=self.default_size, pady=self.default_size)
 
         tk.Label(self.cache_frame, text=lang.CACHE_LABEL, font=self.bold_font, bg=self.bg).grid(row=0, column=1, padx=int(self.default_size / 2))
-        self.halloween_button = tk.Button(self.cache_frame, text='Halloween Start', command=self.halloween_toggle, bg=self.bg)
-        self.halloween_button.grid(row=1, column=3, padx=self.default_size)
+        # self.halloween_button = tk.Button(self.cache_frame, text='Halloween Start', command=self.halloween_toggle, bg=self.bg)
+        # self.halloween_button.grid(row=1, column=3, padx=self.default_size)
         self.all_cache_button = tk.Button(self.cache_frame, text=lang.CACHE_ALL_BUTTON, command=lambda: self.del_cache('all'), bg=self.bg)
         self.all_cache_button.grid(row=1, column=0, padx=int(self.default_size / 2))
         self.not_owned_cache_button = tk.Button(self.cache_frame, text=lang.CACHE_NOT_OWNED_BUTTON, command=lambda: self.del_cache('not_owned'), bg=self.bg)
