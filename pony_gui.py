@@ -602,12 +602,12 @@ class ListingWindow(dialog.Dialog):
                     cindex = ci + len(object_row) * (row_index // self.MAXROWS)
                     el.grid(row=rindex+2, column=cindex, padx=int(self.def_size/2))
                 row_index += 1
-        if len(self.objects) > self.MAXROWS:
+        if row_index > self.MAXROWS:
             for ci, el in enumerate(self.header_objects_copy):
                 el.grid(row=1, column=ci + len(self.header_objects) + 2, padx=int(self.def_size / 2))
-        if len(self.objects) > 2*self.MAXROWS:
-                    for ci, el in enumerate(self.header_objects_copy2):
-                        el.grid(row=1, column=ci + 2*len(self.header_objects) + 3, padx=int(self.def_size / 2))
+        if row_index > 2*self.MAXROWS:
+            for ci, el in enumerate(self.header_objects_copy2):
+                el.grid(row=1, column=ci + 2*len(self.header_objects) + 3, padx=int(self.def_size / 2))
 
     def redraw(self):
         self.sum_checkbutton.grid_forget()
@@ -666,18 +666,16 @@ class ListingWindow(dialog.Dialog):
             el.grid(row=1, column=ci + 1, padx=int(self.def_size / 2))  # ci + 1 because is for header columns are without image.
         for ci, el in enumerate(self.header_max_labels):
             el.grid(row=0, column=ci + 1, padx=int(self.def_size / 2))
-        if len(self.objects) > self.MAXROWS:
-            for ci, el in enumerate(self.header_objects_copy):
-                el.grid(row=1, column=ci + len(self.header_objects) + 2, padx=int(self.def_size / 2))
-        if len(self.objects) > 2*self.MAXROWS:
-            for ci, el in enumerate(self.header_objects_copy2):
-                el.grid(row=1, column=ci + 2*len(self.header_objects) + 3, padx=int(self.def_size / 2))
         self.draw_objects()
 
     def filter_sex(self, sex_identifier):
         self.show_sex = sex_identifier
         for ri, object_row in enumerate(self.objects):
             for ci, el in enumerate(object_row):
+                el.grid_forget()
+            for ci, el in enumerate(self.header_objects_copy2):
+                el.grid_forget()
+            for ci, el in enumerate(self.header_objects_copy):
                 el.grid_forget()
         self.draw_objects()
 
