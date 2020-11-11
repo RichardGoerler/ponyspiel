@@ -1503,7 +1503,10 @@ class PonyGUI:
                     val += self.get_prop_value(subprop)
             if isinstance(val, (int, float)):
                 normval = val / norm
-                textval = str(round(normval, 1)) if normval <= 100 else str(int(normval)) # if Gesamtpotenzial ( > 100), show as integer
+                if round(normval) == normval:
+                    textval = str(int(normval))
+                else:
+                    textval = str(round(normval, 1)) if normval <= 100 else str(int(normval)) # if Gesamtpotenzial ( > 100), show as integer
             else:
                 textval = val
             description_string += (pref + textval)
