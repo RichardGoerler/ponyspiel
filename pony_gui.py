@@ -17,6 +17,7 @@ import multiprocessing
 import sys
 import subprocess
 import requests
+import traceback
 
 import lang
 import stats_parser
@@ -129,6 +130,21 @@ class StudfeeWindow(dialog.Dialog):
                 f.write(str(l) + '\n')
 
 
+class FilterWindow(dialog.Dialog):
+    def body(self, master):
+        tk.Label(master, bg=self.gui.bg, text=lang.FILTER_WINDOW_TEXT, wraplength=450, justify=tk.LEFT).grid(row=0, column=0, padx=int(self.gui.default_size/2))
+        self.entry = tk.Entry(master, bg=self.gui.bg)
+        self.entry.delete(0, tk.END)
+        self.entry.insert(0, self.gui.listing_filter)
+        self.entry.grid(row=1, column=0, padx=int(self.gui.default_size/2), pady=int(self.gui.default_size/2))
+
+    def header(self, master):
+        pass
+
+    def apply(self):
+        self.gui.listing_filter = self.entry.get()
+
+
 class ListingWindow(dialog.Dialog):
     def cancel(self, event=None):
         self.gui.enable_buttons()
@@ -236,6 +252,8 @@ class ListingWindow(dialog.Dialog):
         self.data_table_sum = []
         self.object_colors = []
         self.sex = []
+        self.filter = []
+        self.filter_row = -1
         self.banners = []
         self.images = []
 
@@ -256,16 +274,19 @@ class ListingWindow(dialog.Dialog):
         self.table_frame = tk.Frame(master, bg=self.gui.bg)
         self.table_frame.grid(row=1, column=0, padx=self.def_size)
         self.header_objects = [tk.Button(self.table_frame, text=lang.LISTING_HEADER_NAME[:self.MAX_LEN_NAME], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_NAME: self.sort(p), bg=self.gui.bg)]
+        self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_NAME: self.filter_function(e, p))
         self.header_objects_copy = [tk.Button(self.table_frame, text=lang.LISTING_HEADER_NAME[:self.MAX_LEN_NAME], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_NAME: self.sort(p), bg=self.gui.bg)]
         self.header_objects_copy2 = [tk.Button(self.table_frame, text=lang.LISTING_HEADER_NAME[:self.MAX_LEN_NAME], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_NAME: self.sort(p), bg=self.gui.bg)]
         self.header_max_labels = [tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg)]
         self.data_headers = [lang.LISTING_HEADER_NAME]
         self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AGE[:self.MAX_LEN_PROP], command=lambda p=lang.LISTING_HEADER_AGE: self.sort(p), bg=self.gui.bg))
+        self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_AGE: self.filter_function(e, p))
         self.header_objects_copy.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AGE[:self.MAX_LEN_PROP], command=lambda p=lang.LISTING_HEADER_AGE: self.sort(p), bg=self.gui.bg))
         self.header_objects_copy2.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AGE[:self.MAX_LEN_PROP], command=lambda p=lang.LISTING_HEADER_AGE: self.sort(p), bg=self.gui.bg))
         self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
         self.data_headers.append(lang.LISTING_HEADER_AGE)
         self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_POTENTIAL[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_POTENTIAL: self.sort(p), bg=self.gui.bg))
+        self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_POTENTIAL: self.filter_function(e, p))
         self.header_objects_copy.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_POTENTIAL[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_POTENTIAL: self.sort(p), bg=self.gui.bg))
         self.header_objects_copy2.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_POTENTIAL[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_POTENTIAL: self.sort(p), bg=self.gui.bg))
         self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
@@ -275,12 +296,14 @@ class ListingWindow(dialog.Dialog):
         for prop_list in [self.props, self.additional]:
             for prop in prop_list:
                 self.header_objects.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
+                self.header_objects[-1].bind("<Button-3>", lambda e, p=prop[0]: self.filter_function(e, p))
                 self.header_objects_copy.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
                 self.header_objects_copy2.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
                 self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
                 self.data_headers.append(prop[0])
             if not avg_done:
                 self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_AVERAGE: self.sort(p), bg=self.gui.bg))
+                self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_AVERAGE: self.filter_function(e, p))
                 self.header_objects_copy.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_AVERAGE: self.sort(p), bg=self.gui.bg))
                 self.header_objects_copy2.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_AVERAGE: self.sort(p), bg=self.gui.bg))
                 self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
@@ -433,6 +456,7 @@ class ListingWindow(dialog.Dialog):
                 for el in object_row:
                     el.configure(fg=col)
                 self.object_colors.append(col)
+                self.filter.append(True)
 
         for hdi, hd in enumerate(self.data_headers):
             if hd in self.max_prop_dict.keys():
@@ -596,7 +620,7 @@ class ListingWindow(dialog.Dialog):
             disp_sex = [self.show_sex]
         row_index = 0
         for ri, object_row in enumerate(self.objects):
-            if self.sex[ri] in disp_sex:
+            if self.sex[ri] in disp_sex and self.filter[ri]:
                 for ci, el in enumerate(object_row):
                     rindex = row_index % self.MAXROWS
                     cindex = ci + len(object_row) * (row_index // self.MAXROWS)
@@ -668,6 +692,37 @@ class ListingWindow(dialog.Dialog):
             el.grid(row=0, column=ci + 1, padx=int(self.def_size / 2))
         self.draw_objects()
 
+    def filter_function(self, event, prop):
+        self.gui.listing_filter = ''
+        show_sum = self.check_sum_var.get()
+        data_table = self.data_table_sum if show_sum else self.data_table
+        button = event.widget
+        row_to_apply_on = self.data_headers.index(prop)
+        if self.filter_row == row_to_apply_on:
+            self.filter = [True] * len(data_table)   # filter off if clicked the same button again
+            self.filter_row = -1
+            button.configure(fg='black')
+            self.redraw()
+        else:
+            for but in self.header_objects:
+                if but['fg'] == 'red':
+                    but.configure(fg='black')
+            _ = FilterWindow(self, self.gui, lang.FILTER_WINDOW_TITLE)
+            if len(self.gui.listing_filter) > 0:
+                self.filter_row = row_to_apply_on
+                vals = [row[row_to_apply_on] for row in data_table]
+                button.configure(fg='red')
+                try:
+                    self.filter = [eval(self.gui.listing_filter) for x in vals]
+                except:
+                    traceback.print_exc()
+                    messagebox.showerror(title=lang.FILTER_ERROR_TITLE, message=lang.FILTER_ERROR_TEXT)
+                    self.filter = [True] * len(data_table)
+                    self.gui.listing_filter = ''
+                    self.filter_row = -1
+                    button.configure(fg='black')
+                self.redraw()
+
     def filter_sex(self, sex_identifier):
         self.show_sex = sex_identifier
         for ri, object_row in enumerate(self.objects):
@@ -700,6 +755,7 @@ class ListingWindow(dialog.Dialog):
         table_sorted = []
         table_sorted_sum = []
         sex_sorted = []
+        filter_sorted = []
         race_ids_sorted = []
         cache_exists_for_row_sorted = []
         for pid in sorted_idx:
@@ -708,6 +764,7 @@ class ListingWindow(dialog.Dialog):
             table_sorted.append(self.data_table[pid])
             table_sorted_sum.append(self.data_table_sum[pid])
             sex_sorted.append(self.sex[pid])
+            filter_sorted.append(self.filter[pid])
             race_ids_sorted.append(self.gui.race_ids[pid])
             cache_exists_for_row_sorted.append(self.cache_exists_for_row[pid])
         self.objects = objects_sorted
@@ -715,6 +772,7 @@ class ListingWindow(dialog.Dialog):
         self.data_table = table_sorted
         self.data_table_sum = table_sorted_sum
         self.sex = sex_sorted
+        self.filter = filter_sorted
         self.gui.race_ids = race_ids_sorted
         self.cache_exists_for_row = cache_exists_for_row_sorted
         self.draw_objects()
@@ -872,6 +930,7 @@ class PonyGUI:
         self.poll_processes = []
         self.halloween_process = None
         self.stud_id = 0
+        self.listing_filter = ''
         # self.chromedriver_process = None
         self.bg = "#EDEEF3"
         self.screenwidth = self.root.winfo_screenwidth()
