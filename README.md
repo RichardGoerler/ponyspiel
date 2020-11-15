@@ -130,6 +130,15 @@ Rechtsklick auf einen Pferdenamen färbt alle Pferde schwarz, die gemeinsame Elt
 
 Linksklick auf das Bild des Pferdes in der Auflistung löscht den lokalen Cache des Pferdes. Beim nächsten Aufruf werden die Werte neu aus dem Spiel geladen.
 
+#### Filtern der Liste nach selbstdefiniertem Kriterium
+
+Rechtsklick auf einen Spaltennamen erlaubt es, nur die Pferde anzuzeigen, deren Spaltenwert eine selbst definierbare Bedingung erfüllt. Es öffnet sich ein Fenster, in welchem die Bedingung eigegeben werden kann.
+
+![Filter](https://beachomize.de/ponyspiel_image/Filter400.jpg)
+
+Die Bedingung ist ein Python-Ausdruck, der für den Spaltenwert x jedes Pferdes einzeln ausgewertet wird. Es werden anschließend nur die Pferde angezeigt, für die der Ausdruck wahr ist.
+Erneuter Rechtsklick auf den Splatennamen entfernt den Filter wieder.
+
 ### 9 - Markt-Suche
 
 Durchsuchen von Pferdehandel, Deckstation oder Pferderegister (auswählbar unter **a**). Dies filtert die Pferde aus dem Spiel nach Rasse (auswählbar unter **b**) und sortiert sie nach der unter **c** auswählbaren Methode.
