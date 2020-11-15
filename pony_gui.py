@@ -693,16 +693,16 @@ class ListingWindow(dialog.Dialog):
         self.draw_objects()
 
     def filter_function(self, event, prop):
-        self.gui.listing_filter = ''
         show_sum = self.check_sum_var.get()
         data_table = self.data_table_sum if show_sum else self.data_table
+        self.gui.listing_filter = ''
+        self.filter = [True] * len(data_table)
         button = event.widget
         row_to_apply_on = self.data_headers.index(prop)
         if self.filter_row == row_to_apply_on:
             self.filter = [True] * len(data_table)   # filter off if clicked the same button again
             self.filter_row = -1
             button.configure(fg='black')
-            self.redraw()
         else:
             for but in self.header_objects:
                 if but['fg'] == 'red':
@@ -717,11 +717,10 @@ class ListingWindow(dialog.Dialog):
                 except:
                     traceback.print_exc()
                     messagebox.showerror(title=lang.FILTER_ERROR_TITLE, message=lang.FILTER_ERROR_TEXT)
-                    self.filter = [True] * len(data_table)
                     self.gui.listing_filter = ''
                     self.filter_row = -1
                     button.configure(fg='black')
-                self.redraw()
+        self.redraw()
 
     def filter_sex(self, sex_identifier):
         self.show_sex = sex_identifier
