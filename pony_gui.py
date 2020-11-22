@@ -163,6 +163,14 @@ class ListingWindow(dialog.Dialog):
             if own_file.is_file():
                 with open(own_file, 'r') as f:
                     all_ids = f.read().split()
+
+            exclude_ids = []
+            exclude_file = Path('./listing_exclude')
+            if exclude_file.is_file():
+                with open(exclude_file, 'r') as f:
+                    exclude_ids = f.read().split()
+
+            all_ids = [x for x in all_ids if x not in exclude_ids]
         else:
             all_ids = self.gui.exterior_search_ids
 

@@ -139,6 +139,11 @@ Rechtsklick auf einen Spaltennamen erlaubt es, nur die Pferde anzuzeigen, deren 
 Die Bedingung ist ein Python-Ausdruck, der für den Spaltenwert x jedes Pferdes einzeln ausgewertet wird. Es werden anschließend nur die Pferde angezeigt, für die der Ausdruck wahr ist.
 Erneuter Rechtsklick auf den Splatennamen entfernt den Filter wieder.
 
+#### Pferde aus den Auflistungen ausschließen
+
+Wenn bestimmte Pferde grundsätzlich nicht in Auflistungen auftauchen sollen (z.B. Rentner) kann dies durch Erstellen einer Datei mit Namen *listing_exclude* im Basisverzeichnis geschehen.
+Diese Datei enthält die auszuschließenden IDs, jede in einer eigenen Zeile.
+
 ### 9 - Markt-Suche
 
 Durchsuchen von Pferdehandel, Deckstation oder Pferderegister (auswählbar unter **a**). Dies filtert die Pferde aus dem Spiel nach Rasse (auswählbar unter **b**) und sortiert sie nach der unter **c** auswählbaren Methode.
