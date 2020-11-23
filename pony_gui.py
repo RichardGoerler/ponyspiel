@@ -327,6 +327,16 @@ class ListingWindow(dialog.Dialog):
             progressbar.step(str(id))
             if quick_display:
                 parser = stats_parser.FakeParser(self.gui.extractor.images[idx], self.gui.extractor.ponies[idx])
+                if self.gui.filter_pre_selected:
+                    x = parser.facts_values['Fellfarbe']
+                    try:
+                        if not eval(self.gui.listing_filter):
+                            continue
+                    except:
+                        traceback.print_exc()
+                        messagebox.showerror(title=lang.FILTER_ERROR_TITLE, message=lang.FILTER_ERROR_TEXT)
+                        progressbar.close()
+                        return
             else:
                 if not self.gui.extractor.get_pony_info(id):
                     if 'too many redirects' in self.gui.extractor.log[-1].lower():
@@ -964,6 +974,7 @@ class PonyGUI:
         self.root.title(lang.MAIN_TITLE)
         self.root.configure(bg=self.bg)
         self.exterior_search_requested = False
+        self.filter_pre_selected = False
         self.quick_display = False
         self.exterior_search_ids = []
 
@@ -1189,10 +1200,12 @@ class PonyGUI:
 
         tk.Label(self.exterior_frame, text=lang.N_PAGES_LABEL, font=self.default_font, bg=self.bg).grid(row=1, column=3, padx=int(self.default_size / 2))
 
-        n_pages_list = ['1', '2', '3', '4', '5', '6']
+        n_pages_list = ['1', '2', '3', '4', '5', '6',
+                        '10: ' + lang.N_PAGES_FILTER_TEXT, '50: ' + lang.N_PAGES_FILTER_TEXT, '100: ' + lang.N_PAGES_FILTER_TEXT,
+                        '200: ' + lang.N_PAGES_FILTER_TEXT, '500: ' + lang.N_PAGES_FILTER_TEXT, '1000: ' + lang.N_PAGES_FILTER_TEXT]
         self.n_pages_var = tk.StringVar()
         self.n_pages_var.set(n_pages_list[0])  # default value
-        tk.OptionMenu(self.exterior_frame, self.n_pages_var, *n_pages_list).grid(row=1, column=4)
+        tk.OptionMenu(self.exterior_frame, self.n_pages_var, *n_pages_list, command=self.market_search_pages_select).grid(row=1, column=4)
 
         self.cache_frame = tk.Frame(self.root, bg=self.bg)
         self.cache_frame.grid(row=8, column=0, padx=self.default_size, pady=self.default_size)
@@ -1217,6 +1230,16 @@ class PonyGUI:
         if not self.check_for_updates():
             self.start_poll_on_boot()
             self.root.mainloop()
+
+    def market_search_pages_select(self, value):
+        self.filter_pre_selected = False
+        if lang.N_PAGES_FILTER_TEXT in value:
+            self.listing_filter = ''
+            _ = FilterWindow(self.root, self, lang.FILTER_WINDOW_TITLE)
+            if len(self.listing_filter) == 0:
+                self.n_pages_var.set('1')
+                return
+            self.filter_pre_selected = True
 
     def check_for_updates(self):
         check_path = Path('./pony_gui.py')
@@ -1270,7 +1293,6 @@ class PonyGUI:
             for pid in too_many_redirects_ids:
                 message += ('\n' + str(pid))
             messagebox.showwarning(title=lang.REDIRECTS_WARNING_TITLE, message=message)
-
 
     def beauty_all(self):
         too_many_redirects_ids = []
@@ -1614,8 +1636,13 @@ class PonyGUI:
     def exterior_search(self):
         sort_by_key = self.sort_by_var.get()
         sort_by_value = self.extractor.sort_by_dict[sort_by_key]
+        if self.filter_pre_selected:
+            self.quick_display_var.set(1)
+            n_pages = int(self.n_pages_var.get().split(':')[0])
+        else:
+            n_pages = int(self.n_pages_var.get())
         self.quick_display = bool(self.quick_display_var.get())
-        self.exterior_search_ids = self.extractor.browse_horses(self.horse_pages.index(self.horse_page_type_var.get()), race=self.race_var.get(), sort_by=sort_by_value, pages=int(self.n_pages_var.get()), quick=self.quick_display)
+        self.exterior_search_ids = self.extractor.browse_horses(self.horse_pages.index(self.horse_page_type_var.get()), race=self.race_var.get(), sort_by=sort_by_value, pages=n_pages, quick=self.quick_display)
         if self.exterior_search_ids == False:
             messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
         else:
@@ -1650,7 +1677,6 @@ class PonyGUI:
                 self.interactive_states[but_ind] = tk.DISABLED
         else:
             pass
-
 
     def load_own_ponies(self):
         horse_ids = self.extractor.get_own_ponies()

@@ -1027,6 +1027,11 @@ class PonyExtractor:
 
             page += 1
 
+        if quick:
+            if len(self.ponies) > len(horse_ids):
+                self.ponies = self.ponies[:len(horse_ids)]
+                self.images = self.images[:len(horse_ids)]
+
         return horse_ids
 
     def _request_pony_file(self, pony_id, cached=True):

@@ -155,6 +155,10 @@ Zusätzlich wird bei Pferdehandel und Deckstation der Preis angezeigt.
 Die Schnelloption **f** beschleunigt die Suche stark, allerdings können dann nur noch die Werte angezeigt werden, die im Web auf der Liste selbst angezeigt werden (Name, Alter, Geschlecht, Fellfarbe, Preis, Gesundheit, Charakter, Exterieur, Gesamtpotenzial, Ausbildung, Gangarten, Dressur, Springen, Military, Western, Rennen, Fahren).
 Ohne die Schnelloption wird die Seite jedes Pferdes einzeln aufgerufen - so können Einzelwerte wie z.B. Tölt, Rennpass abgerufen werden. Diese Werte werden bei Verwendung der Schnelloption automatisch auf 0 gesetzt.
 
+Unter **e** steht außerdem die Option zur Verfügung, eine hohe Zahl von Seiten zu durchsuchen, aber die anzuzeigenden Pferde nach Fellfarbe zu filtern.
+Wird eine dieser Optionen ausgewählt, öffnet sich ein Fenster, in dem ein Python-Ausdruck angegeben werden kann, der zu einem Boolean evaluiert. Dabei ist x die Fellfarbe des Pferdes.
+Diese Filtermethode wird unter **8 - Eigene Pferde auflisten - Filtern der Liste nach selbstdefiniertem Kriterium** genauer beschrieben.
+
 ### 10 - Cache löschen
 
 Der lokale Cache kann komplett, nur für nicht-eigene Pferde oder für das aktuell geladene Pferd gelöscht werden. Dies ist z.B. sinnvoll, wenn sich Werte durch Training verändert haben.
