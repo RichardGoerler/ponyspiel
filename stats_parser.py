@@ -735,7 +735,7 @@ class DeckstationLoginParser(HTMLParser):
         elif self.in_main:
             if tag == 'h2' and self.h2 is None:
                 self.in_h2 = True
-            elif tag == 'input' and ('name', 'studfee'):
+            elif tag == 'input' and ('name', 'studfee') in attrs:
                 for (t, v) in attrs:
                     if t == 'value':
                         self.current_fee = v
