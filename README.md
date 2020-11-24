@@ -137,7 +137,7 @@ Rechtsklick auf einen Spaltennamen erlaubt es, nur die Pferde anzuzeigen, deren 
 ![Filter](https://beachomize.de/ponyspiel_image/Filter400.jpg)
 
 Die Bedingung ist ein Python-Ausdruck, der für den Spaltenwert x jedes Pferdes einzeln ausgewertet wird. Es werden anschließend nur die Pferde angezeigt, für die der Ausdruck wahr ist.
-Erneuter Rechtsklick auf den Splatennamen entfernt den Filter wieder.
+Erneuter Rechtsklick auf den Spaltennamen entfernt den Filter wieder.
 
 #### Pferde aus den Auflistungen ausschließen
 
