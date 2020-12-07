@@ -1,8 +1,0 @@
-Andalusier
-Dressur
-Ausbildung
-=
-Ex: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
-Exterieur
-Charakter
-Gesundheit: Zufriedenheit, Robustheit
