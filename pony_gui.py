@@ -155,14 +155,11 @@ class ListingWindow(dialog.Dialog):
 
     def body(self, master):
         quick_display = self.gui.quick_display
+        no_images = not self.gui.listing_images_var.get()
         self.gui.quick_display = False
         too_many_redirects_ids = []
         if not self.gui.exterior_search_requested:
-            own_file = Path('./owned_ponies')
-            all_ids = []
-            if own_file.is_file():
-                with open(own_file, 'r') as f:
-                    all_ids = f.read().split()
+            all_ids, all_races = read_own_file()
 
             exclude_ids = []
             exclude_file = Path('./listing_exclude')
@@ -170,7 +167,9 @@ class ListingWindow(dialog.Dialog):
                 with open(exclude_file, 'r') as f:
                     exclude_ids = f.read().split()
 
-            all_ids = [x for x in all_ids if x not in exclude_ids]
+            not_exclude_list_indices = [i for i in range(len(all_ids)) if all_ids[i] not in exclude_ids]
+            all_ids = [all_ids[i] for i in not_exclude_list_indices]
+            all_races = [all_races[i] for i in not_exclude_list_indices]
         else:
             all_ids = self.gui.exterior_search_ids
 
@@ -323,6 +322,7 @@ class ListingWindow(dialog.Dialog):
         for ci, el in enumerate(self.header_objects):
             el.grid(row=1, column=ci+1, padx=int(self.def_size / 2))   # ci + 1 because the image does not have a corresponding header!
 
+        races_numbers = [self.gui.extractor.race_dict[r] for r in races]
         for idx, id in enumerate(all_ids):
             progressbar.step(str(id))
             if quick_display:
@@ -338,6 +338,9 @@ class ListingWindow(dialog.Dialog):
                         progressbar.close()
                         return
             else:
+                if not self.gui.exterior_search_requested and all_races[idx] > 0:
+                    if all_races[idx] not in races_numbers:
+                        continue
                 if not self.gui.extractor.get_pony_info(id):
                     if 'too many redirects' in self.gui.extractor.log[-1].lower():
                         too_many_redirects_ids.append(id)
@@ -346,13 +349,15 @@ class ListingWindow(dialog.Dialog):
                     progressbar.close()
                     return
                 parser = self.gui.extractor.parser
+                if not self.gui.exterior_search_requested:
+                    all_races[idx] = self.gui.extractor.race_dict[parser.facts_values['Rasse']]
             if parser.facts_values['Rasse'] in races:
                 self.gui.race_ids.append(id)
                 if quick_display:
                     self.cache_exists_for_row.append(False)   # No relatives display if we are in quick mode
                 else:
                     self.cache_exists_for_row.append(self.gui.extractor.cache_exists)
-                if quick_display:
+                if quick_display or no_images:
                     im = self.gui.imorg
                 elif not self.gui.extractor.request_pony_images(urls=parser.image_urls, pony_id=id):
                     messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.gui.extractor.log[-1])
@@ -475,6 +480,22 @@ class ListingWindow(dialog.Dialog):
                     el.configure(fg=col)
                 self.object_colors.append(col)
                 self.filter.append(True)
+
+        # update owned ponies race entries
+        own_file = Path('./owned_ponies')
+        if own_file.is_file():
+            with open(own_file, 'r') as f:
+                lines = f.read().splitlines()
+        for li in range(len(lines)):
+            this_line = lines[li].split()
+            pid_loaded = this_line[0]
+            if pid_loaded in all_ids:
+                this_ind = all_ids.index(pid_loaded)
+                new_race = all_races[this_ind]
+                lines[li] = pid_loaded + ' ' + str(new_race)
+        with open(own_file, 'w') as f:
+            for l in lines:
+                f.write(l + '\n')
 
         for hdi, hd in enumerate(self.data_headers):
             if hd in self.max_prop_dict.keys():
@@ -926,6 +947,23 @@ def halloween_poll():
             url_index %= len(URLS)
 
 
+def read_own_file():
+    own_file = Path('./owned_ponies')
+    all_ids = []
+    all_races = []
+    if own_file.is_file():
+        with open(own_file, 'r') as f:
+            lines = f.read().splitlines()
+    for l in lines:
+        spl = l.split()
+        all_ids.append(spl[0])
+        if len(spl) > 1:
+            all_races.append(int(spl[1]))
+        else:
+            all_races.append(-1)
+    return all_ids, all_races
+
+
 class PonyGUI:
     def __init__(self):
         self.__version__ = build_count.__version__
@@ -1131,6 +1169,10 @@ class PonyGUI:
         self.listing_button.grid(row=1, column=1, padx=int(self.default_size / 2))
         self.interactive_elements.append(self.listing_button)
 
+        self.listing_images_var = tk.IntVar()
+        self.listing_images_var.set(0)
+        tk.Checkbutton(self.listing_frame, text=lang.CHECK_LISTING_IMAGES, font=self.default_font, variable=self.listing_images_var, bg=self.bg).grid(row=1, column=2, padx=int(self.default_size / 2))
+
         self.left_frame = tk.Frame(self.root, bg=self.bg)
         self.left_frame.grid(row=7, column=0)
 
@@ -1265,11 +1307,7 @@ class PonyGUI:
 
     def deckstation_login_all(self):
         too_many_redirects_ids = []
-        own_file = Path('./owned_ponies')
-        all_ids = []
-        if own_file.is_file():
-            with open(own_file, 'r') as f:
-                all_ids = f.read().split()
+        all_ids, all_races = read_own_file()
         stud_lines = []
         stud_file = Path('./studs')
         if stud_file.is_file():
@@ -1296,11 +1334,7 @@ class PonyGUI:
 
     def beauty_all(self):
         too_many_redirects_ids = []
-        own_file = Path('./owned_ponies')
-        all_ids = []
-        if own_file.is_file():
-            with open(own_file, 'r') as f:
-                all_ids = f.read().split()
+        all_ids, all_races = read_own_file()
         beauty_ids = []
         beauty_file = Path('./beauty_ponies')
         if beauty_file.is_file():
@@ -1333,11 +1367,7 @@ class PonyGUI:
 
     def train_all(self):
         too_many_redirects_ids = []
-        own_file = Path('./owned_ponies')
-        all_ids = []
-        if own_file.is_file():
-            with open(own_file, 'r') as f:
-                all_ids = f.read().split()
+        all_ids, all_races = read_own_file()
         no_train_ids = []
         no_train_file = Path('./no_train')
         if no_train_file.is_file():
@@ -1383,11 +1413,7 @@ class PonyGUI:
 
     def care_all(self):
         too_many_redirects_ids = []
-        own_file = Path('./owned_ponies')
-        all_ids = []
-        if own_file.is_file():
-            with open(own_file, 'r') as f:
-                all_ids = f.read().split()
+        all_ids, all_races = read_own_file()
         progressbar = ProgressWindow(self.root, self, title=lang.CARE_OWN_BUTTON, steps=len(all_ids), initial_text=str(all_ids[0]))
         for this_id in all_ids:
             if not self.extractor.care_pony(this_id):
@@ -1658,11 +1684,7 @@ class PonyGUI:
             self.extractor.del_pony_cache(pony_id_str)
             self.this_cache_button['state'] = tk.DISABLED
         elif type == 'not_owned':
-            own_file = Path('./owned_ponies')
-            own_ids = []
-            if own_file.is_file():
-                with open(own_file, 'r') as f:
-                    own_ids = f.read().split()
+            own_ids, own_races = read_own_file()
             self.extractor.del_pony_cache_all(exclude=own_ids)
             if pony_id_str not in own_ids:
                 self.this_cache_button['state'] = tk.DISABLED
@@ -1679,6 +1701,7 @@ class PonyGUI:
             pass
 
     def load_own_ponies(self):
+        all_ids, all_races = read_own_file()
         horse_ids = self.extractor.get_own_ponies()
         if horse_ids == False:
             messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
@@ -1686,7 +1709,12 @@ class PonyGUI:
             own_file = Path('./owned_ponies')
             with open(own_file, 'w') as f:
                 for id in horse_ids:
-                    f.write(str(id) + '\n')
+                    id_str = str(id)
+                    this_race = all_races[all_ids.index(id_str)] if id_str in all_ids else -1
+                    if this_race == -1:
+                        f.write(id_str + '\n')
+                    else:
+                        f.write(id_str + ' ' + str(this_race) + '\n')
 
     def make_listing(self):
         self.exterior_search_requested = False
@@ -1716,30 +1744,39 @@ class PonyGUI:
     def update_owned(self):
         pony_id_str = self.id_label.cget('text')
         own_file = Path('./owned_ponies')
-        content = []
-        if own_file.is_file():
-            with open(own_file, 'r') as f:
-                content = f.read().split()
+        all_ids, all_races = read_own_file()
         if self.check_ownership_var.get():
             # We want to add id to the file if it does not exist
-            if not pony_id_str in content:
-                content.append(pony_id_str)
+            if pony_id_str not in all_ids:
+                if str(self.extractor.pony_id) != pony_id_str:
+                    self.extractor.get_pony_info(pony_id_str)
+                this_race = self.extractor.race_dict[self.extractor.parser.facts_values['Rasse']]
+                all_ids.append(pony_id_str)
+                all_races.append(str(this_race))
         else:
             # We want to delete id from the file if it does exist
-            if pony_id_str in content:
-                content.remove(pony_id_str)
+            if pony_id_str in all_ids:
+                ind = all_ids.index(pony_id_str)
+                del all_ids[ind]
+                del all_races[ind]
         with open(own_file, 'w') as f:
-            for c in content:
-                f.write(c + '\n')
+            for pid, race in zip(all_ids, all_races):
+                f.write(str(pid) + ' ' + str(race) + '\n')
 
     def is_owned(self):
+
+        def exist_in_file(pony_id_str, content):
+            exist = False
+            for ll in content:
+                if ll.split()[0] == pony_id_str:
+                    exist = True
+                    break
+            return exist
+
         pony_id_str = self.id_label.cget('text')
         own_file = Path('./owned_ponies')
-        content = []
-        if own_file.is_file():
-            with open(own_file, 'r') as f:
-                content = f.read().split()
-        return pony_id_str in content
+        all_ids, _ = read_own_file()
+        return pony_id_str in all_ids
 
     def toggle_all_var(self):
         target = self.check_all_var.get()
