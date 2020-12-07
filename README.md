@@ -4,7 +4,7 @@ Tool zur Verwaltung von Pferden beim Browsergame noblehorsechampion.
 
 ## Funktionen
 
-![main_window](https://beachomize.de/ponyspiel_image/main_with_numbers4.jpg)
+![main_window](https://beachomize.de/ponyspiel_image/main_with_numbers5.jpg)
 
 ### 1 - Login
 
@@ -117,6 +117,8 @@ Stuten sind in Rot, Hengste in blauer Schrift dargestellt. Noch nicht ausgewachs
 Durch Klick auf einen Spaltennamen werden die Pferde absteigend nach dieser Spalte sortiert.
 
 Der Wert über einem Spaltennamen zeigt den Gesamtwert der Kategorie des Pferdes mit dem Höchstwert in dieser Spalte an.
+
+Hier wurde die Option "Mit Bildern" gewählt. Wird diese nicht gewählt, wird links neben dem Pferdenamen lediglich ein Platzhalter angezeigt. Dafür ist die Ladezeit wesentlich geringer.
 
 #### Aufruf eines Pferds im Browser
 
