@@ -1372,6 +1372,9 @@ class PonyExtractor:
                 traceback.print_exc()
                 self.log.append('Deckstation login failed. Unexpected error. Exception was printed.')
                 return False
+            if int(pony_id) == 161516:
+                print('Just posted to {} with payload {}'.format(url, deckstation_login_payload))
+        print('Trying to load Deckstation login at {}, got redirected to a page with title {}.'.format(url, lowertitle))
         return True
 
     def login_beauty(self, pony_id):
