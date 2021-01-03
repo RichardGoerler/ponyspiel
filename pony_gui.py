@@ -1631,7 +1631,7 @@ class PonyGUI:
             if isinstance(val, (int, float)):
                 normval = val / norm
                 if round(normval, 1) == round(normval):   # if rounding to one decimal place yields x.0
-                    textval = str(int(normval))
+                    textval = str(int(round(normval, 1)))
                 else:
                     textval = str(round(normval, 1)) if normval <= 100 else str(int(normval))   # if Gesamtpotenzial ( > 100), show as integer
             else:
