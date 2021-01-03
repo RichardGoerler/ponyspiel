@@ -27,6 +27,18 @@ import build_count
 
 HALLOWEEN = False
 
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = Path(sys._MEIPASS)
+    except AttributeError:
+        base_path = Path(".")
+
+    return base_path / relative_path
+
+
 class ProgressWindow(tk.Toplevel):
     def __init__(self, parent, gui, title=lang.PROGRESS, steps=100, initial_text=''):
 
@@ -1020,7 +1032,7 @@ class PonyGUI:
 
         # Create gui elements here
         # banner
-        self.imorg = Image.open("4logo-sm.png")
+        self.imorg = Image.open(resource_path("4logo-sm.png"))
         dim = self.dims_by_scale(0.01 * self.default_size)[0]
         fac = float(dim) / self.imorg.size[0]
         dim2 = int(self.imorg.size[1] * fac)
