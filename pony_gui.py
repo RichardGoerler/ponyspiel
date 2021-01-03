@@ -840,6 +840,7 @@ class LoginWindow(dialog.Dialog):
         except IOError:
             user_loaded = ''
             pw_loaded = ''
+            tel_loaded = ''
         tk.Label(master, text=lang.USER_LABEL, font=self.gui.default_font, bg=self.gui.bg).grid(row=0, column=0, padx=self.gui.default_size//2)
         self.user_var = tk.StringVar()
         self.user_var.set(user_loaded)
