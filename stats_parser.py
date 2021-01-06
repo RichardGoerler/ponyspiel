@@ -71,9 +71,12 @@ class MyHTMLParser(HTMLParser):
                                   'Hogback', 'Wasser', 'Billiard', 'Graben', 'Schweinerücken', 'Bürste', 'Ecke', 'Trakehnergraben',
                                   'Wassereinsprung', 'Wasseraussprung', 'Tiefsprung', 'Tisch', 'Strohsprung', 'Bullfinish', '4 Phasen Gelände']
         self.military_codes = [500 + i for i in range(22)]
-        self.western_headings = ['Western', 'Sliding Stop', 'Spin', 'Back Up', 'Tempowechsel', 'Cutting', 'Pole Bending',
-                                 'Barrel Race', 'Roll Back', 'Trail', 'Roping', 'Horsemanship', 'Showmanship at Halter',
-                                 'Turn', 'Circles', 'Rundown', 'Railwork', 'Sidepass', 'Sidewalk']
+        # self.western_headings = ['Western', 'Sliding Stop', 'Spin', 'Back Up', 'Tempowechsel', 'Cutting', 'Pole Bending',
+        #                          'Barrel Race', 'Roll Back', 'Trail', 'Roping', 'Horsemanship', 'Showmanship at Halter',
+        #                          'Turn', 'Circles', 'Rundown', 'Railwork', 'Sidepass', 'Sidewalk'] # deprecated
+        self.western_headings = ['Western', 'Sliding Stop', 'Spin', 'Back Up', 'Tempowechsel', 'Halt', 'Pole Bending',
+                                 'Barrel Race', 'Roll Back', 'Lopes', 'Roping', 'Flying Lead Changes', 'Rein Back',
+                                 'Turn', 'Circles', 'Rundown', 'Railwork', 'Sidepass', 'Sideways']
         self.western_codes = [600 + i for i in range(18)]
         self.rennen_headings = ['Rennen', 'Hürdenrennen', 'Trabrennen', 'Galopprennen', 'Distanzrennen', 'Jagdrennen', 'Töltrennen', 'Passrennen',
                                 'Endspurt', 'Start', 'Fliegender Start', 'Autostart', 'Bänderstart', 'Startbox']
