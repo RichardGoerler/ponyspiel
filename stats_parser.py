@@ -78,11 +78,17 @@ class MyHTMLParser(HTMLParser):
                                  'Barrel Race', 'Roll Back', 'Lopes', 'Roping', 'Flying Lead Changes', 'Rein Back',
                                  'Turn', 'Circles', 'Rundown', 'Railwork', 'Sidepass', 'Sideways']
         self.western_codes = [600 + i for i in range(18)]
-        self.rennen_headings = ['Rennen', 'Hürdenrennen', 'Trabrennen', 'Galopprennen', 'Distanzrennen', 'Jagdrennen', 'Töltrennen', 'Passrennen',
+        # self.rennen_headings = ['Rennen', 'Hürdenrennen', 'Trabrennen', 'Galopprennen', 'Distanzrennen', 'Jagdrennen', 'Töltrennen', 'Passrennen',
+        #                         'Endspurt', 'Start', 'Fliegender Start', 'Autostart', 'Bänderstart', 'Startbox'] # deprecated
+        self.rennen_headings = ['Rennen', 'Hecken auf der Strecke', 'Sulky', 'Linkskurve', 'Distanzrennen', 'Rechtskurve', 'Töltrennen', 'Passrennen',
                                 'Endspurt', 'Start', 'Fliegender Start', 'Autostart', 'Bänderstart', 'Startbox']
         self.rennen_codes = [700 + i for i in range(7)] + [750 + i for i in range(6)]
-        self.fahren_headings = ['Fahren', 'Dressurfahren', 'Geländefahren', 'Hindernisfahren', 'Kegelfahren',
-                                'Einspänner', 'Zweispänner', 'Tandem', 'Dreispänner', 'Random', 'Einhorn', 'Verkehrtes Einhorn', 'Quadriga', 'Vierspänner', 'Fünfspänner', 'Sechsspänner', 'Wildgang']
+        # self.fahren_headings = ['Fahren', 'Dressurfahren', 'Geländefahren', 'Hindernisfahren', 'Kegelfahren',
+        #                         'Einspänner', 'Zweispänner', 'Tandem', 'Dreispänner', 'Random', 'Einhorn', 'Verkehrtes Einhorn',
+        #                         'Quadriga', 'Vierspänner', 'Fünfspänner', 'Sechsspänner', 'Wildgang'] # deprecated
+        self.fahren_headings = ['Fahren', 'Zügel in einer Hand', 'Holzhindernis', 'Trail Brücke', 'Zick Zack Kegel',
+                                'Einspänner', 'Zweispänner', 'Tandem', 'Dreispänner', 'Random', 'Einhorn', 'Verkehrtes Einhorn',
+                                'Quadriga', 'Vierspänner', 'Fünfspänner', 'Sechsspänner', 'Wildgang']
         self.fahren_codes = [801 + i for i in range(4)] + [850 + i for i in range(12)]
         self.charakter_training_headings = ['Bodenarbeit', 'Spaziergang', 'Longenarbeit', 'Freiheitsdressur', 'Desensibilisierung', 'Zirzensik', 'Dualaktivierung', 'Gymnastikreihe',
                                             'Freispringen', 'Liberty', 'Working Equitation', 'Handarbeit']
