@@ -1364,6 +1364,11 @@ class PonyExtractor:
         self.deckstation_login_parser.feed(r.text)
         lowertitle = self.deckstation_login_parser.page_title.lower()
         if 'deckstation' in lowertitle:    # If deckstation login is not possible, get redirects to pony page. So we check whether Deckstation is in Page title
+            if int(pony_id) == 161516:
+                print('{}: current fee {}, new fee {}, lowertitle {}, short_description {}, notes {}').format(pony_id,
+                                                                          self.deckstation_login_parser.current_fee,
+                                                                          fee, self.deckstation_login_parser.short_description,
+                                                                                                              self.deckstation_login_parser.notes)
             if len(self.deckstation_login_parser.current_fee) > 0 and int(self.deckstation_login_parser.current_fee) == int(fee):
                 return True
             deckstation_login_payload['newshort'] = self.deckstation_login_parser.short_description
