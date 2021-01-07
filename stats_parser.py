@@ -728,7 +728,6 @@ class ListParser(HTMLParser):
 class DeckstationLoginParser(HTMLParser):
     def __init__(self):
         super(DeckstationLoginParser, self).__init__()
-        self.reset()
 
     def handle_starttag(self, tag, attrs):
         if not self.in_main and tag == 'div':
@@ -762,11 +761,8 @@ class DeckstationLoginParser(HTMLParser):
         elif self.lasttag == 'newnotes':
             self.notes = str(data)
 
-    def feed(self, data):
-        self.reset()
-        super(DeckstationLoginParser, self).feed(data)
-
     def reset(self):
+        super(DeckstationLoginParser, self).reset()
         self.in_main = False
         self.in_h2 = False
         self.page_title = ''
@@ -1368,6 +1364,7 @@ class PonyExtractor:
             traceback.print_exc()
             self.log.append('Retrieving deckstation login page at {} failed. Unexpected error. Exception was printed.'.format(url))
             return False
+        self.deckstation_login_parser.reset()
         self.deckstation_login_parser.feed(r.text)
         lowertitle = self.deckstation_login_parser.page_title.lower()
         if 'deckstation' in lowertitle:    # If deckstation login is not possible, get redirects to pony page. So we check whether Deckstation is in Page title
