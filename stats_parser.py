@@ -728,14 +728,7 @@ class ListParser(HTMLParser):
 class DeckstationLoginParser(HTMLParser):
     def __init__(self):
         super(DeckstationLoginParser, self).__init__()
-        self.in_main = False
-        self.in_h2 = False
-        self.page_title = ''
-        self.current_fee = ''
-        self.textarea_type = None
-        self.short_description = ''
-        self.notes = ''
-        self.h2 = None
+        self.reset()
 
     def handle_starttag(self, tag, attrs):
         if not self.in_main and tag == 'div':
@@ -768,6 +761,20 @@ class DeckstationLoginParser(HTMLParser):
             self.short_description = str(data)
         elif self.lasttag == 'newnotes':
             self.notes = str(data)
+
+    def feed(self, data):
+        self.reset()
+        super(DeckstationLoginParser, self).feed(data)
+
+    def reset(self):
+        self.in_main = False
+        self.in_h2 = False
+        self.page_title = ''
+        self.current_fee = ''
+        self.textarea_type = None
+        self.short_description = ''
+        self.notes = ''
+        self.h2 = None
 
 
 class PonyExtractor:
@@ -1364,11 +1371,11 @@ class PonyExtractor:
         self.deckstation_login_parser.feed(r.text)
         lowertitle = self.deckstation_login_parser.page_title.lower()
         if 'deckstation' in lowertitle:    # If deckstation login is not possible, get redirects to pony page. So we check whether Deckstation is in Page title
-            if int(pony_id) == 161516:
-                print('{}: current fee {}, new fee {}, lowertitle {}, short_description {}, notes {}'.format(pony_id,
-                                                                          self.deckstation_login_parser.current_fee,
-                                                                          fee, lowertitle, self.deckstation_login_parser.short_description,
-                                                                                                              self.deckstation_login_parser.notes))
+            # if int(pony_id) == 161516:
+            #     print('{}: current fee {}, new fee {}, lowertitle {}, short_description {}, notes {}'.format(pony_id,
+            #                                                               self.deckstation_login_parser.current_fee,
+            #                                                               fee, lowertitle, self.deckstation_login_parser.short_description,
+            #                                                                                                   self.deckstation_login_parser.notes))
             if len(self.deckstation_login_parser.current_fee) > 0 and int(self.deckstation_login_parser.current_fee) == int(fee):
                 return True
             deckstation_login_payload['newshort'] = self.deckstation_login_parser.short_description
@@ -1386,9 +1393,9 @@ class PonyExtractor:
                 traceback.print_exc()
                 self.log.append('Deckstation login failed. Unexpected error. Exception was printed.')
                 return False
-            if int(pony_id) == 161516:
-                print('Just posted to {} with payload {}'.format(url, deckstation_login_payload))
-        print('Trying to load Deckstation login at {}, got redirected to a page with title {}.'.format(url, lowertitle))
+            # if int(pony_id) == 161516:
+        #         print('Just posted to {} with payload {}'.format(url, deckstation_login_payload))
+        # print('Trying to load Deckstation login at {}, got redirected to a page with title {}.'.format(url, lowertitle))
         return True
 
     def login_beauty(self, pony_id):
