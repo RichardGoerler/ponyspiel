@@ -1328,9 +1328,11 @@ class PonyGUI:
                 stud_lines = f.read().splitlines()
         stud_ids = [l.split()[0] for l in stud_lines]
         own_stud_lines = [stud_lines[i].split() for i, pid in enumerate(stud_ids) if pid in all_ids]
+        print(own_stud_lines)
         if len(own_stud_lines) > 0:
             progressbar = ProgressWindow(self.root, self, title=lang.DECKSTATION_LOGIN_BUTTON, steps=len(own_stud_lines), initial_text=str(own_stud_lines[0][0]))
             for pid, fee in own_stud_lines:
+                print(pid, fee)
                 if not self.extractor.login_deckstation(pid, fee):
                     if 'too many redirects' in self.extractor.log[-1].lower():
                         too_many_redirects_ids.append(pid)
