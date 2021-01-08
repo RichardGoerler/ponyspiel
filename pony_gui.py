@@ -1196,7 +1196,7 @@ class PonyGUI:
         self.care_all_button = tk.Button(self.left_frame, text=lang.CARE_OWN_BUTTON, command=self.care_all, bg=self.bg)
         self.care_all_button.grid(row=0, column=1, padx=int(self.default_size / 2))
         self.interactive_elements.append(self.care_all_button)
-        self.train_all_button = tk.Button(self.left_frame, text=lang.TRAIN_OWN_BUTTON, command=self.train_all, bg=self.bg)
+        self.train_all_button = tk.Button(self.left_frame, text=lang.TRAIN_OWN_BUTTON, command=self.train_all_wrapper, bg=self.bg)
         self.train_all_button.grid(row=0, column=2, padx=int(self.default_size / 2))
         self.interactive_elements.append(self.train_all_button)
         self.beauty_all_button = tk.Button(self.left_frame, text=lang.BEAUTY_OWN_BUTTON, command=self.beauty_all, bg=self.bg)
@@ -1378,7 +1378,15 @@ class PonyGUI:
                 messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                 return
 
-    def train_all(self):
+    def train_all_wrapper(self):
+        only_train_file = Path('./only_train')
+        only_train = False
+        if only_train_file.is_file():
+            reply = messagebox.askquestion(lang.ONLY_TRAIN_QUESTION_TITLE, lang.ONLY_TRAIN_QUESTION_MESSAGE)
+            only_train = (reply == 'yes')
+        self.train_all(only_train=only_train)
+
+    def train_all(self, only_train=False):
         too_many_redirects_ids = []
         all_ids, all_races = read_own_file()
         no_train_ids = []
@@ -1386,36 +1394,48 @@ class PonyGUI:
         if no_train_file.is_file():
             with open(no_train_file, 'r') as f:
                 no_train_ids = f.read().split()
-        train_ids = [pid for pid in all_ids if pid not in no_train_ids]
-        progressbar = ProgressWindow(self.root, self, title=lang.TRAIN_OWN_BUTTON, steps=len(train_ids), initial_text=str(train_ids[0]))
-        for this_id in train_ids:
-            if not self.extractor.train_pony(this_id):
-                if 'too many redirects' in self.extractor.log[-1].lower():
-                    too_many_redirects_ids.append(this_id)
-                    progressbar.step(str(this_id))
-                    continue
-                messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
-                progressbar.close()
+        if only_train:
+            only_train_file = Path('./only_train')
+            if only_train_file.is_file():
+                with open(only_train_file, 'r') as f:
+                    only_train_ids = f.read().split()
+            else:
+                messagebox.showerror(lang.IO_ERROR, lang.ERROR_ONLY_TRAIN_FILE_MISSING)
                 return
-            # check whether pony is fully trained
-            if len(self.extractor.log) > 0 and this_id in self.extractor.log[-1] and 'fully trained' in self.extractor.log[-1] and self.extractor.parser.charakter_training_headings[0] in self.extractor.parser.charakter_training_values.keys():
-                flag = True
-                for k in self.extractor.parser.charakter_training_values.keys():
-                    if self.extractor.parser.charakter_training_values[k] < self.extractor.parser.charakter_training_max[k]:
-                        flag = False
-                        break
-                if flag:
-                    no_train_ids.append(this_id)
-                    with open(no_train_file, 'w') as f:
-                        for pid in no_train_ids:
-                            f.write(str(pid) + '\n')
-            progressbar.step(str(this_id))
+            train_ids = [pid for pid in all_ids if (pid in only_train_ids and pid not in no_train_ids)]
+        else:
+            train_ids = [pid for pid in all_ids if pid not in no_train_ids]
 
-        if len(too_many_redirects_ids) > 0:
-            message = lang.REDIRECTS_WARNING_MESSAGE
-            for pid in too_many_redirects_ids:
-                message += ('\n' + str(pid))
-            messagebox.showwarning(title=lang.REDIRECTS_WARNING_TITLE, message=message)
+        if len(train_ids) > 0:
+            progressbar = ProgressWindow(self.root, self, title=lang.TRAIN_OWN_BUTTON, steps=len(train_ids), initial_text=str(train_ids[0]))
+            for this_id in train_ids:
+                if not self.extractor.train_pony(this_id):
+                    if 'too many redirects' in self.extractor.log[-1].lower():
+                        too_many_redirects_ids.append(this_id)
+                        progressbar.step(str(this_id))
+                        continue
+                    messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+                    progressbar.close()
+                    return
+                # check whether pony is fully trained
+                if len(self.extractor.log) > 0 and this_id in self.extractor.log[-1] and 'fully trained' in self.extractor.log[-1] and self.extractor.parser.charakter_training_headings[0] in self.extractor.parser.charakter_training_values.keys():
+                    flag = True
+                    for k in self.extractor.parser.charakter_training_values.keys():
+                        if self.extractor.parser.charakter_training_values[k] < self.extractor.parser.charakter_training_max[k]:
+                            flag = False
+                            break
+                    if flag:
+                        no_train_ids.append(this_id)
+                        with open(no_train_file, 'w') as f:
+                            for pid in no_train_ids:
+                                f.write(str(pid) + '\n')
+                progressbar.step(str(this_id))
+
+            if len(too_many_redirects_ids) > 0:
+                message = lang.REDIRECTS_WARNING_MESSAGE
+                for pid in too_many_redirects_ids:
+                    message += ('\n' + str(pid))
+                messagebox.showwarning(title=lang.REDIRECTS_WARNING_TITLE, message=message)
 
     def train_this(self):
         id = self.id_label.cget('text').strip()
