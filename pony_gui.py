@@ -1390,23 +1390,26 @@ class PonyGUI:
         too_many_redirects_ids = []
         all_ids, all_races = read_own_file()
         no_train_ids = []
+        only_train_ids = []
         no_train_file = Path('./no_train')
         if no_train_file.is_file():
             with open(no_train_file, 'r') as f:
                 no_train_ids = f.read().split()
+        only_train_file = Path('./only_train')
+        if only_train_file.is_file():
+            with open(only_train_file, 'r') as f:
+                only_train_ids = f.read().split()
+        elif only_train:
+            messagebox.showerror(lang.IO_ERROR, lang.ERROR_ONLY_TRAIN_FILE_MISSING)
+            return
         if only_train:
-            only_train_file = Path('./only_train')
-            if only_train_file.is_file():
-                with open(only_train_file, 'r') as f:
-                    only_train_ids = f.read().split()
-            else:
-                messagebox.showerror(lang.IO_ERROR, lang.ERROR_ONLY_TRAIN_FILE_MISSING)
-                return
             train_ids = [pid for pid in all_ids if (pid in only_train_ids and pid not in no_train_ids)]
         else:
             train_ids = [pid for pid in all_ids if pid not in no_train_ids]
 
         if len(train_ids) > 0:
+            add_to_only_train = []
+            add_to_no_train = []
             progressbar = ProgressWindow(self.root, self, title=lang.TRAIN_OWN_BUTTON, steps=len(train_ids), initial_text=str(train_ids[0]))
             for this_id in train_ids:
                 if not self.extractor.train_pony(this_id):
@@ -1417,19 +1420,40 @@ class PonyGUI:
                     messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                     progressbar.close()
                     return
-                # check whether pony is fully trained
-                if len(self.extractor.log) > 0 and this_id in self.extractor.log[-1] and 'fully trained' in self.extractor.log[-1] and self.extractor.parser.charakter_training_headings[0] in self.extractor.parser.charakter_training_values.keys():
-                    flag = True
-                    for k in self.extractor.parser.charakter_training_values.keys():
-                        if self.extractor.parser.charakter_training_values[k] < self.extractor.parser.charakter_training_max[k]:
-                            flag = False
-                            break
-                    if flag:
-                        no_train_ids.append(this_id)
-                        with open(no_train_file, 'w') as f:
-                            for pid in no_train_ids:
-                                f.write(str(pid) + '\n')
+                # check whether pony is fully trained or in charakter training
+                if len(self.extractor.log) > 0 and this_id in self.extractor.log[-1] \
+                        and 'fully trained' in self.extractor.log[-1] \
+                        and len(self.extractor.parser.charakter_training_values) > 0:
+                    years = int(self.extractor.parser.facts_values['Alter'].split('Jahre')[0].strip()) \
+                        if 'Jahre' in self.extractor.parser.facts_values['Alter'] else 0
+                    if years >= 3:    # if younger than 3 years, pony can neither be fully trained nor in charakter training
+                        flag = True
+                        for k in self.extractor.parser.charakter_training_values.keys():
+                            if self.extractor.parser.charakter_training_values[k] < self.extractor.parser.charakter_training_max[k]:
+                                flag = False
+                                add_to_only_train.append(this_id)   # if fully trained without charakter, pony is ready for charakter training
+                                break
+                        if flag:
+                            add_to_no_train.append(this_id)
+                elif len(self.extractor.log) > 0 and this_id in self.extractor.log[-1] \
+                        and 'charakter' in self.extractor.log[-1]:
+                    add_to_only_train.append(this_id)
                 progressbar.step(str(this_id))
+
+            for new_id in add_to_no_train:
+                no_train_ids.append(new_id)
+                if new_id in only_train_ids:
+                    remove_index = only_train_ids.index(new_id)
+                    del only_train_ids[remove_index]
+            for new_id in add_to_only_train:
+                if new_id not in only_train_ids:
+                    only_train_ids.append(new_id)
+            with open(no_train_file, 'w') as f:
+                for pid in no_train_ids:
+                    f.write(str(pid) + '\n')
+            with open(only_train_file, 'w') as f:
+                for pid in only_train_ids:
+                    f.write(str(pid) + '\n')
 
             if len(too_many_redirects_ids) > 0:
                 message = lang.REDIRECTS_WARNING_MESSAGE

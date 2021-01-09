@@ -1305,6 +1305,7 @@ class PonyExtractor:
             all_codes = self.parser.fohlenerziehung_codes + self.parser.ausbildung_codes + self.parser.gangarten_codes
         energy = self.parser.energy
         ind = 0
+        train_payload = {'id': pony_id, 'trainwert': 0}
         if not self.parser.has_box:
             self.log.append('Pony {} cannot be trained because it does not have a box'.format(pony_id))
             energy = 0
@@ -1332,6 +1333,8 @@ class PonyExtractor:
             else:
                 self.log.append('Pony {} is fully trained'.format(pony_id))
                 energy = 0
+        if train_payload['trainwert'] in self.parser.charakter_training_codes:
+            self.log.append('Pony {} is doing charakter training'.format(pony_id))
         return True
 
     def care_pony(self, pony_id):
