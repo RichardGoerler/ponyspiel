@@ -1419,7 +1419,7 @@ class PonyGUI:
                         continue
                     messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                     progressbar.close()
-                    return
+                    break
                 # check whether pony is fully trained or in charakter training
                 if len(self.extractor.log) > 0 and this_id in self.extractor.log[-1] \
                         and 'fully trained' in self.extractor.log[-1] \
