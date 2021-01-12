@@ -788,6 +788,7 @@ class PonyExtractor:
         self.base_url = 'https://noblehorsechampion.com/inside/'
         self.train_post_url = 'https://noblehorsechampion.com/inside/inc/horses/training/training.php'
         self.deckstation_login_url = 'https://noblehorsechampion.com/inside/loginstud.php?id={}'
+        self.deckstation_club_url = 'https://noblehorsechampion.com/inside/loginclubstud.php?id={}'
         self.beauty_url = 'https://noblehorsechampion.com/inside/loginbeauty.php'
         self.payload = {'email': '', 'password': '', 'login': ''}
         self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36'}
@@ -1383,6 +1384,24 @@ class PonyExtractor:
             if 'verwalten' in lowertitle:
                 deckstation_login_payload['changestudfee'] = ''    # Stud fee change
             else:
+                # check if pony is already in club deckstation, abort if true
+                club_url = self.deckstation_club_url.format(pony_id)
+                try:
+                    r_club = self.session.get(club_url, headers=self.headers)
+                except requests.exceptions.TooManyRedirects:
+                    self.log.append('Retrieving club deckstation login page at {} failed. Too many redirects.'.format(club_url))
+                    return False
+                except Exception:
+                    traceback.print_exc()
+                    self.log.append(
+                        'Retrieving club deckstation login page at {} failed. Unexpected error. Exception was printed.'.format(club_url))
+                    return False
+                self.deckstation_login_parser.reset()
+                self.deckstation_login_parser.feed(r_club.text)
+                lowertitle = self.deckstation_login_parser.page_title.lower()
+                if 'verwalten' in lowertitle:
+                    # Pony is already registered in club deckstation
+                    return True
                 deckstation_login_payload['checkin'] = ''          # Stud fee new
             try:
                 pos = self.session.post(url, data=deckstation_login_payload, headers=self.headers)
