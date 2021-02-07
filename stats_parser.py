@@ -7,7 +7,7 @@ import csv
 import shutil
 import traceback
 from datetime import datetime
-from selenium import webdriver
+# from selenium import webdriver
 
 def add_margin(pil_img, top, right, bottom, left, color):
     width, height = pil_img.size
@@ -38,9 +38,10 @@ class MyHTMLParser(HTMLParser):
         self.alert_type = ''
 
         # Query containers
+                                # 'Trainingszustand' removed
         self.details_headings = ['Gesundheit', 'Zufriedenheit', 'Robustheit', 'Hufe', 'Zähne', 'Impfungen', 'Wurmkur',
                                  'Charakter', 'Vertrauen', 'Intelligenz', 'Mut', 'Aufmerksamkeit', 'Gehorsam', 'Gelassenheit', 'Nervenstärke', 'Siegeswille', 'Motivation', 'Gutmütigkeit', 'Genauigkeit', 'Auffassungsvermögen',
-                                 'Exterieur', 'Trainingszustand', 'Bemuskelung', 'Bewegungen', 'Haltung', 'Ausdruck', 'Kopf', 'Halsansatz', 'Rückenlinie', 'Beinstellung']
+                                 'Exterieur', 'Bemuskelung', 'Bewegungen', 'Haltung', 'Ausdruck', 'Kopf', 'Halsansatz', 'Rückenlinie', 'Beinstellung']
         self.gesundheit_headings = self.details_headings[self.details_headings.index('Gesundheit'):self.details_headings.index('Charakter')]
         self.charakter_headings = self.details_headings[self.details_headings.index('Charakter'):self.details_headings.index('Exterieur')]
         self.exterieur_headings = self.details_headings[self.details_headings.index('Exterieur'):]
@@ -58,38 +59,65 @@ class MyHTMLParser(HTMLParser):
                                    'Tölt', 'Paso', 'Rack', 'Walk', 'Marcha Batida', 'Jog', 'Indian Shuffle', 'Foxtrott', 'Marcha Picada', 'Rennpass', 'Single Foot', 'Saddle Gait',
                                    'Trailwalk', 'Slow Canter', 'Lope', 'Running Walk', 'Flatfoot Walk', 'Sobreandando', 'Paso Llano', 'Termino', 'Classic Fino', 'Paso Corto', 'Paso Largo', 'Trocha', 'Trote Y Galope']
         self.gangarten_codes = [200 + i for i in range(31)]
+
+                                # Verstärkt & Versammelt
         self.dressur_headings = ['Dressur', 'starker Schritt', 'starker Trab', 'starker Galopp', 'versammelter Schritt', 'versammelter Trab', 'versammelter Galopp',
-                                'Galoppwechsel', 'Außengalopp', 'Hinterhandwendung', 'Kurzkehrtwendung', 'Vorhandwendung', 'Passage', 'Piaffe', 'Pirouette', 'Schultervor', 'Renvers', 'Traversale', 'Schaukel',
-                                'Traversalverschiebungen', 'Kehrtwendevorhand', 'Kehrtwendehinterhand', 'halbe Pirouette',
-                                'Spanischer Tritt', 'Ballotade', 'Courbette', 'Croupade', 'Kapriole', 'Levade', 'Pesade', 'Mezair', 'Terre à Terre', 'Spanischer Trab', 'Sarabande']
-        self.dressur_codes = [300 + i for i in range(6)] + [310 + i for i in range(16)] + [350 + i for i in range(11)]
+                                 # Attribute
+                                 'Losgelassenheit', 'Anlehnung', 'Schwung', 'Durchlässigkeit', 'Geraderichtung', 'Geschmeidigkeit', 'Serienwechsel', 'Übergänge', 'Balance', 'Elastizität', 'Raumgriff', 'Bergauftendenz',
+                                # Grundlagen
+                                'Halten', 'Arbeitstrab', 'Galoppwechsel', 'Außengalopp', 'Hinterhandwendung', 'Kurzkehrtwendung', 'Vorhandwendung', 'Passage', 'Piaffe', 'Pirouette', 'Schultervor', 'Renvers', 'Traversale', 'Schaukel',
+                                'Traversalverschiebungen', 'Kehrtwendevorhand', 'Kehrtwendehinterhand', 'halbe Pirouette', 'Schulterherein', 'Galoppsprünge verlängern', 'Tritte verlängern',
+                                 # Hohe Schule
+                                'Spanischer Tritt', 'Ballotade', 'Courbette', 'Croupade', 'Kapriole', 'Levade', 'Pesade', 'Mezair', 'Terre à Terre', 'Spanischer Trab', 'Sarabande', 'Piaffepirouette', 'Passagetravers']
+        # [375 + i for i in range(7)] + [383 + i for i in range(4)] sind der Block 'Attribute' da 382 fehlt
+        self.dressur_codes = [300 + i for i in range(6)] \
+                             + [375 + i for i in range(12)]  \
+                             + [307, 306] + [310 + i for i in range(19)] \
+                             + [350 + i for i in range(13)]
+
         self.springen_headings = ['Springen', 'Steilsprung', 'Wassergraben', '2er Kombination', '3er Kombination', 'Mauer', 'Eisenbahnschranken', 'Gatter', 'Rick', 'Kreuz', 'Planke', 'Palisade',
                                   'Oxer', 'Triplebarre', 'Überbautes Wasser', 'Buschoxer', 'Birkenoxer', 'Doppelrick',
                                   'Pulvermanns Grab', 'Irische Wälle', 'Holsteiner Wegesprünge', 'Wall']
         self.springen_codes = [400 + i for i in range(11)] + [440 + i for i in range(6)] + [470 + i for i in range(4)]
+
         self.military_headings = ['Military', 'Bank', 'Hecke', 'Coffin', 'Eulenloch', 'Normandiebank', 'Schmales Hindernis', 'Sunkenroad',
-                                  'Hogback', 'Wasser', 'Billiard', 'Graben', 'Schweinerücken', 'Bürste', 'Ecke', 'Trakehnergraben',
-                                  'Wassereinsprung', 'Wasseraussprung', 'Tiefsprung', 'Tisch', 'Strohsprung', 'Bullfinish', '4 Phasen Gelände']
+                                  'Hogback', 'Wasser', 'Arrow Head', 'Graben', 'Steinwand', 'Bürste', 'Ecke', 'Trakehnergraben',
+                                  'Wassereinsprung', 'Wasseraussprung', 'Rolltop', 'Tisch', 'Strohsprung', 'Bullfinish', 'Doppelfass']
         self.military_codes = [500 + i for i in range(22)]
-        self.western_headings = ['Western', 'Sliding Stop', 'Spin', 'Back Up', 'Tempowechsel', 'Cutting', 'Pole Bending',
-                                 'Barrel Race', 'Roll Back', 'Trail', 'Roping', 'Horsemanship', 'Showmanship at Halter',
-                                 'Turn', 'Circles', 'Rundown', 'Railwork', 'Sidepass', 'Sidewalk'] # deprecated
-        # self.western_headings = ['Western', 'Sliding Stop', 'Spin', 'Back Up', 'Tempowechsel', 'Halt', 'Pole Bending',
-        #                          'Barrel Race', 'Roll Back', 'Lopes', 'Roping', 'Flying Lead Changes', 'Rein Back',
-        #                          'Turn', 'Circles', 'Rundown', 'Railwork', 'Sidepass', 'Sideways']
-        self.western_codes = [600 + i for i in range(18)]
-        self.rennen_headings = ['Rennen', 'Hürdenrennen', 'Trabrennen', 'Galopprennen', 'Distanzrennen', 'Jagdrennen', 'Töltrennen', 'Passrennen',
-                                'Endspurt', 'Start', 'Fliegender Start', 'Autostart', 'Bänderstart', 'Startbox'] # deprecated
-        # self.rennen_headings = ['Rennen', 'Hecken auf der Strecke', 'Sulky', 'Linkskurve', 'Distanzrennen', 'Rechtskurve', 'Töltrennen', 'Passrennen',
-        #                         'Endspurt', 'Start', 'Fliegender Start', 'Autostart', 'Bänderstart', 'Startbox']
-        self.rennen_codes = [700 + i for i in range(7)] + [750 + i for i in range(6)]
-        self.fahren_headings = ['Fahren', 'Dressurfahren', 'Geländefahren', 'Hindernisfahren', 'Kegelfahren',
+
+                                # Reining
+        self.western_headings = ['Western', 'Sliding Stop', 'Spin', 'Roll Back', 'Back Up', 'Rundown', 'Circles', 'Turn', 'Figure Eight', 'Railwork',
+                                # Cutting
+                                 'Cow Sense', 'Cow Focus', 'Cow Seperation', 'Dry Work', 'Fence Work', 'Roping',
+                                 # Trail
+                                 'Brücke', 'Gate', 'L-Hindernis', 'U-Hindernis', 'Rückwärts durch das Hindernis', 'Sidepass', 'Tempowechsel', 'Halt', 'Pole Bending', 'Barrel Race',
+                                 'Lopes', 'Flying Lead Changes', 'Rein Back', 'Sideways', 'Schlangenlinie', 'Rods Alley'] # deprecated
+        self.western_codes = [600, 601, 607, 602, 614, 613, 612, 619, 615] \
+                             + [620 + i for i in range(5)] + [609] \
+                             + [626, 625, 627, 628, 630, 616] + [603 + i for i in range(4)] + [608, 610, 611, 617, 618, 629]
+
+                                # Rennart
+        self.rennen_headings = ['Rennen', 'Sulky', 'Distanzrennen', 'Töltrennen', 'Passrennen',
+                                # Attribute
+                                'Start', 'Fliegender Start', 'Autostart', 'Bänderstart', 'Startbox',
+                                # Attribute
+                                'Hindernisrennen', 'Linkskurve', 'Rechtskurve', 'kurze Distanz', 'mittlere Distanz', 'lange Distanz', 'Endspurt', 'Sprint'] # deprecated
+        self.rennen_codes = [701, 703, 705, 706] + [750 + i for i in range(6)] + [700, 702, 704, 756, 757, 758, 750, 759]
+
+                                # Dressur
+        self.fahren_headings = ['Fahren', 'Zügel in einer Hand', 'Schritt am langen Zügel', 'Volte', 'Links lenken', 'Rechts lenken', 'S-Kurve', 'Schleife', 'Trab am langen Zügel', 'Still stehen', 'Pull Back',
+                                # Marathon
+                                'Zick Zack Kegel', 'Kegel im Kreis', 'Kegel S-Kurve', 'Kegel in einer Schleife', 'U-Kurve', 'L-Biegung', 'Kegel auf einer Schlangenlinie',
+                                # Geschicklichkeit
+                                'Holzhindernis', 'Trail Brücke', 'Strohballen', 'Wasserhindernis', 'Trail Sektion', 'Tonnen', 'Flaggen', 'Huegel', 'Baumstamm', 'Bäume', 'Schlangenlinien Volte',
+                                # Anspannungen
                                 'Einspänner', 'Zweispänner', 'Tandem', 'Dreispänner', 'Random', 'Einhorn', 'Verkehrtes Einhorn',
                                 'Quadriga', 'Vierspänner', 'Fünfspänner', 'Sechsspänner', 'Wildgang'] # deprecated
-        # self.fahren_headings = ['Fahren', 'Zügel in einer Hand', 'Holzhindernis', 'Trail Brücke', 'Zick Zack Kegel',
-        #                         'Einspänner', 'Zweispänner', 'Tandem', 'Dreispänner', 'Random', 'Einhorn', 'Verkehrtes Einhorn',
-        #                         'Quadriga', 'Vierspänner', 'Fünfspänner', 'Sechsspänner', 'Wildgang']
-        self.fahren_codes = [801 + i for i in range(4)] + [850 + i for i in range(12)]
+        self.fahren_codes = [801] + [805 + i for i in range(9)] \
+                            + [804] + [814 + i for i in range(6)] \
+                            + [802, 803] + [820 + i for i in range(9)] \
+                            + [850 + i for i in range(12)]
+
         self.charakter_training_headings = ['Bodenarbeit', 'Spaziergang', 'Longenarbeit', 'Freiheitsdressur', 'Desensibilisierung', 'Zirzensik', 'Dualaktivierung', 'Gymnastikreihe',
                                             'Freispringen', 'Liberty', 'Working Equitation', 'Handarbeit']
         self.charakter_training_codes = [2001 + i for i in range(12)]
@@ -774,6 +802,23 @@ class DeckstationLoginParser(HTMLParser):
 
 
 class PonyExtractor:
+    GRUNDAUSBILDUNG = 0
+    DRESSUR = 1
+    SPRINGEN = 2
+    MILITARY = 3
+    WESTERN = 4
+    RENNEN = 5
+    FAHREN = 6
+    CHARAKTER = 7
+    KOMPLETT = 8
+    TRAINING_CONSTANT_DICT = {'Dressur': DRESSUR,
+                    'Springen': SPRINGEN,
+                    'Military': MILITARY,
+                    'Western': WESTERN,
+                    'Rennen': RENNEN,
+                    'Fahren': FAHREN,
+                    'Charakter': CHARAKTER }
+
     def __init__(self):
         self.parser = MyHTMLParser()
         self.beauty_parser = BeautyParser()
@@ -804,7 +849,8 @@ class PonyExtractor:
                      'Araber': 7,
                      'Welsh Mountain Pony': 8,
                      'Isländer': 9,
-                     'Friese': 10}
+                     'Friese': 10,
+                      'Haflinger': 11}
         self.sort_by_dict = {'Neueste zuerst': 'firstnew',
                             'Jüngste zuerst': 'firstyoung',
                             'Älteste zuerst': 'firstold',
@@ -1286,24 +1332,87 @@ class PonyExtractor:
             return 'No telegram id found. Message was not sent'
         
         
-    def train_pony(self, pony_id):
+    def train_pony(self, pony_id, disciplines=None):
+        if disciplines is None:
+            disciplines = [PonyExtractor.GRUNDAUSBILDUNG]   # default argument
         if not self.get_pony_info(pony_id, cached=False):
             return False
         years = int(self.parser.facts_values['Alter'].split('Jahre')[0].strip()) if 'Jahre' in self.parser.facts_values['Alter'] else 0
         if years >= 3:
-            all_dict_max = {**self.parser.ausbildung_max, **self.parser.gangarten_max, **self.parser.dressur_max, **self.parser.springen_max,
-                        **self.parser.military_max, **self.parser.western_max, **self.parser.rennen_max, **self.parser.fahren_max, **self.parser.charakter_training_max}
-            all_dict_values = { **self.parser.ausbildung_values, **self.parser.gangarten_values, **self.parser.dressur_values, **self.parser.springen_values,
-                            **self.parser.military_values, **self.parser.western_values, **self.parser.rennen_values, **self.parser.fahren_values, **self.parser.charakter_training_values}
-            all_headings =  self.parser.ausbildung_headings[1:] + self.parser.gangarten_headings[1:] + self.parser.dressur_headings[1:] + self.parser.springen_headings[1:] +\
-                           self.parser.military_headings[1:] + self.parser.western_headings[1:] + self.parser.rennen_headings[1:] + self.parser.fahren_headings[1:] + self.parser.charakter_training_headings
-            all_codes = self.parser.ausbildung_codes + self.parser.gangarten_codes + self.parser.dressur_codes + self.parser.springen_codes +\
-                        self.parser.military_codes + self.parser.western_codes + self.parser.rennen_codes + self.parser.fahren_codes + self.parser.charakter_training_codes
+            if PonyExtractor.KOMPLETT in disciplines:
+                all_dict_max = {**self.parser.ausbildung_max, **self.parser.gangarten_max, **self.parser.dressur_max, **self.parser.springen_max,
+                                **self.parser.military_max, **self.parser.western_max, **self.parser.rennen_max, **self.parser.fahren_max, **self.parser.charakter_training_max}
+                all_dict_values = {**self.parser.ausbildung_values, **self.parser.gangarten_values, **self.parser.dressur_values, **self.parser.springen_values,
+                                   **self.parser.military_values, **self.parser.western_values, **self.parser.rennen_values, **self.parser.fahren_values, **self.parser.charakter_training_values}
+                all_headings = self.parser.ausbildung_headings[1:] + self.parser.gangarten_headings[1:] + self.parser.dressur_headings[1:] + self.parser.springen_headings[1:] + \
+                               self.parser.military_headings[1:] + self.parser.western_headings[1:] + self.parser.rennen_headings[1:] + self.parser.fahren_headings[1:] + self.parser.charakter_training_headings
+                all_codes = self.parser.ausbildung_codes + self.parser.gangarten_codes + self.parser.dressur_codes + self.parser.springen_codes + \
+                            self.parser.military_codes + self.parser.western_codes + self.parser.rennen_codes + self.parser.fahren_codes + self.parser.charakter_training_codes
+            else:
+                all_dict_max ={}
+                all_dict_values = {}
+                all_headings = []
+                all_codes = []
+                
+                if PonyExtractor.GRUNDAUSBILDUNG in disciplines:
+                    all_dict_max = {**self.parser.ausbildung_max, **self.parser.gangarten_max}
+                    all_dict_values = {**self.parser.ausbildung_values, **self.parser.gangarten_values}
+                    all_headings = self.parser.ausbildung_headings[1:] + self.parser.gangarten_headings[1:]
+                    all_codes = self.parser.ausbildung_codes + self.parser.gangarten_codes
+                
+                if PonyExtractor.DRESSUR in disciplines:
+                    all_dict_max = {**all_dict_max, **self.parser.dressur_max}
+                    all_dict_values = {**all_dict_values, **self.parser.dressur_values}
+                    all_headings = all_headings + self.parser.dressur_headings[1:]
+                    all_codes = all_codes + self.parser.dressur_codes
+                    
+                if PonyExtractor.SPRINGEN in disciplines:
+                    all_dict_max = {**all_dict_max, **self.parser.springen_max}
+                    all_dict_values = {**all_dict_values, **self.parser.springen_values}
+                    all_headings = all_headings + self.parser.springen_headings[1:]
+                    all_codes = all_codes + self.parser.springen_codes
+                    
+                if PonyExtractor.MILITARY in disciplines:
+                    all_dict_max = {**all_dict_max, **self.parser.military_max}
+                    all_dict_values = {**all_dict_values, **self.parser.military_values}
+                    all_headings = all_headings + self.parser.military_headings[1:]
+                    all_codes = all_codes + self.parser.military_codes
+                    
+                if PonyExtractor.WESTERN in disciplines:
+                    all_dict_max = {**all_dict_max, **self.parser.western_max}
+                    all_dict_values = {**all_dict_values, **self.parser.western_values}
+                    all_headings = all_headings + self.parser.western_headings[1:]
+                    all_codes = all_codes + self.parser.western_codes
+                    
+                if PonyExtractor.RENNEN in disciplines:
+                    all_dict_max = {**all_dict_max, **self.parser.rennen_max}
+                    all_dict_values = {**all_dict_values, **self.parser.rennen_values}
+                    all_headings = all_headings + self.parser.rennen_headings[1:]
+                    all_codes = all_codes + self.parser.rennen_codes
+                    
+                if PonyExtractor.FAHREN in disciplines:
+                    all_dict_max = {**all_dict_max, **self.parser.fahren_max}
+                    all_dict_values = {**all_dict_values, **self.parser.fahren_values}
+                    all_headings = all_headings + self.parser.fahren_headings[1:]
+                    all_codes = all_codes + self.parser.fahren_codes
+                    
+                if PonyExtractor.CHARAKTER in disciplines:
+                    all_dict_max = {**all_dict_max, **self.parser.charakter_training_max}
+                    all_dict_values = {**all_dict_values, **self.parser.charakter_training_values}
+                    all_headings = all_headings + self.parser.charakter_training_headings[1:]
+                    all_codes = all_codes + self.parser.charakter_training_codes
+        
         else:
-            all_dict_max = {**self.parser.fohlenerziehung_max, **self.parser.ausbildung_max, **self.parser.gangarten_max}
-            all_dict_values = {**self.parser.fohlenerziehung_values, **self.parser.ausbildung_values, **self.parser.gangarten_values}
-            all_headings = self.parser.fohlenerziehung_headings + self.parser.ausbildung_headings[1:] + self.parser.gangarten_headings[1:]
-            all_codes = self.parser.fohlenerziehung_codes + self.parser.ausbildung_codes + self.parser.gangarten_codes
+            all_dict_max = self.parser.fohlenerziehung_max
+            all_dict_values = self.parser.fohlenerziehung_values
+            all_headings = self.parser.fohlenerziehung_headings
+            all_codes = self.parser.fohlenerziehung_codes
+            
+            if PonyExtractor.GRUNDAUSBILDUNG in disciplines or PonyExtractor.KOMPLETT in disciplines:
+                all_dict_max = {**self.parser.fohlenerziehung_max, **self.parser.ausbildung_max, **self.parser.gangarten_max}
+                all_dict_values = {**self.parser.fohlenerziehung_values, **self.parser.ausbildung_values, **self.parser.gangarten_values}
+                all_headings = self.parser.fohlenerziehung_headings + self.parser.ausbildung_headings[1:] + self.parser.gangarten_headings[1:]
+                all_codes = self.parser.fohlenerziehung_codes + self.parser.ausbildung_codes + self.parser.gangarten_codes
         energy = self.parser.energy
         ind = 0
         train_payload = {'id': pony_id, 'trainwert': 0}

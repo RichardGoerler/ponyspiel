@@ -198,6 +198,13 @@ class ListingWindow(dialog.Dialog):
                 stud_lines = f.read().splitlines()
         self.studs = [l.split()[0] for l in stud_lines]
 
+        self.discipline_ids, self.disciplines = read_train_file()
+        self.fully_trained_file = Path('./fully_trained')
+        self.fully_trained_ids = []
+        if self.fully_trained_file.is_file():
+            with open(self.fully_trained_file, 'r') as f:
+                self.fully_trained_ids = f.read().split()
+
         self.last_column_sorted = -1   # index of the column that was last sorted. If -1, column sort will be always descending, if >= 0, sort of that specific column will be descending
 
         progressbar = ProgressWindow(self, self.gui, steps=len(all_ids)+3, initial_text=lang.PROGRESS_READING_CONFIG)
@@ -211,6 +218,7 @@ class ListingWindow(dialog.Dialog):
         self.def_size = self.gui.default_size
         self.def_font = font.Font(family=self.gui.default_font['family'], size=self.def_size)
         self.bol_font = font.Font(family=self.gui.default_font['family'], size=self.def_size, weight='bold')
+        self.bol_font_strike = font.Font(family=self.gui.default_font['family'], size=int(self.def_size*0.8), weight='bold', overstrike=True)
         self.show_sex = 0  # 0: all, 1: female, 2: male
         lname = self.gui.market_listing_var.get() if self.gui.exterior_search_requested else self.gui.option_var.get()
         price_type = self.gui.horse_page_type_var.get() if self.gui.exterior_search_requested else ''
@@ -380,6 +388,13 @@ class ListingWindow(dialog.Dialog):
                 table_row = []
                 table_row_sum = []
 
+                if id in self.discipline_ids:
+                    dis_idx = self.discipline_ids.index(id)
+                    dis_str = self.disciplines[dis_idx]
+                    dis_list = [int(s) for s in dis_str]
+                else:
+                    dis_list = [stats_parser.PonyExtractor.GRUNDAUSBILDUNG]
+
                 dim = self.gui.dims_by_scale(0.001 * self.def_size)[0]
                 fac = float(dim) / im.size[0]
                 dim2 = int(im.size[1] * fac)
@@ -388,6 +403,7 @@ class ListingWindow(dialog.Dialog):
                 self.banners.append(ImageTk.PhotoImage(im))
                 object_row.append(tk.Label(self.table_frame, image=self.banners[-1], bg=self.gui.bg, cursor="hand2"))
                 object_row[-1].bind("<Button-1>", lambda e, pid=id: self.del_cache(e, pid))
+                object_row[-1].bind("<Button-2>", lambda e, hid=id: self.gui.clipboard_description(hid))
                 object_row[-1].bind("<Button-3>", lambda e, pid=id: self.toggle_beauty(e, pid))
                 object_row[-1].configure(borderwidth=1*int(id in self.beauty_ids), relief="solid")
                 object_row.append(tk.Label(self.table_frame, text=parser.name[:self.MAX_LEN_NAME], font=self.bol_font, bg=self.gui.bg, cursor="hand2"))
@@ -413,7 +429,16 @@ class ListingWindow(dialog.Dialog):
 
                 table_row.append(parser.training_max['Gesamtpotenzial'])
                 table_row_sum.append(parser.training_max['Gesamtpotenzial'])
-                object_row.append(tk.Label(self.table_frame, text=table_row[-1], font=self.bol_font, bg=self.gui.bg))
+
+                fo = self.bol_font
+                bw = 0
+                if len(dis_list) == 0:
+                    fo = self.bol_font_strike
+                elif stats_parser.PonyExtractor.KOMPLETT in dis_list:
+                    bw = 1
+
+                object_row.append(tk.Label(self.table_frame, text=table_row[-1], font=fo, bg=self.gui.bg, relief="solid", borderwidth=bw))
+                object_row[-1].bind("<Button-1>", lambda e, pid=id, dis=-1: self.toggle_training(e, pid, dis))
 
                 avg_done = False
                 for prop_list in [self.props, self.additional]:
@@ -448,7 +473,15 @@ class ListingWindow(dialog.Dialog):
                                 textval = str(round(normval, 1))
                             else:
                                 normval = textval = val
-                            object_row.append(tk.Label(self.table_frame, text=textval, font=self.def_font, bg=self.gui.bg))
+                            if len(prop) == 1 and prop[0] in stats_parser.PonyExtractor.TRAINING_CONSTANT_DICT.keys():
+                                this_discipline = stats_parser.PonyExtractor.TRAINING_CONSTANT_DICT[prop[0]]
+                                if this_discipline in dis_list:
+                                    object_row.append(tk.Label(self.table_frame, text=textval, font=self.def_font, bg=self.gui.bg, relief="solid", borderwidth=1))
+                                else:
+                                    object_row.append(tk.Label(self.table_frame, text=textval, font=self.def_font, bg=self.gui.bg, relief="solid", borderwidth=0))
+                                object_row[-1].bind("<Button-1>", lambda e, pid=id, dis=this_discipline: self.toggle_training(e, pid, dis))
+                            else:
+                                object_row.append(tk.Label(self.table_frame, text=textval, font=self.def_font, bg=self.gui.bg))
                         table_row.append(normval)
                         if len(prop) == 1 and (prop[0] in ['Gesundheit', 'Charakter', 'Exterieur'] or prop[0] in parser.training_headings):
                             table_row_sum.append(val)      # referenced before assignment only if lang.LISTING_HEADER_PRICE in details_topheadings or training_headings, which is not the case
@@ -620,6 +653,44 @@ class ListingWindow(dialog.Dialog):
             for pid in self.beauty_ids:
                 f.write(str(pid) + '\n')
 
+    def toggle_training(self, event, pid, dis):
+        lab = event.widget
+        if pid not in self.discipline_ids:
+            self.discipline_ids.append(pid)
+            self.disciplines.append(str(stats_parser.PonyExtractor.GRUNDAUSBILDUNG))
+            dis_idx = -1
+
+        else:
+            dis_idx = self.discipline_ids.index(pid)
+        if dis == -1: # Gesamtpotential
+            if lab['borderwidth'] == 1:
+                lab['borderwidth'] = 0
+                self.disciplines[dis_idx] = str(stats_parser.PonyExtractor.GRUNDAUSBILDUNG)
+            elif lab['font'] == str(self.bol_font_strike):
+                lab['font'] = self.bol_font
+                lab['borderwidth'] = 1
+                self.disciplines[dis_idx] = str(stats_parser.PonyExtractor.KOMPLETT)
+            else:
+                lab['font'] = self.bol_font_strike
+                self.disciplines[dis_idx] = ''
+        else:
+            if lab['borderwidth'] == 0:
+                if self.disciplines[dis_idx] != '' and str(stats_parser.PonyExtractor.KOMPLETT) not in self.disciplines[dis_idx]:
+                    lab['borderwidth'] = 1
+                    self.disciplines[dis_idx] += str(dis)
+            else:
+                lab['borderwidth'] = 0
+                self.disciplines[dis_idx] = self.disciplines[dis_idx].replace(str(dis), '')
+        train_dis_file = Path('./train_define')
+        with open(train_dis_file, 'w') as f:
+            for pi, s in zip(self.discipline_ids, self.disciplines):
+                f.write(str(pi) + ' ' + str(s) + '\n')
+        if str(pid) in self.fully_trained_ids:
+            self.fully_trained_ids.remove(str(pid))
+            with open(self.fully_trained_file, 'w') as f:
+                for pi in self.fully_trained_ids:
+                    f.write(str(pi) + '\n')
+
     def del_cache(self, event, pid):
         lab = event.widget
         if lab['state'] == tk.NORMAL:
@@ -693,37 +764,37 @@ class ListingWindow(dialog.Dialog):
         self.table_frame.grid_forget()
         for i, h in enumerate(self.header_objects):
             h.grid_forget()
-            if i in self.BOLD_COLUMNS:
-                h.configure(font=self.bol_font)
-            else:
-                h.configure(font=self.def_font)
+            # if i in self.BOLD_COLUMNS:
+            #     h.configure(font=self.bol_font)
+            # else:
+            #     h.configure(font=self.def_font)
         if len(self.objects) > self.MAXROWS:
             for i, h in enumerate(self.header_objects_copy):
                 h.grid_forget()
-                if i in self.BOLD_COLUMNS:
-                    h.configure(font=self.bol_font)
-                else:
-                    h.configure(font=self.def_font)
+                # if i in self.BOLD_COLUMNS:
+                #     h.configure(font=self.bol_font)
+                # else:
+                #     h.configure(font=self.def_font)
         if len(self.objects) > 2*self.MAXROWS:
             for i, h in enumerate(self.header_objects_copy2):
                 h.grid_forget()
-                if i in self.BOLD_COLUMNS:
-                    h.configure(font=self.bol_font)
-                else:
-                    h.configure(font=self.def_font)
+                # if i in self.BOLD_COLUMNS:
+                #     h.configure(font=self.bol_font)
+                # else:
+                #     h.configure(font=self.def_font)
         for i, h in enumerate(self.header_max_labels):
             h.grid_forget()
-            h.configure(font=self.def_font)
+            # h.configure(font=self.def_font)
         for ri, object_row in enumerate(self.objects):
             for ci, el in enumerate(object_row):
-                if (ci-1) in self.BOLD_COLUMNS:  # ci - 1 because BOLD_COLUMNS is for header columns (without) image. So 1 here corresponds to 0 in BOLD_COLUMNS
-                    el.configure(font=self.bol_font)
-                else:
-                    el.configure(font=self.def_font)
+                # if (ci-1) in self.BOLD_COLUMNS:  # ci - 1 because BOLD_COLUMNS is for header columns (without) image. So 1 here corresponds to 0 in BOLD_COLUMNS
+                #     el.configure(font=self.bol_font)
+                # else:
+                #     el.configure(font=self.def_font)
                 el.grid_forget()
-        self.sex_all_button.configure(font=self.def_font)
-        self.sex_female_button.configure(font=self.def_font)
-        self.sex_male_button.configure(font=self.def_font)
+        # self.sex_all_button.configure(font=self.def_font)
+        # self.sex_female_button.configure(font=self.def_font)
+        # self.sex_male_button.configure(font=self.def_font)
         self.button_frame.grid(row=0, column=0, padx=self.def_size, pady=self.def_size, sticky=tk.W)
         self.sum_checkbutton.grid(row=0, column=0, padx=int(self.def_size / 2))
         self.sex_all_button.grid(row=0, column=1, padx=int(self.def_size / 2))
@@ -967,14 +1038,30 @@ def read_own_file():
     if own_file.is_file():
         with open(own_file, 'r') as f:
             lines = f.read().splitlines()
-    for l in lines:
-        spl = l.split()
-        all_ids.append(spl[0])
-        if len(spl) > 1:
-            all_races.append(int(spl[1]))
-        else:
-            all_races.append(-1)
+        for l in lines:
+            spl = l.split()
+            all_ids.append(spl[0])
+            if len(spl) > 1:
+                all_races.append(int(spl[1]))
+            else:
+                all_races.append(-1)
     return all_ids, all_races
+
+def read_train_file():
+    own_file = Path('./train_define')
+    train_ids = []
+    train_disciplines = []
+    if own_file.is_file():
+        with open(own_file, 'r') as f:
+            lines = f.read().splitlines()
+        for l in lines:
+            spl = l.split()
+            train_ids.append(spl[0])
+            if len(spl) > 1:
+                train_disciplines.append(spl[1])
+            else:
+                train_disciplines.append('')
+    return train_ids, train_disciplines
 
 
 class PonyGUI:
@@ -1016,6 +1103,8 @@ class PonyGUI:
         self.text_font.configure(size=self.default_size)
         self.bold_font = self.default_font.copy()
         self.bold_font.configure(weight="bold")
+        self.bold_strikethrough_font = self.bold_font.copy()
+        self.bold_strikethrough_font.configure(overstrike=1)
         self.big_bold_font = self.bold_font.copy()
         self.big_bold_font.configure(size=int(1.33*self.default_size))
         try:
@@ -1389,12 +1478,12 @@ class PonyGUI:
     def train_all(self, only_train=False):
         too_many_redirects_ids = []
         all_ids, all_races = read_own_file()
-        no_train_ids = []
+        fully_trained_ids = []
         only_train_ids = []
-        no_train_file = Path('./no_train')
-        if no_train_file.is_file():
-            with open(no_train_file, 'r') as f:
-                no_train_ids = f.read().split()
+        fully_trained_file = Path('./fully_trained')
+        if fully_trained_file.is_file():
+            with open(fully_trained_file, 'r') as f:
+                fully_trained_ids = f.read().split()
         only_train_file = Path('./only_train')
         if only_train_file.is_file():
             with open(only_train_file, 'r') as f:
@@ -1403,16 +1492,24 @@ class PonyGUI:
             messagebox.showerror(lang.IO_ERROR, lang.ERROR_ONLY_TRAIN_FILE_MISSING)
             return
         if only_train:
-            train_ids = [pid for pid in all_ids if (pid in only_train_ids and pid not in no_train_ids)]
+            train_ids = [pid for pid in all_ids if (pid in only_train_ids and pid not in fully_trained_ids)]
         else:
-            train_ids = [pid for pid in all_ids if pid not in no_train_ids]
+            train_ids = [pid for pid in all_ids if pid not in fully_trained_ids]
+        discipline_ids, disciplines = read_train_file()
 
         if len(train_ids) > 0:
             add_to_only_train = []
-            add_to_no_train = []
+            add_to_fully_trained = []
             progressbar = ProgressWindow(self.root, self, title=lang.TRAIN_OWN_BUTTON, steps=len(train_ids), initial_text=str(train_ids[0]))
             for this_id in train_ids:
-                if not self.extractor.train_pony(this_id):
+                if this_id in discipline_ids:
+                    dis_idx = discipline_ids.index(this_id)
+                    dis_str = disciplines[dis_idx]
+                    dis_list = [int(s) for s in dis_str]
+                else:
+                    dis_list = [stats_parser.PonyExtractor.GRUNDAUSBILDUNG]
+
+                if not self.extractor.train_pony(this_id, disciplines=dis_list):
                     if 'too many redirects' in self.extractor.log[-1].lower():
                         too_many_redirects_ids.append(this_id)
                         progressbar.step(str(this_id))
@@ -1422,34 +1519,36 @@ class PonyGUI:
                     break
                 # check whether pony is fully trained or in charakter training
                 if len(self.extractor.log) > 0 and this_id in self.extractor.log[-1] \
-                        and 'fully trained' in self.extractor.log[-1] \
-                        and len(self.extractor.parser.charakter_training_values) > 0:
+                        and 'fully trained' in self.extractor.log[-1]:
+                       # and len(self.extractor.parser.charakter_training_values) > 0:
                     years = int(self.extractor.parser.facts_values['Alter'].split('Jahre')[0].strip()) \
                         if 'Jahre' in self.extractor.parser.facts_values['Alter'] else 0
-                    if years >= 3:    # if younger than 3 years, pony can neither be fully trained nor in charakter training
-                        flag = True
-                        for k in self.extractor.parser.charakter_training_values.keys():
-                            if self.extractor.parser.charakter_training_values[k] < self.extractor.parser.charakter_training_max[k]:
-                                flag = False
-                                add_to_only_train.append(this_id)   # if fully trained without charakter, pony is ready for charakter training
-                                break
-                        if flag:
-                            add_to_no_train.append(this_id)
+                    if years >= 3 or len(dis_list) == 0 or dis_list == [stats_parser.PonyExtractor.GRUNDAUSBILDUNG]:    # if younger than 3 years, pony can neither be fully trained nor in charakter training
+                        # flag = True
+                        # for k in self.extractor.parser.charakter_training_values.keys():
+                        #     if self.extractor.parser.charakter_training_values[k] < self.extractor.parser.charakter_training_max[k]:
+                        #         flag = False
+                        #         add_to_only_train.append(this_id)   # if fully trained without charakter, pony is ready for charakter training
+                        #         break
+                        # if flag:
+                        add_to_fully_trained.append(this_id)
                 elif len(self.extractor.log) > 0 and this_id in self.extractor.log[-1] \
                         and 'charakter' in self.extractor.log[-1]:
                     add_to_only_train.append(this_id)
                 progressbar.step(str(this_id))
 
-            for new_id in add_to_no_train:
-                no_train_ids.append(new_id)
+                time.sleep(2)
+
+            for new_id in add_to_fully_trained:
+                fully_trained_ids.append(new_id)
                 if new_id in only_train_ids:
                     remove_index = only_train_ids.index(new_id)
                     del only_train_ids[remove_index]
             for new_id in add_to_only_train:
                 if new_id not in only_train_ids:
                     only_train_ids.append(new_id)
-            with open(no_train_file, 'w') as f:
-                for pid in no_train_ids:
+            with open(fully_trained_file, 'w') as f:
+                for pid in fully_trained_ids:
                     f.write(str(pid) + '\n')
             with open(only_train_file, 'w') as f:
                 for pid in only_train_ids:
@@ -1462,9 +1561,16 @@ class PonyGUI:
                 messagebox.showwarning(title=lang.REDIRECTS_WARNING_TITLE, message=message)
 
     def train_this(self):
-        id = self.id_label.cget('text').strip()
-        if len(id) > 0 and id.isnumeric():
-            if not self.extractor.train_pony(id):
+        this_id = self.id_label.cget('text').strip()
+        if len(this_id) > 0 and this_id.isnumeric():
+            discipline_ids, disciplines = read_train_file()
+            if this_id in discipline_ids:
+                dis_idx = discipline_ids.index(this_id)
+                dis_str = disciplines[dis_idx]
+                dis_list = [int(s) for s in dis_str]
+            else:
+                dis_list = [stats_parser.PonyExtractor.GRUNDAUSBILDUNG]
+            if not self.extractor.train_pony(this_id, disciplines=dis_list):
                 messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                 return
 
@@ -1618,8 +1724,11 @@ class PonyGUI:
 
         self.text_to_clipboard(note)
 
-    def clipboard_description(self):
-        pony_id_str = self.id_label.cget('text')
+    def clipboard_description(self, pid=None):
+        if pid is not None:
+            pony_id_str = str(pid)
+        else:
+            pony_id_str = self.id_label.cget('text')
         if not self.extractor.get_pony_info(int(pony_id_str)):
             messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
             return
@@ -1699,9 +1808,13 @@ class PonyGUI:
             p = parser
         l = [p.facts_values, p.gesundheit_values, p.charakter_values, p.exterieur_values, p.ausbildung_max, p.gangarten_max, p.dressur_max,
              p.springen_max, p.military_max, p.western_max, p.rennen_max, p.fahren_max]
-        for l_list in l:
+        for l_list in l: # list ist aber ein dict
             if prop in list(l_list.keys()):
-                return (l_list[prop], len(l_list)-1)
+                try:
+                    prop_sum = sum(l_list.values()) - l_list[prop]
+                except TypeError:
+                    return (l_list[prop], len(l_list)-1)
+                return (prop_sum, len(l_list)-1)
         return (0,1)
 
     def get_prop_value(self, prop, parser=None):
