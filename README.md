@@ -132,6 +132,10 @@ Rechtsklick auf einen Pferdenamen färbt alle Pferde schwarz, die gemeinsame Elt
 
 Linksklick auf das Bild des Pferdes in der Auflistung löscht den lokalen Cache des Pferdes. Beim nächsten Aufruf werden die Werte neu aus dem Spiel geladen.
 
+#### Kurzbeschreibung generieren
+
+Mittelklick auf das Bild des Pferdes generiert eine automatische Kurzbeschreibung und kopiert diese in die Zwischenablage, exakt wie bei Funktion 5.
+
 #### Filtern der Liste nach selbstdefiniertem Kriterium
 
 Rechtsklick auf einen Spaltennamen erlaubt es, nur die Pferde anzuzeigen, deren Spaltenwert eine selbst definierbare Bedingung erfüllt. Es öffnet sich ein Fenster, in welchem die Bedingung eigegeben werden kann.
