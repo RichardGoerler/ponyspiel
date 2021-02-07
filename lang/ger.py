@@ -57,6 +57,7 @@ CACHE_LABEL = 'Cache löschen'
 CACHE_ALL_BUTTON = 'Komplett'
 CACHE_NOT_OWNED_BUTTON = 'Nur fremde'
 CACHE_THIS_BUTTON = 'Aktuell'
+SHUTDOWN_CHECKBOX = 'Nach dem Vorgang herunterfahren'
 
 HORSE_PAGE_TRADE = 'Pferdehandel'
 HORSE_PAGE_STUD = 'Deckstation'

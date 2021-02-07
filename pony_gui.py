@@ -40,7 +40,7 @@ def resource_path(relative_path):
 
 
 class ProgressWindow(tk.Toplevel):
-    def __init__(self, parent, gui, title=lang.PROGRESS, steps=100, initial_text=''):
+    def __init__(self, parent, gui, title=lang.PROGRESS, steps=100, initial_text='', shutdown_button=True):
 
         tk.Toplevel.__init__(self, parent)
         self.configure(bg="#EDEEF3")
@@ -72,6 +72,10 @@ class ProgressWindow(tk.Toplevel):
 
         self.attributes('-disabled', True)
 
+        self.gui.shutdown_var.set(0)
+        if shutdown_button:
+            self.gui.checkbox_shutdown.grid(row=2, column=0, columnspan=3)
+
     def pad_str(self, text):
         PAD_TO = 50
         l = len(text)
@@ -89,10 +93,17 @@ class ProgressWindow(tk.Toplevel):
         self.pb['value'] = self.value
         if self.value > self.max_value-self.stepsize/2:
             self.destroy()
+            if self.gui.shutdown_var.get() == 1:
+                subprocess.call(["shutdown", "-f", "-s", "-t", "2"])
+                # print('shutdown')
         self.gui.root.update()
 
     def close(self):
         self.destroy()
+        
+    def destroy(self):
+        self.gui.checkbox_shutdown.grid_forget()
+        super(ProgressWindow, self).destroy()
 
 
 def argsort(seq, ascending=False):
@@ -207,7 +218,7 @@ class ListingWindow(dialog.Dialog):
 
         self.last_column_sorted = -1   # index of the column that was last sorted. If -1, column sort will be always descending, if >= 0, sort of that specific column will be descending
 
-        progressbar = ProgressWindow(self, self.gui, steps=len(all_ids)+3, initial_text=lang.PROGRESS_READING_CONFIG)
+        progressbar = ProgressWindow(self, self.gui, steps=len(all_ids)+3, initial_text=lang.PROGRESS_READING_CONFIG, shutdown_button=False)
         self.MAXROWS = 25
         self.MAX_LEN_NAME = 20
         self.MAX_LEN_PROP = 3
@@ -1366,6 +1377,10 @@ class PonyGUI:
         self.interactive_elements.append(self.all_cache_button)
         self.interactive_elements.append(self.not_owned_cache_button)
         self.interactive_elements.append(self.this_cache_button)
+
+        self.shutdown_var = tk.IntVar()
+        self.shutdown_var.set(0)
+        self.checkbox_shutdown = tk.Checkbutton(self.cache_frame, text=lang.SHUTDOWN_CHECKBOX, variable=self.shutdown_var, bg=self.bg)
 
         self.interactive_states = [0]*len(self.interactive_elements)
 
