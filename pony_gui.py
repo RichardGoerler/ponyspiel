@@ -404,7 +404,7 @@ class ListingWindow(dialog.Dialog):
                     dis_str = self.disciplines[dis_idx]
                     dis_list = [int(s) for s in dis_str]
                 else:
-                    dis_list = [stats_parser.PonyExtractor.GRUNDAUSBILDUNG]
+                    dis_list = self.gui.default_disciplines
 
                 dim = self.gui.dims_by_scale(0.001 * self.def_size)[0]
                 fac = float(dim) / im.size[0]
@@ -1386,6 +1386,14 @@ class PonyGUI:
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
+        default_train_file = Path('./default_train')
+        if default_train_file.exists():
+            with open(default_train_file, 'r') as f:
+                dis_str = f.read().split()[0].strip()
+                self.default_disciplines = [int(s) for s in dis_str]
+        else:
+            self.default_disciplines = [self.extractor.GRUNDAUSBILDUNG]
+
         if not self.check_for_updates():
             self.start_poll_on_boot()
             self.root.mainloop()
@@ -1522,7 +1530,7 @@ class PonyGUI:
                     dis_str = disciplines[dis_idx]
                     dis_list = [int(s) for s in dis_str]
                 else:
-                    dis_list = [stats_parser.PonyExtractor.GRUNDAUSBILDUNG]
+                    dis_list = self.default_disciplines
 
                 if not self.extractor.train_pony(this_id, disciplines=dis_list):
                     if 'too many redirects' in self.extractor.log[-1].lower():
