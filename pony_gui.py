@@ -1835,6 +1835,10 @@ class PonyGUI:
             if prop in list(l_list.keys()):
                 try:
                     prop_sum = sum(l_list.values()) - l_list[prop]
+                    if prop_sum == 0:
+                        raise TypeError('This is expected behavior')  # if all single values are 0, values are probably
+                                                                      # coming from a FakeParser, which is made from
+                                                                      # parsing a list with quick mode.
                 except TypeError:
                     return (l_list[prop], len(l_list)-1)
                 return (prop_sum, len(l_list)-1)
