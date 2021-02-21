@@ -1043,13 +1043,22 @@ class PonyExtractor:
     def get_own_ponies(self, progress_window=None):
         def get_own_ponies_from_stables(html_text, prog_win=None):
             urls = []
+            if not 'nostable.php?id=' in html_text:
+                self.log.append(f'Could not find nostable link in landing page')
+                return False
+            url_begin = html_text.index('nostable.php?id=')
+            url_text = html_text[url_begin: url_begin + 30]
+            url_end = url_text.index('"')
+            nostable_url = url_text[:url_end]
+            urls.append(nostable_url)
+
             while 'stable.php?id=' in html_text:
                 url_begin = html_text.index('stable.php?id=')
                 url_text = html_text[url_begin: url_begin+30]
                 url_end = url_text.index('"')
                 stable_url = url_text[:url_end]
                 if stable_url not in urls:
-                    urls.append(url_text[:url_end])
+                    urls.append(stable_url)
                 html_text = html_text[url_begin+url_end:]
 
             if prog_win is not None:
