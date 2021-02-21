@@ -76,6 +76,10 @@ class ProgressWindow(tk.Toplevel):
         if shutdown_button:
             self.gui.checkbox_shutdown.grid(row=2, column=0, columnspan=3)
 
+    def set_steps(self, n_steps):
+        self.steps = n_steps
+        self.stepsize = self.max_value/self.steps
+
     def pad_str(self, text):
         PAD_TO = 50
         l = len(text)
@@ -775,27 +779,27 @@ class ListingWindow(dialog.Dialog):
         self.table_frame.grid_forget()
         for i, h in enumerate(self.header_objects):
             h.grid_forget()
-            # if i in self.BOLD_COLUMNS:
-            #     h.configure(font=self.bol_font)
-            # else:
-            #     h.configure(font=self.def_font)
+            if i in self.BOLD_COLUMNS:
+                h.configure(font=self.bol_font)
+            else:
+                h.configure(font=self.def_font)
         if len(self.objects) > self.MAXROWS:
             for i, h in enumerate(self.header_objects_copy):
                 h.grid_forget()
-                # if i in self.BOLD_COLUMNS:
-                #     h.configure(font=self.bol_font)
-                # else:
-                #     h.configure(font=self.def_font)
+                if i in self.BOLD_COLUMNS:
+                    h.configure(font=self.bol_font)
+                else:
+                    h.configure(font=self.def_font)
         if len(self.objects) > 2*self.MAXROWS:
             for i, h in enumerate(self.header_objects_copy2):
                 h.grid_forget()
-                # if i in self.BOLD_COLUMNS:
-                #     h.configure(font=self.bol_font)
-                # else:
-                #     h.configure(font=self.def_font)
+                if i in self.BOLD_COLUMNS:
+                    h.configure(font=self.bol_font)
+                else:
+                    h.configure(font=self.def_font)
         for i, h in enumerate(self.header_max_labels):
             h.grid_forget()
-            # h.configure(font=self.def_font)
+            h.configure(font=self.def_font)
         for ri, object_row in enumerate(self.objects):
             for ci, el in enumerate(object_row):
                 # if (ci-1) in self.BOLD_COLUMNS:  # ci - 1 because BOLD_COLUMNS is for header columns (without) image. So 1 here corresponds to 0 in BOLD_COLUMNS
@@ -803,9 +807,9 @@ class ListingWindow(dialog.Dialog):
                 # else:
                 #     el.configure(font=self.def_font)
                 el.grid_forget()
-        # self.sex_all_button.configure(font=self.def_font)
-        # self.sex_female_button.configure(font=self.def_font)
-        # self.sex_male_button.configure(font=self.def_font)
+        self.sex_all_button.configure(font=self.def_font)
+        self.sex_female_button.configure(font=self.def_font)
+        self.sex_male_button.configure(font=self.def_font)
         self.button_frame.grid(row=0, column=0, padx=self.def_size, pady=self.def_size, sticky=tk.W)
         self.sum_checkbutton.grid(row=0, column=0, padx=int(self.def_size / 2))
         self.sex_all_button.grid(row=0, column=1, padx=int(self.def_size / 2))
@@ -1899,7 +1903,8 @@ class PonyGUI:
 
     def load_own_ponies(self):
         all_ids, all_races = read_own_file()
-        horse_ids = self.extractor.get_own_ponies()
+        prog_wind = ProgressWindow(self.root, self, title=lang.LOAD_OWN_BUTTON, steps=10, initial_text=lang.GET_STABLE_LIST, shutdown_button=False)
+        horse_ids = self.extractor.get_own_ponies(prog_wind)
         if horse_ids == False:
             messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
         else:

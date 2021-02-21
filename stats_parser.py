@@ -1040,7 +1040,54 @@ class PonyExtractor:
             self.driver.get(url)
         return self.driver.page_source
 
-    def get_own_ponies(self):
+    def get_own_ponies(self, progress_window=None):
+        def get_own_ponies_from_stables(html_text, prog_win=None):
+            urls = []
+            while 'stable.php?id=' in html_text:
+                url_begin = html_text.index('stable.php?id=')
+                url_text = html_text[url_begin: url_begin+30]
+                url_end = url_text.index('"')
+                stable_url = url_text[:url_end]
+                if stable_url not in urls:
+                    urls.append(url_text[:url_end])
+                html_text = html_text[url_begin+url_end:]
+
+            if prog_win is not None:
+                prog_win.set_steps(len(urls)+1)
+
+            horse_ids = []
+            for stable_url in urls:
+                if prog_win is not None:
+                    prog_win.step(stable_url)
+                r2 = self.session.get(self.base_url + stable_url)
+                stable_text = r2.text
+                if 'class="main"' in stable_text:
+                    main_begin = stable_text.index('class="main"')
+                else:
+                    self.log.append(f'Could not find main div in stable {self.base_url + stable_url}')
+                    return False
+                if '<footer' in stable_text:
+                    main_end = stable_text.index('<footer')
+                else:
+                    self.log.append(f'Could not find footer in stable {self.base_url + stable_url}')
+                    return False
+                stable_text = stable_text[main_begin : main_end]
+                search_string = '"horse.php?id='
+                while search_string in stable_text:
+                    index = stable_text.index(search_string) + len(search_string)
+                    id_string = ''
+                    while stable_text[index].isnumeric():
+                        id_string += stable_text[index]
+                        index += 1
+                    id = int(id_string)
+                    if not id in horse_ids:
+                        horse_ids.append(id)
+                    stable_text = stable_text[index:]
+
+            if prog_win is not None:
+                prog_win.step('Finished')
+            return horse_ids
+
         if not self._login_if_required():
             return False
         r1 = self.session.get(self.base_url, headers=self.headers)
@@ -1048,6 +1095,10 @@ class PonyExtractor:
         if len(text) < self.loginpage_length_threshold:
             self.log.append('Contacting start page at {} failed'.format(self.base_url))
             return False
+
+        # Temporarily (or maybe permanently) switched to horse detection from stable page
+        return get_own_ponies_from_stables(text, progress_window)
+
         search_string = 'organizehorses.php?id='
         if not search_string in text:
             self.log.append('Could not find organizehorses link in start page')
