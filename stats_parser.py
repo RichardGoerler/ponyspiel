@@ -140,7 +140,7 @@ class MyHTMLParser(HTMLParser):
                                 # Attribute
                                 'Hindernisrennen', 'Linkskurve', 'Rechtskurve', 'kurze Distanz', 'mittlere Distanz',
                                 'lange Distanz', 'Endspurt', 'Sprint']  # deprecated
-        self.rennen_codes = [701, 703, 705, 706] + [750 + i for i in range(6)] + [700, 702, 704, 756, 757, 758, 750,
+        self.rennen_codes = [701, 703, 705, 706] + [751 + i for i in range(5)] + [700, 702, 704, 756, 757, 758, 750,
                                                                                   759]
 
         # Dressur
