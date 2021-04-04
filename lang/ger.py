@@ -58,6 +58,8 @@ CACHE_LABEL = 'Cache löschen'
 CACHE_ALL_BUTTON = 'Komplett'
 CACHE_NOT_OWNED_BUTTON = 'Nur fremde'
 CACHE_THIS_BUTTON = 'Aktuell'
+EVENT_BUTTON_START = 'Event Start'
+EVENT_BUTTON_STOP = 'Event Stop'
 SHUTDOWN_CHECKBOX = 'Nach dem Vorgang herunterfahren'
 
 HORSE_PAGE_TRADE = 'Pferdehandel'

@@ -9,7 +9,8 @@ import traceback
 from datetime import datetime
 
 
-# from selenium import webdriver
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 def add_margin(pil_img, top, right, bottom, left, color):
     width, height = pil_img.size
@@ -1022,7 +1023,9 @@ class PonyExtractor:
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument("--headless")
         driver_path = Path('./chromedriver.exe').absolute()
-        self.driver = webdriver.Chrome(str(driver_path), chrome_options=chrome_options)
+        options = Options()
+        options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        self.driver = webdriver.Chrome(str(driver_path), chrome_options=chrome_options, options=options)
         # self.driver = webdriver.Chrome()
         self.driver.get(self.post_login_url)
         # assert "noblehorsechampion" in driver.title
@@ -1034,7 +1037,6 @@ class PonyExtractor:
         password = self.driver.find_element_by_name("password")
         password.clear()
         password.send_keys(self.payload['password'])
-
         self.driver.find_element_by_name("login").click()
 
     def open_page_in_browser(self, url):

@@ -14,6 +14,7 @@ import win32clipboard
 import webbrowser
 import time
 import multiprocessing
+import os
 import sys
 import subprocess
 import requests
@@ -1035,7 +1036,7 @@ def halloween_poll():
             text = extractor.open_page_in_browser(url)
             if text:
                 if 'Belohnungen einzutauschen' in text:
-                    print('Halloween-Item gefunden nach {} Aufrufen'.format(found_counter))
+                    print('Event-Item gefunden nach {} Aufrufen'.format(found_counter))
                     found_counter = 1
                     # Gefunden!
                     time.sleep(61)
@@ -1370,8 +1371,8 @@ class PonyGUI:
         self.cache_frame.grid(row=8, column=0, padx=self.default_size, pady=self.default_size)
 
         tk.Label(self.cache_frame, text=lang.CACHE_LABEL, font=self.bold_font, bg=self.bg).grid(row=0, column=1, padx=int(self.default_size / 2))
-        # self.halloween_button = tk.Button(self.cache_frame, text='Halloween Start', command=self.halloween_toggle, bg=self.bg)
-        # self.halloween_button.grid(row=1, column=3, padx=self.default_size)
+        self.halloween_button = tk.Button(self.cache_frame, text=lang.EVENT_BUTTON_START, command=self.halloween_toggle, bg=self.bg)
+        self.halloween_button.grid(row=1, column=3, padx=self.default_size)
         self.all_cache_button = tk.Button(self.cache_frame, text=lang.CACHE_ALL_BUTTON, command=lambda: self.del_cache('all'), bg=self.bg)
         self.all_cache_button.grid(row=1, column=0, padx=int(self.default_size / 2))
         self.not_owned_cache_button = tk.Button(self.cache_frame, text=lang.CACHE_NOT_OWNED_BUTTON, command=lambda: self.del_cache('not_owned'), bg=self.bg)
@@ -1636,10 +1637,11 @@ class PonyGUI:
             self.halloween_process = multiprocessing.Process(target=halloween_poll)
             self.halloween_process.start()
 
-            self.halloween_button['text'] = 'Halloween Stopp'
+            self.halloween_button['text'] = lang.EVENT_BUTTON_STOP
         else:
             self.halloween_process.terminate()
             self.halloween_process = None
+            os.system('taskkill /IM chromedriver.exe /F')
             # if self.chromedriver_process is not None:
             #     self.chromedriver_process.terminate()
             self.halloween_button['text'] = 'Halloween Start'
@@ -1675,10 +1677,6 @@ class PonyGUI:
             poll_file.unlink()
 
     def on_closing(self):
-        if self.halloween_process is not None:
-            self.halloween_process.terminate()
-        # if self.chromedriver_process is not None:
-        #     self.chromedriver_process.terminate()
         running_proc_indices = [i for i in range(len(self.poll_processes)) if self.poll_processes[i].is_alive()]
         self.poll_processes = [self.poll_processes[i] for i in running_proc_indices]
         self.poll_ids = [self.poll_ids[i] for i in running_proc_indices]
@@ -1687,9 +1685,14 @@ class PonyGUI:
             if messagebox.askokcancel(lang.QUIT_HEADING, lang.QUIT_TEXT):
                 for p in self.poll_processes:
                     p.terminate()
-                self.root.destroy()
-        else:
-            self.root.destroy()
+            else:
+                return
+        if self.halloween_process is not None:
+            self.halloween_process.terminate()
+            os.system('taskkill /IM chromedriver.exe /F')
+        # if self.chromedriver_process is not None:
+        #     self.chromedriver_process.terminate()
+        self.root.destroy()
 
     def deckstation_poll_toggle(self):
         pid = self.id_label.cget('text')
