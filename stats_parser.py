@@ -140,7 +140,7 @@ class MyHTMLParser(HTMLParser):
                                 # Attribute
                                 'Hindernisrennen', 'Linkskurve', 'Rechtskurve', 'kurze Distanz', 'mittlere Distanz',
                                 'lange Distanz', 'Endspurt', 'Sprint']  # deprecated
-        self.rennen_codes = [701, 703, 705, 706] + [750 + i for i in range(6)] + [700, 702, 704, 756, 757, 758, 750,
+        self.rennen_codes = [701, 703, 705, 706] + [751 + i for i in range(6)] + [700, 702, 704, 756, 757, 758, 750,
                                                                                   759]
 
         # Dressur
@@ -900,6 +900,7 @@ class PonyExtractor:
         self.bot_token = '1331285354:AAHwXfiRyvrd4JFiSAw5SAB4C3YDlEpXXE8'
         self.race_dict = {'Alle': 0,
                           'Trakehner': 1,
+                          'Pura Raza Española': 2,
                           'Andalusier': 2,
                           'Holsteiner': 3,
                           'Englisches Vollblut': 4,
@@ -909,7 +910,8 @@ class PonyExtractor:
                           'Welsh Mountain Pony': 8,
                           'Isländer': 9,
                           'Friese': 10,
-                          'Haflinger': 11}
+                          'Haflinger': 11,
+                          'Appaloosa': 12,}
         self.sort_by_dict = {'Neueste zuerst': 'firstnew',
                              'Jüngste zuerst': 'firstyoung',
                              'Älteste zuerst': 'firstold',

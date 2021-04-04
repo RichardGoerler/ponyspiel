@@ -1,3 +1,4 @@
 Exterieur: Haltung, Ausdruck, Kopf, Halsansatz, Rückenlinie, Beinstellung
 Gesamtpotenzial
 A_Ausbildung
+D_Dressur
