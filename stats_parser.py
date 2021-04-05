@@ -943,6 +943,10 @@ class PonyExtractor:
         self.ponies = []
         self.empty_img = Image.new('RGBA', (428, 251), (0, 0, 0, 0))
 
+        self.has_box = None
+        self.energy = None
+        self.train_state = None
+
     def __del__(self):
         if self.session is not None:
             self.session.close()
@@ -1305,14 +1309,21 @@ class PonyExtractor:
         self.parser.gesundheit_values = {k: self.parser.details_values[k] for k in self.parser.gesundheit_headings}
         self.parser.charakter_values = {k: self.parser.details_values[k] for k in self.parser.charakter_headings}
         self.parser.exterieur_values = {k: self.parser.details_values[k] for k in self.parser.exterieur_headings}
-        if new_id == int(
-                pony_id):  # if the parser was not redirected to a different page. If it was, the info usually belongs to the mother of the requested pony. We do not want to store that
+        if new_id == int(pony_id):
+            # if the parser was not redirected to a different page. If it was, the info usually belongs to the
+            # mother of the requested pony. We do not want to store that
             with open(write_file, 'wb') as f:
                 pickle.dump(self.parser, f)
             self.cache_exists = True
         else:
             self.cache_exists = False
         return True
+
+    def _write_cache(self, pony_id):
+        write_file = Path('.cache/{}/ponydata.p'.format(pony_id))
+        with open(write_file, 'wb') as f:
+            pickle.dump(self.parser, f)
+        self.cache_exists = True
 
     def request_pony_images(self, cached=True, urls=None, pony_id=None):
         if urls is not None:
@@ -1460,13 +1471,16 @@ class PonyExtractor:
             self.log.append(resp)
             return 'No telegram id found. Message was not sent'
 
-    def train_pony(self, pony_id, disciplines=None):
+    def train_pony(self, pony_id, disciplines=None, refresh_state_only=False):
         if disciplines is None:
             disciplines = [PonyExtractor.GRUNDAUSBILDUNG]  # default argument
-        if not self.get_pony_info(pony_id, cached=False):
-            return False
+        if not refresh_state_only:
+            if not self.get_pony_info(pony_id, cached=False):
+                return False
         years = int(self.parser.facts_values['Alter'].split('Jahre')[0].strip()) if 'Jahre' in self.parser.facts_values[
             'Alter'] else 0
+        # Check whether charakter training is in progress
+        charakter_training_in_progress = any(x > 0 for x in self.parser.charakter_training_values.values())
         if years >= 3:
             if PonyExtractor.KOMPLETT in disciplines:
                 all_dict_max = {**self.parser.ausbildung_max, **self.parser.gangarten_max, **self.parser.dressur_max,
@@ -1488,9 +1502,6 @@ class PonyExtractor:
                 all_codes = self.parser.ausbildung_codes + self.parser.gangarten_codes + self.parser.dressur_codes + self.parser.springen_codes + \
                             self.parser.military_codes + self.parser.western_codes + self.parser.rennen_codes + self.parser.fahren_codes + self.parser.charakter_training_codes
             else:
-                # Check whether charakter training is in progress
-                charakter_training_in_progress = any(x > 0 for x in self.parser.charakter_training_values.values())
-
                 all_dict_max = {}
                 all_dict_values = {}
                 all_headings = []
@@ -1558,7 +1569,10 @@ class PonyExtractor:
                 all_headings = self.parser.fohlenerziehung_headings + self.parser.ausbildung_headings[
                                                                       1:] + self.parser.gangarten_headings[1:]
                 all_codes = self.parser.fohlenerziehung_codes + self.parser.ausbildung_codes + self.parser.gangarten_codes
-        energy = self.parser.energy
+        energy = self.parser.energy if not refresh_state_only else 0
+        max_sum = sum(all_dict_max.values()) if not charakter_training_in_progress else 120
+        val_sum = min(max_sum, sum(all_dict_values.values()) + energy) if not charakter_training_in_progress else min(max_sum, sum(self.parser.charakter_training_values.values()) + energy)
+        self.parser.train_state = val_sum/max_sum if not charakter_training_in_progress else val_sum/max_sum + 1
         ind = 0
         train_payload = {'id': pony_id, 'trainwert': 0}
         if not self.parser.has_box:
@@ -1590,6 +1604,8 @@ class PonyExtractor:
                 energy = 0
         if train_payload['trainwert'] in self.parser.charakter_training_codes:
             self.log.append('Pony {} is doing charakter training'.format(pony_id))
+        # write cache to store updated train state
+        self._write_cache(pony_id)
         return True
 
     def care_pony(self, pony_id):
