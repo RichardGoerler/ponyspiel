@@ -1572,7 +1572,10 @@ class PonyExtractor:
         energy = self.parser.energy if not refresh_state_only else 0
         max_sum = sum(all_dict_max.values()) if not charakter_training_in_progress else 120
         val_sum = min(max_sum, sum(all_dict_values.values()) + energy) if not charakter_training_in_progress else min(max_sum, sum(self.parser.charakter_training_values.values()) + energy)
-        self.parser.train_state = val_sum/max_sum if not charakter_training_in_progress else val_sum/max_sum + 1
+        if max_sum == 0:
+            self.parser.train_state = -1
+        else:
+            self.parser.train_state = val_sum/max_sum if not charakter_training_in_progress else val_sum/max_sum + 1
         ind = 0
         train_payload = {'id': pony_id, 'trainwert': 0}
         if not self.parser.has_box:

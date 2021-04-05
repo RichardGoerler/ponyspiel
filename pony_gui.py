@@ -471,6 +471,8 @@ class ListingWindow(dialog.Dialog):
                     self.gui.extractor.train_pony(pony_id=id, disciplines=dis_list, refresh_state_only=True)
                 if parser.train_state is None:
                     state_str = '?'
+                elif parser.train_state < 0:
+                    state_str = 'N'
                 elif parser.train_state <= 1:
                     state_str = '{:d}%'.format(int(100 * parser.train_state))
                 else:
