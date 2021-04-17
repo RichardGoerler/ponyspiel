@@ -334,13 +334,16 @@ class ListingWindow(dialog.Dialog):
         self.header_objects_copy2.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_POTENTIAL[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_POTENTIAL: self.sort(p), bg=self.gui.bg))
         self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
         self.data_headers.append(lang.LISTING_HEADER_POTENTIAL)
-        self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_TRAIN_STATE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_TRAIN_STATE: self.sort(p), bg=self.gui.bg))
-        self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_TRAIN_STATE: self.filter_function(e, p))
-        self.header_objects_copy.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_TRAIN_STATE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_TRAIN_STATE: self.sort(p), bg=self.gui.bg))
-        self.header_objects_copy2.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_TRAIN_STATE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_TRAIN_STATE: self.sort(p), bg=self.gui.bg))
-        self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
-        self.data_headers.append(lang.LISTING_HEADER_TRAIN_STATE)
-        NUM_NON_USER_PROP = 4  # number of entries in the data table that is not defined by the user (and which the average is calculated over). Does not include the image!
+        if not self.gui.exterior_search_requested:
+            self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_TRAIN_STATE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_TRAIN_STATE: self.sort(p), bg=self.gui.bg))
+            self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_TRAIN_STATE: self.filter_function(e, p))
+            self.header_objects_copy.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_TRAIN_STATE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_TRAIN_STATE: self.sort(p), bg=self.gui.bg))
+            self.header_objects_copy2.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_TRAIN_STATE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_TRAIN_STATE: self.sort(p), bg=self.gui.bg))
+            self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
+            self.data_headers.append(lang.LISTING_HEADER_TRAIN_STATE)
+            NUM_NON_USER_PROP = 4 # number of entries in the data table that is not defined by the user (and which the average is calculated over). Does not include the image!
+        else:
+            NUM_NON_USER_PROP = 3
         avg_done = False
         for prop_list in [self.props, self.additional]:
             for prop in prop_list:
@@ -462,25 +465,26 @@ class ListingWindow(dialog.Dialog):
                 object_row.append(tk.Label(self.table_frame, text=table_row[-1], font=fo, bg=self.gui.bg, relief="solid", borderwidth=bw))
                 object_row[-1].bind("<Button-1>", lambda e, pid=id, dis=-1: self.toggle_training(e, pid, dis))
 
-                try:
-                    parser.train_state
-                except AttributeError:
-                    parser.train_state = None
+                if not self.gui.exterior_search_requested:
+                    try:
+                        parser.train_state
+                    except AttributeError:
+                        parser.train_state = None
 
-                if parser.train_state is None:
-                    self.gui.extractor.train_pony(pony_id=id, disciplines=dis_list, refresh_state_only=True)
-                if parser.train_state is None:
-                    state_str = '?'
-                elif parser.train_state < 0:
-                    state_str = 'N'
-                elif parser.train_state <= 1:
-                    state_str = '{:d}%'.format(int(100 * parser.train_state))
-                else:
-                    state_str = 'C{:d}%'.format(int(100 * parser.train_state - 100))
-                table_row.append(state_str)
-                table_row_sum.append(state_str)
+                    if parser.train_state is None:
+                        self.gui.extractor.train_pony(pony_id=id, disciplines=dis_list, refresh_state_only=True)
+                    if parser.train_state is None:
+                        state_str = '?'
+                    elif parser.train_state < 0:
+                        state_str = 'N'
+                    elif parser.train_state <= 1:
+                        state_str = '{:d}%'.format(int(100 * parser.train_state))
+                    else:
+                        state_str = 'C{:d}%'.format(int(100 * parser.train_state - 100))
+                    table_row.append(state_str)
+                    table_row_sum.append(state_str)
 
-                object_row.append(tk.Label(self.table_frame, text=table_row[-1], font=self.def_font, bg=self.gui.bg))
+                    object_row.append(tk.Label(self.table_frame, text=table_row[-1], font=self.def_font, bg=self.gui.bg))
 
                 avg_done = False
                 for prop_list in [self.props, self.additional]:
