@@ -791,8 +791,11 @@ class ListingWindow(dialog.Dialog):
             if self.sex[ri] in disp_sex and self.filter[ri]:
                 for ci, el in enumerate(object_row):
                     rindex = row_index % self.MAXROWS
-                    cindex = ci + len(object_row) * (row_index // self.MAXROWS)
-                    el.grid(row=rindex+2, column=cindex, padx=int(self.def_size/2))
+                    block_id = (row_index // self.MAXROWS)
+                    cindex = ci + len(object_row) * block_id
+                    if block_id < 4:
+                        # only draw four columns
+                        el.grid(row=rindex+2, column=cindex, padx=int(self.def_size/2))
                 row_index += 1
         if row_index > self.MAXROWS:
             for ci, el in enumerate(self.header_objects_copy):
