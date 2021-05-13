@@ -171,6 +171,61 @@ class FilterWindow(dialog.Dialog):
 
     def apply(self):
         self.gui.listing_filter = self.entry.get()
+        
+        
+class AdvancedFilterWindow(dialog.Dialog):
+    def body(self, master):
+        self.parent.advanced_filter_var.set(0)    # will be set if successfull
+        self.attribute_vars = []
+        self.attribute_names = ([p[0] for p in self.parent.props] + [lang.LISTING_HEADER_AVERAGE] + [p[0] for p in self.parent.additional])
+        tk.Label(master, bg=self.gui.bg, font=self.parent.bol_font, text=lang.ADV_FILTER_ALL).grid(row=0, column=1, padx=int(self.gui.default_size/2))
+        tk.Label(master, bg=self.gui.bg, font=self.parent.bol_font, text=lang.ADV_FILTER_STUD).grid(row=0, column=2, padx=int(self.gui.default_size/2))
+        tk.Label(master, bg=self.gui.bg, font=self.parent.bol_font, text=lang.ADV_FILTER_MARE).grid(row=0, column=3, padx=int(self.gui.default_size/2))
+        for i, nam in enumerate(self.attribute_names):
+            tk.Label(master, bg=self.gui.bg, font=self.parent.def_font, text=nam).grid(row=i+1, column=0, padx=int(self.gui.default_size/2))
+            snumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+            vars = []
+            for j in range(3):
+                numvar = tk.StringVar()
+                numvar.set(snumbers[0])  # default value
+                tk.OptionMenu(master, numvar, *snumbers).grid(row=i+1, column=j+1)
+                vars.append(numvar)
+            self.attribute_vars.append(vars)
+        self.radio_frame = tk.Frame(master, bg=self.gui.bg)
+        self.radio_frame.grid(row=len(self.attribute_names)+1, column=0, columnspan=4)
+        tk.Label(self.radio_frame, bg=self.gui.bg, font=self.parent.bol_font, text=lang.ADV_FILTER_RADIO_TITLE).grid(row=0, column=0)
+        self.display_selected_var = tk.IntVar()
+        self.display_selected_var.set(0)
+        tk.Radiobutton(self.radio_frame, font=self.parent.def_font, text=lang.ADV_FILTER_RADIO_HIDE, variable=self.display_selected_var, value=0).grid(row=1, column=0)
+        tk.Radiobutton(self.radio_frame, font=self.parent.def_font, text=lang.ADV_FILTER_RADIO_DISPLAY, variable=self.display_selected_var, value=1).grid(row=2, column=0)
+
+
+    def header(self, master):
+        pass
+
+    def apply(self):
+        data = self.parent.data_table
+        filt = [True] * len(data)
+        for ivar, vars in enumerate(self.attribute_vars):
+            column_data = [row[ivar+self.parent.num_non_user_prop] for row in data]
+            column_data_studs = [column_data[i] for i in range(len(column_data)) if self.parent.sex[i] == 2]
+            column_data_mares = [column_data[i] for i in range(len(column_data)) if self.parent.sex[i] == 1]
+            sortind = argsort(column_data)
+            sortind_studs = argsort(column_data_studs)
+            sortind_mares = argsort(column_data_mares)
+            num_all = int(vars[0].get())
+            num_studs = int(vars[1].get())
+            num_mares = int(vars[2].get())
+            for i_all in range(num_all):
+                filt[sortind[i_all]] = False
+            for i_all in range(num_studs):
+                filt[sortind_studs[i_all]] = False
+            for i_all in range(num_mares):
+                filt[sortind_mares[i_all]] = False
+        if self.display_selected_var:   # reverse if selected should be displayed instead of hidden
+            filt = [not fi for fi in filt]
+        self.parent.advanced_filter_var.set(1)   # success
+        self.parent.filter = filt
 
 
 class ListingWindow(dialog.Dialog):
@@ -312,6 +367,10 @@ class ListingWindow(dialog.Dialog):
         self.sex_female_button.grid(row=0, column=2, padx=int(self.def_size / 2))
         self.sex_male_button = tk.Button(self.button_frame, text=lang.LISTING_SEX_MALE, font=self.def_font, command=lambda: self.filter_sex(2), bg=self.gui.bg)
         self.sex_male_button.grid(row=0, column=3, padx=int(self.def_size / 2))
+        self.advanced_filter_var = tk.IntVar()
+        self.advanced_filter_var.set(0)
+        self.advanced_filter_checkbutton = tk.Checkbutton(self.button_frame, text=lang.CHECK_ADV_FILTER, font=self.def_font, variable=self.advanced_filter_var, command=self.toggle_advanced_filter, bg=self.gui.bg)
+        self.advanced_filter_checkbutton.grid(row=0, column=4, padx=int(self.def_size / 2))
 
         self.gui.race_ids = []
         self.table_frame = tk.Frame(master, bg=self.gui.bg)
@@ -341,9 +400,9 @@ class ListingWindow(dialog.Dialog):
             self.header_objects_copy2.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_TRAIN_STATE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_TRAIN_STATE: self.sort(p), bg=self.gui.bg))
             self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
             self.data_headers.append(lang.LISTING_HEADER_TRAIN_STATE)
-            NUM_NON_USER_PROP = 4 # number of entries in the data table that is not defined by the user (and which the average is calculated over). Does not include the image!
+            self.num_non_user_prop = 4 # number of entries in the data table that is not defined by the user (and which the average is calculated over). Does not include the image!
         else:
-            NUM_NON_USER_PROP = 3
+            self.num_non_user_prop = 3
         avg_done = False
         for prop_list in [self.props, self.additional]:
             for prop in prop_list:
@@ -541,8 +600,8 @@ class ListingWindow(dialog.Dialog):
 
                     # total average - only done once
                     if not avg_done:
-                        table_row.append(sum(table_row[NUM_NON_USER_PROP:])/(len(table_row)-NUM_NON_USER_PROP))
-                        table_row_sum.append(sum(table_row[NUM_NON_USER_PROP:]) / (len(table_row) - NUM_NON_USER_PROP))
+                        table_row.append(sum(table_row[self.num_non_user_prop:])/(len(table_row)-self.num_non_user_prop))
+                        table_row_sum.append(sum(table_row[self.num_non_user_prop:]) / (len(table_row) - self.num_non_user_prop))
                         object_row.append(tk.Label(self.table_frame, text=str(round(table_row[-1], 1)), font=self.bol_font, bg=self.gui.bg))
                         avg_done = True
 
@@ -612,6 +671,21 @@ class ListingWindow(dialog.Dialog):
             for pid in too_many_redirects_ids:
                 message += ('\n' + str(pid))
             messagebox.showwarning(title=lang.REDIRECTS_WARNING_TITLE, message=message)
+
+    def toggle_advanced_filter(self):
+        if not self.advanced_filter_var.get():  # if advanced filter is now off
+            self.filter = [True] * len(self.data_table)
+            for but in self.header_objects:
+                if but['fg'] == 'red':
+                    but.configure(fg='black')
+            self.redraw()
+        else:
+            _ = AdvancedFilterWindow(self, self.gui, title=lang.CHECK_ADV_FILTER)
+            if self.advanced_filter_var.get():  # window will deactivate if not successful
+                for but in self.header_objects:
+                    if but['fg'] == 'red':
+                        but.configure(fg='black')
+                self.redraw()
 
     def mark_relatives(self, id):
         rels = self.get_relatives(id)
@@ -880,17 +954,16 @@ class ListingWindow(dialog.Dialog):
                     but.configure(fg='black')
             _ = FilterWindow(self, self.gui, lang.FILTER_WINDOW_TITLE)
             if len(self.gui.listing_filter) > 0:
-                self.filter_row = row_to_apply_on
                 vals = [row[row_to_apply_on] for row in data_table]
-                button.configure(fg='red')
                 try:
                     self.filter = [eval(self.gui.listing_filter) for x in vals]
                 except:
                     traceback.print_exc()
                     messagebox.showerror(title=lang.FILTER_ERROR_TITLE, message=lang.FILTER_ERROR_TEXT)
                     self.gui.listing_filter = ''
-                    self.filter_row = -1
-                    button.configure(fg='black')
+                self.filter_row = row_to_apply_on
+                button.configure(fg='red')
+                self.advanced_filter_var.set(0)
         self.redraw()
 
     def filter_sex(self, sex_identifier):

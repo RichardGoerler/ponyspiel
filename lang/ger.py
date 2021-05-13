@@ -79,6 +79,7 @@ TELEGRAM_LABEL = 'Telegram ID (optional)'
 
 LISTING_TITLE = 'Auflistung'
 CHECK_LISTING_SUM = 'Summen-Werte'
+CHECK_ADV_FILTER = 'Profi-Filter'
 LISTING_HEADER_NAME = 'Name'
 LISTING_HEADER_AGE = 'Alter'
 LISTING_HEADER_POTENTIAL = 'Potenzial'
@@ -115,3 +116,10 @@ FILTER_WINDOW_TEXT = 'x ist ein Eintrag in der zu filternden Spalte. Python-Ausd
 FILTER_WINDOW_TITLE = 'Filterausdruck eingeben'
 FILTER_ERROR_TITLE = 'Filtern fehlgeschlagen'
 FILTER_ERROR_TEXT = 'Vermutlich ist der eingegebene Filter-Ausdruck ungültig. Die Ausnahme wurde auf dem Terminal ausgegeben.'
+
+ADV_FILTER_ALL = 'Alle'
+ADV_FILTER_STUD = 'Hengste'
+ADV_FILTER_MARE = 'Stuten'
+ADV_FILTER_RADIO_TITLE = 'Gewählte Ponies...'
+ADV_FILTER_RADIO_DISPLAY = '...anzeigen'
+ADV_FILTER_RADIO_HIDE = '...ausblenden'
