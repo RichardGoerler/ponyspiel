@@ -209,7 +209,9 @@ class AdvancedFilterWindow(dialog.Dialog):
         for ivar, vars in enumerate(self.attribute_vars):
             column_data = [row[ivar+self.parent.num_non_user_prop] for row in data]
             column_data_studs = [column_data[i] for i in range(len(column_data)) if self.parent.sex[i] == 2]
+            stud_indices = [i for i in range(len(column_data)) if self.parent.sex[i] == 2]
             column_data_mares = [column_data[i] for i in range(len(column_data)) if self.parent.sex[i] == 1]
+            mare_indices = [i for i in range(len(column_data)) if self.parent.sex[i] == 1]
             sortind = argsort(column_data)
             sortind_studs = argsort(column_data_studs)
             sortind_mares = argsort(column_data_mares)
@@ -219,10 +221,10 @@ class AdvancedFilterWindow(dialog.Dialog):
             for i_all in range(num_all):
                 filt[sortind[i_all]] = False
             for i_all in range(num_studs):
-                filt[sortind_studs[i_all]] = False
+                filt[stud_indices[sortind_studs[i_all]]] = False
             for i_all in range(num_mares):
-                filt[sortind_mares[i_all]] = False
-        if self.display_selected_var:   # reverse if selected should be displayed instead of hidden
+                filt[mare_indices[sortind_mares[i_all]]] = False
+        if self.display_selected_var.get():   # reverse if selected should be displayed instead of hidden
             filt = [not fi for fi in filt]
         self.parent.advanced_filter_var.set(1)   # success
         self.parent.filter = filt
@@ -371,6 +373,7 @@ class ListingWindow(dialog.Dialog):
         self.advanced_filter_var.set(0)
         self.advanced_filter_checkbutton = tk.Checkbutton(self.button_frame, text=lang.CHECK_ADV_FILTER, font=self.def_font, variable=self.advanced_filter_var, command=self.toggle_advanced_filter, bg=self.gui.bg)
         self.advanced_filter_checkbutton.grid(row=0, column=4, padx=int(self.def_size / 2))
+        self.reverse_filter_button = tk.Button(self.button_frame, text=lang.ADV_FILTER_REVERSE, font=self.def_font, command=self.reverse_advanced_filter, bg=self.gui.bg)
 
         self.gui.race_ids = []
         self.table_frame = tk.Frame(master, bg=self.gui.bg)
@@ -672,12 +675,17 @@ class ListingWindow(dialog.Dialog):
                 message += ('\n' + str(pid))
             messagebox.showwarning(title=lang.REDIRECTS_WARNING_TITLE, message=message)
 
+    def reverse_advanced_filter(self):
+        self.filter = [not fi for fi in self.filter]
+        self.redraw()
+
     def toggle_advanced_filter(self):
         if not self.advanced_filter_var.get():  # if advanced filter is now off
             self.filter = [True] * len(self.data_table)
             for but in self.header_objects:
                 if but['fg'] == 'red':
                     but.configure(fg='black')
+            self.reverse_filter_button.grid_forget()
             self.redraw()
         else:
             _ = AdvancedFilterWindow(self, self.gui, title=lang.CHECK_ADV_FILTER)
@@ -686,6 +694,7 @@ class ListingWindow(dialog.Dialog):
                     if but['fg'] == 'red':
                         but.configure(fg='black')
                 self.redraw()
+                self.reverse_filter_button.grid(row=0, column=5, padx=int(self.def_size / 2))
 
     def mark_relatives(self, id):
         rels = self.get_relatives(id)
@@ -883,6 +892,7 @@ class ListingWindow(dialog.Dialog):
         self.sex_all_button.grid_forget()
         self.sex_female_button.grid_forget()
         self.sex_male_button.grid_forget()
+        self.advanced_filter_checkbutton.grid_forget()
         self.button_frame.grid_forget()
         self.table_frame.grid_forget()
         for i, h in enumerate(self.header_objects):
@@ -918,11 +928,16 @@ class ListingWindow(dialog.Dialog):
         self.sex_all_button.configure(font=self.def_font)
         self.sex_female_button.configure(font=self.def_font)
         self.sex_male_button.configure(font=self.def_font)
+        self.advanced_filter_checkbutton.configure(font=self.def_font)
+        self.reverse_filter_button.configure(font=self.def_font)
         self.button_frame.grid(row=0, column=0, padx=self.def_size, pady=self.def_size, sticky=tk.W)
         self.sum_checkbutton.grid(row=0, column=0, padx=int(self.def_size / 2))
         self.sex_all_button.grid(row=0, column=1, padx=int(self.def_size / 2))
         self.sex_female_button.grid(row=0, column=2, padx=int(self.def_size / 2))
         self.sex_male_button.grid(row=0, column=3, padx=int(self.def_size / 2))
+        self.advanced_filter_checkbutton.grid(row=0, column=4, padx=int(self.def_size / 2))
+        if self.advanced_filter_var.get():
+            self.reverse_filter_button.grid(row=0, column=5, padx=int(self.def_size / 2))
         for ii, im in enumerate(self.images):
             dim = self.gui.dims_by_scale(0.001 * self.def_size)[0]
             fac = float(dim) / im.size[0]
@@ -964,6 +979,7 @@ class ListingWindow(dialog.Dialog):
                 self.filter_row = row_to_apply_on
                 button.configure(fg='red')
                 self.advanced_filter_var.set(0)
+                self.reverse_filter_button.grid_forget()
         self.redraw()
 
     def filter_sex(self, sex_identifier):
