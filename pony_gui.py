@@ -175,8 +175,9 @@ class FilterWindow(dialog.Dialog):
         
 class AdvancedFilterWindow(dialog.Dialog):
     def body(self, master):
-        self.parent.advanced_filter_var.set(0)    # will be set if successfull
+        self.parent.advanced_filter_var.set(0)    # will be set if successful
         self.attribute_vars = []
+        self.checkvars = []  # for Fellfarbe
         self.attribute_names = ([p[0] for p in self.parent.props] + [lang.LISTING_HEADER_AVERAGE] + [p[0] for p in self.parent.additional])
         tk.Label(master, bg=self.gui.bg, font=self.parent.bol_font, text=lang.ADV_FILTER_ALL).grid(row=0, column=1, padx=int(self.gui.default_size/2))
         tk.Label(master, bg=self.gui.bg, font=self.parent.bol_font, text=lang.ADV_FILTER_STUD).grid(row=0, column=2, padx=int(self.gui.default_size/2))
@@ -188,17 +189,39 @@ class AdvancedFilterWindow(dialog.Dialog):
             for j in range(3):
                 numvar = tk.StringVar()
                 numvar.set(snumbers[0])  # default value
-                tk.OptionMenu(master, numvar, *snumbers).grid(row=i+1, column=j+1)
+                if j == 0:
+                    om = tk.OptionMenu(master, numvar, *snumbers, command=lambda v, row_i=i: self.numvar_sel(v, row_i))
+                else:
+                    om = tk.OptionMenu(master, numvar, *snumbers)
+                om['bg'] = self.gui.bg
+                om.grid(row=i+1, column=j+1)
                 vars.append(numvar)
             self.attribute_vars.append(vars)
+            if nam == 'Fellfarbe':
+                for pi, prop in enumerate(self.attribute_names[:len(self.parent.props)+1]):
+                    checkvar = tk.IntVar()
+                    checkvar.set(0)
+                    tk.Checkbutton(master, text=prop, variable=checkvar, bg=self.gui.bg).grid(row=i+1, column=5+pi)
+                    self.checkvars.append(checkvar)
+
         self.radio_frame = tk.Frame(master, bg=self.gui.bg)
         self.radio_frame.grid(row=len(self.attribute_names)+1, column=0, columnspan=4)
         tk.Label(self.radio_frame, bg=self.gui.bg, font=self.parent.bol_font, text=lang.ADV_FILTER_RADIO_TITLE).grid(row=0, column=0)
         self.display_selected_var = tk.IntVar()
         self.display_selected_var.set(0)
-        tk.Radiobutton(self.radio_frame, font=self.parent.def_font, text=lang.ADV_FILTER_RADIO_HIDE, variable=self.display_selected_var, value=0).grid(row=1, column=0)
-        tk.Radiobutton(self.radio_frame, font=self.parent.def_font, text=lang.ADV_FILTER_RADIO_DISPLAY, variable=self.display_selected_var, value=1).grid(row=2, column=0)
+        tk.Radiobutton(self.radio_frame, font=self.parent.def_font, text=lang.ADV_FILTER_RADIO_HIDE, variable=self.display_selected_var, value=0, bg=self.gui.bg).grid(row=1, column=0)
+        tk.Radiobutton(self.radio_frame, font=self.parent.def_font, text=lang.ADV_FILTER_RADIO_DISPLAY, variable=self.display_selected_var, value=1, bg=self.gui.bg).grid(row=2, column=0)
 
+    def numvar_sel(self, value, row_i):
+        val = int(value)
+        row = self.attribute_vars[row_i]
+        new_val = (val-1) // 2
+        stud_var = row[1]
+        mare_var = row[2]
+        if not int(stud_var.get()):
+            stud_var.set(str(new_val))
+        if not int(mare_var.get()):
+            mare_var.set(str(new_val))
 
     def header(self, master):
         pass
@@ -212,22 +235,71 @@ class AdvancedFilterWindow(dialog.Dialog):
             stud_indices = [i for i in range(len(column_data)) if self.parent.sex[i] == 2]
             column_data_mares = [column_data[i] for i in range(len(column_data)) if self.parent.sex[i] == 1]
             mare_indices = [i for i in range(len(column_data)) if self.parent.sex[i] == 1]
-            sortind = argsort(column_data)
-            sortind_studs = argsort(column_data_studs)
-            sortind_mares = argsort(column_data_mares)
             num_all = int(vars[0].get())
             num_studs = int(vars[1].get())
             num_mares = int(vars[2].get())
-            for i_all in range(num_all):
-                filt[sortind[i_all]] = False
-            for i_all in range(num_studs):
-                filt[stud_indices[sortind_studs[i_all]]] = False
-            for i_all in range(num_mares):
-                filt[mare_indices[sortind_mares[i_all]]] = False
+            if self.attribute_names[ivar] == 'Fellfarbe':
+                scheckungen = ['tovero', 'overo', 'maximal tobiano', 'tobiano', 'splashed white', 'sabino',
+                               'roan spotted blanket', 'spotted blanket', 'blanket', 'few spot leopard', 'leopard',
+                               'snowcap', 'snowflake', 'mottled', 'varnish roan', 'rabicano', 'birdcatcher spots',
+                               'brindle', 'reverse dapples', 'macchiato', 'minimalsabino']
+                column_data = list(map(lambda x: x.lower(), column_data))
+                for scheck in scheckungen:
+                    column_data = list(map(lambda x: x.replace(scheck, ''), column_data))
+                column_data = list(map(lambda x: x.strip(), column_data))
+                check_list = [ch.get() for ch in self.checkvars]
+                for ci, ch in enumerate(check_list):
+                    if ch:
+                        inds_to_drop = self.fellfarbe_func(fellfarbe_data=column_data, n_all=num_all, n_studs=num_studs, n_mares=num_mares, ivar=ci)
+                        for drop_id in inds_to_drop:
+                            filt[drop_id] = False
+            else:
+                sortind = argsort(column_data)
+                sortind_studs = argsort(column_data_studs)
+                sortind_mares = argsort(column_data_mares)
+                for i_all in range(num_all):
+                    filt[sortind[i_all]] = False
+                for i_all in range(num_studs):
+                    filt[stud_indices[sortind_studs[i_all]]] = False
+                for i_all in range(num_mares):
+                    filt[mare_indices[sortind_mares[i_all]]] = False
         if self.display_selected_var.get():   # reverse if selected should be displayed instead of hidden
             filt = [not fi for fi in filt]
         self.parent.advanced_filter_var.set(1)   # success
         self.parent.filter = filt
+
+    def fellfarbe_func(self, fellfarbe_data, n_all, n_studs, n_mares, ivar):
+        var_data = [row[ivar+self.parent.num_non_user_prop] for row in self.parent.data_table]
+        identity_indices = list(range(len(var_data)))
+        var_data_studs = [var_data[i] for i in range(len(var_data)) if self.parent.sex[i] == 2]
+        stud_indices = [i for i in range(len(var_data)) if self.parent.sex[i] == 2]
+        var_data_mares = [var_data[i] for i in range(len(var_data)) if self.parent.sex[i] == 1]
+        mare_indices = [i for i in range(len(var_data)) if self.parent.sex[i] == 1]
+        sortind = argsort(var_data)
+        sortind_studs = argsort(var_data_studs)
+        sortind_mares = argsort(var_data_mares)
+        # sortind is the argsorted list, but sortind_studs and sortind_mares are both shorter than sortind
+        # if i is an index from sortind_studs, then real_i = stud_indices[i] is the index of the respective pony in
+        # var_data. Same for sortind_mares and mare_indices.
+        inds_to_drop = []
+        for sortind_this, indices_this, n_this in zip([sortind, sortind_studs, sortind_mares],
+                                                      [identity_indices, stud_indices, mare_indices],
+                                                      [n_all, n_studs, n_mares]):
+            if n_this == 0:
+                # No pony will ever be added to the list so we can skip that
+                continue
+            dat_dict = {}
+            # keys will be fellfarben and values will be the occurence counts. When long as the occurrence count is
+            # smaller or equal to the respective n (value from OptionMenu), the index of the occurrence will be added to
+            # the inds_to_drop list, which is returned in the end.
+            for i in sortind_this:
+                real_i = indices_this[i]
+                dat = fellfarbe_data[real_i]
+                dat_dict[dat] = dat_dict[dat] + 1 if dat in dat_dict else 1
+                if dat_dict[dat] <= n_this:
+                    inds_to_drop.append(real_i)
+
+        return inds_to_drop
 
 
 class ListingWindow(dialog.Dialog):
@@ -1403,7 +1475,9 @@ class PonyGUI:
         self.listing_files, self.listing_names = self.get_listing_files()
         self.option_var = tk.StringVar()
         self.option_var.set(self.listing_names[0])  # default value
-        tk.OptionMenu(self.listing_frame, self.option_var, *self.listing_names).grid(row=1, column=0, padx=int(self.default_size / 2))
+        om = tk.OptionMenu(self.listing_frame, self.option_var, *self.listing_names)
+        om['bg'] = self.bg
+        om.grid(row=1, column=0, padx=int(self.default_size / 2))
 
         self.listing_button = tk.Button(self.listing_frame, text=lang.LISTING_BUTTON, command=self.make_listing, bg=self.bg)
         self.listing_button.grid(row=1, column=1, padx=int(self.default_size / 2))
@@ -1458,23 +1532,31 @@ class PonyGUI:
         self.horse_pages = [lang.HORSE_PAGE_TRADE, lang.HORSE_PAGE_STUD, lang.HORSE_PAGE_ALL]
         self.horse_page_type_var = tk.StringVar()
         self.horse_page_type_var.set(self.horse_pages[0])  # default value
-        tk.OptionMenu(self.exterior_frame, self.horse_page_type_var, *self.horse_pages).grid(row=0, column=2, padx=int(self.default_size / 2))
+        om = tk.OptionMenu(self.exterior_frame, self.horse_page_type_var, *self.horse_pages)
+        om['bg'] = self.bg
+        om.grid(row=0, column=2, padx=int(self.default_size / 2))
 
         races = list(self.extractor.race_dict.keys())
         self.race_var = tk.StringVar()
         self.race_var.set(races[0])  # default value
-        tk.OptionMenu(self.exterior_frame, self.race_var, *races).grid(row=0, column=3, columnspan=2, padx=int(self.default_size / 2))
+        om = tk.OptionMenu(self.exterior_frame, self.race_var, *races)
+        om['bg'] = self.bg
+        om.grid(row=0, column=3, columnspan=2, padx=int(self.default_size / 2))
 
         self.listing_names_plus_ext = list(self.listing_names)
         self.listing_names_plus_ext.append('Exterieur')
         self.market_listing_var = tk.StringVar()
         self.market_listing_var.set(self.listing_names_plus_ext[-1])
-        tk.OptionMenu(self.exterior_frame, self.market_listing_var, *self.listing_names_plus_ext).grid(row=1, column=1, padx=int(self.default_size / 2))
+        om = tk.OptionMenu(self.exterior_frame, self.market_listing_var, *self.listing_names_plus_ext)
+        om['bg'] = self.bg
+        om.grid(row=1, column=1, padx=int(self.default_size / 2))
 
         sort_bys = list(self.extractor.sort_by_dict.keys())
         self.sort_by_var = tk.StringVar()
         self.sort_by_var.set(sort_bys[7])  # default value
-        tk.OptionMenu(self.exterior_frame, self.sort_by_var, *sort_bys).grid(row=1, column=0, padx=int(self.default_size / 2))
+        om = tk.OptionMenu(self.exterior_frame, self.sort_by_var, *sort_bys)
+        om['bg'] = self.bg
+        om.grid(row=1, column=0, padx=int(self.default_size / 2))
 
         self.ext_button = tk.Button(self.exterior_frame, text=lang.EXTERIEUR_BUTTON, command=self.exterior_search, bg=self.bg)
         self.ext_button.grid(row=1, column=2, padx=int(self.default_size / 2))
@@ -1487,7 +1569,9 @@ class PonyGUI:
                         '200: ' + lang.N_PAGES_FILTER_TEXT, '500: ' + lang.N_PAGES_FILTER_TEXT, '1000: ' + lang.N_PAGES_FILTER_TEXT]
         self.n_pages_var = tk.StringVar()
         self.n_pages_var.set(n_pages_list[0])  # default value
-        tk.OptionMenu(self.exterior_frame, self.n_pages_var, *n_pages_list, command=self.market_search_pages_select).grid(row=1, column=4)
+        om = tk.OptionMenu(self.exterior_frame, self.n_pages_var, *n_pages_list, command=self.market_search_pages_select)
+        om['bg'] = self.bg
+        om.grid(row=1, column=4)
 
         self.cache_frame = tk.Frame(self.root, bg=self.bg)
         self.cache_frame.grid(row=8, column=0, padx=self.default_size, pady=self.default_size)
