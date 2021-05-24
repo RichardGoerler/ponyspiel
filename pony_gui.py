@@ -1660,6 +1660,14 @@ class PonyGUI:
                     else:
                         messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                         return
+                if '25 years' in self.extractor.log[-1].lower() and pid in self.extractor.log[-1]:
+                    print('Pony {} is older than 25 years. Removing from stud file.'.format(pid))
+                    if stud_file.is_file():
+                        # delete pid line from stud file
+                        stud_lines = [l for l in stud_lines if pid not in l]
+                        with open(stud_file, 'w') as f:
+                            f.writelines(stud_lines)
+
                 progressbar.step(str(pid))
 
         if len(too_many_redirects_ids) > 0:
@@ -1686,6 +1694,13 @@ class PonyGUI:
                     else:
                         messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                         return
+                if '25 years' in self.extractor.log[-1].lower() and pid in self.extractor.log[-1]:
+                    print('Pony {} is older than 25 years. Removing from beauty file.'.format(pid))
+                    if beauty_file.is_file():
+                        # delete pid line from stud file
+                        beauty_ids = [l for l in beauty_ids if pid not in l]
+                        with open(beauty_file, 'w') as f:
+                            f.writelines(beauty_ids)
                 progressbar.step(str(pid))
 
         if len(too_many_redirects_ids) > 0:

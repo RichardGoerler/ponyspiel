@@ -1631,6 +1631,13 @@ class PonyExtractor:
     def login_deckstation(self, pony_id, fee):
         if not self._login_if_required():
             return False
+        if not self.get_pony_info(pony_id):
+            return False
+        years = int(self.parser.facts_values['Alter'].split('Jahre')[0].strip()) if 'Jahre' in self.parser.facts_values[
+            'Alter'] else 0
+        if years > 25:
+            self.log.append('Pony {} is older than 25 years. Deckstation login no allowed.'.format(pony_id))
+            return True
         deckstation_login_payload = {'studfee': fee, 'newshort': '', 'newnotes': ''}
         url = self.deckstation_login_url.format(pony_id)
         try:
@@ -1698,6 +1705,14 @@ class PonyExtractor:
     def login_beauty(self, pony_id):
         if not self._login_if_required():
             return False
+        if not self.get_pony_info(pony_id):
+            return False
+        years = int(self.parser.facts_values['Alter'].split('Jahre')[0].strip()) if 'Jahre' in self.parser.facts_values[
+            'Alter'] else 0
+        if years > 25:
+            self.log.append('Pony {} is older than 25 years. Beauty registration no allowed.'.format(pony_id))
+            print('Pony {} is older than 25 years. Beauty registration no allowed.'.format(pony_id))
+            return True
         query_dict = {'id': pony_id}
         try:
             r = self.session.get(self.beauty_url, params=query_dict, headers=self.headers)
