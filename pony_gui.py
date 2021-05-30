@@ -1660,7 +1660,7 @@ class PonyGUI:
                     else:
                         messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                         return
-                if '25 years' in self.extractor.log[-1].lower() and pid in self.extractor.log[-1]:
+                if len(self.extractor.log) > 0 and '25 years' in self.extractor.log[-1].lower() and pid in self.extractor.log[-1]:
                     print('Pony {} is older than 25 years. Removing from stud file.'.format(pid))
                     if stud_file.is_file():
                         # delete pid line from stud file
@@ -1694,7 +1694,7 @@ class PonyGUI:
                     else:
                         messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                         return
-                if '25 years' in self.extractor.log[-1].lower() and pid in self.extractor.log[-1]:
+                if len(self.extractor.log) > 0 and '25 years' in self.extractor.log[-1].lower() and pid in self.extractor.log[-1]:
                     print('Pony {} is older than 25 years. Removing from beauty file.'.format(pid))
                     if beauty_file.is_file():
                         # delete pid line from stud file
