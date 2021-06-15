@@ -160,17 +160,35 @@ class StudfeeWindow(dialog.Dialog):
 
 class FilterWindow(dialog.Dialog):
     def body(self, master):
+        self.preset_file = Path('./filter_presets')
+        filter_preset_lines = []
+        if self.preset_file.is_file():
+            with self.preset_file.open('r') as f:
+                filter_preset_lines = f.readlines()
+        self.filter_presets = {'': ''}
+        for l in filter_preset_lines:
+            spl = l.split(':')
+            if len(spl) > 1:
+                self.filter_presets[spl[0]] = spl[1]
+        self.preset_var = tk.StringVar()
+        self.preset_var.set('')  # default value
         tk.Label(master, bg=self.gui.bg, text=lang.FILTER_WINDOW_TEXT, wraplength=450, justify=tk.LEFT).grid(row=0, column=0, padx=int(self.gui.default_size/2))
         self.entry = tk.Entry(master, bg=self.gui.bg)
         self.entry.delete(0, tk.END)
         self.entry.insert(0, self.gui.listing_filter)
         self.entry.grid(row=1, column=0, padx=int(self.gui.default_size/2), pady=int(self.gui.default_size/2))
+        tk.Label(master, bg=self.gui.bg, text=lang.FILTER_PRESETS_TEXT, wraplength=450, justify=tk.LEFT).grid(row=2, column=0, padx=int(self.gui.default_size / 2))
+        tk.OptionMenu(master, self.preset_var, *self.filter_presets.keys(), command=lambda v: self.set_entry(self.filter_presets[v])).grid(row=3, column=0)
 
     def header(self, master):
         pass
 
     def apply(self):
         self.gui.listing_filter = self.entry.get()
+
+    def set_entry(self, v):
+        self.entry.delete(0, tk.END)
+        self.entry.insert(0, v)
         
         
 class AdvancedFilterWindow(dialog.Dialog):

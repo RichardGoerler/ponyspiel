@@ -114,6 +114,7 @@ STUDFEE_LABEL = 'Decktaxe'
 STUDFEE_TITLE = 'Dextaxe eintragen'
 
 FILTER_WINDOW_TEXT = 'x ist ein Eintrag in der zu filternden Spalte. Python-Ausdruck eingeben, der zu einem boolean evaluiert.'
+FILTER_PRESETS_TEXT = 'Oder hier eine Vorlage aus der filter_presets-Datei auswählen:'
 FILTER_WINDOW_TITLE = 'Filterausdruck eingeben'
 FILTER_ERROR_TITLE = 'Filtern fehlgeschlagen'
 FILTER_ERROR_TEXT = 'Vermutlich ist der eingegebene Filter-Ausdruck ungültig. Die Ausnahme wurde auf dem Terminal ausgegeben.'
