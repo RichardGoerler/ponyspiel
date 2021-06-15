@@ -1061,7 +1061,7 @@ class ListingWindow(dialog.Dialog):
             if len(self.gui.listing_filter) > 0:
                 vals = [row[row_to_apply_on] for row in data_table]
                 try:
-                    self.filter = [eval(self.gui.listing_filter) for x in vals]
+                    self.filter = eval('[' + self.gui.listing_filter + ' for x in vals]')
                 except:
                     traceback.print_exc()
                     messagebox.showerror(title=lang.FILTER_ERROR_TITLE, message=lang.FILTER_ERROR_TEXT)
