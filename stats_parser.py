@@ -912,7 +912,8 @@ class PonyExtractor:
                           'Isländer': 9,
                           'Friese': 10,
                           'Haflinger': 11,
-                          'Appaloosa': 12,}
+                          'Appaloosa': 12,
+                          'Marwari':13,}
         self.sort_by_dict = {'Neueste zuerst': 'firstnew',
                              'Jüngste zuerst': 'firstyoung',
                              'Älteste zuerst': 'firstold',
