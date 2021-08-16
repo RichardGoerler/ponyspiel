@@ -28,6 +28,10 @@ import build_count
 
 HALLOWEEN = False
 
+SCHECKUNGEN = ['tovero', 'overo', 'maximal tobiano', 'tobiano', 'splashed white', 'sabino',
+               'roan spotted blanket', 'spotted blanket', 'blanket', 'few spot leopard', 'leopard',
+               'snowcap', 'snowflake', 'mottled', 'varnish roan', 'rabicano', 'birdcatcher spots',
+               'brindle', 'reverse dapples', 'macchiato', 'minimalsabino']
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -257,12 +261,8 @@ class AdvancedFilterWindow(dialog.Dialog):
             num_studs = int(vars[1].get())
             num_mares = int(vars[2].get())
             if self.attribute_names[ivar] == 'Fellfarbe':
-                scheckungen = ['tovero', 'overo', 'maximal tobiano', 'tobiano', 'splashed white', 'sabino',
-                               'roan spotted blanket', 'spotted blanket', 'blanket', 'few spot leopard', 'leopard',
-                               'snowcap', 'snowflake', 'mottled', 'varnish roan', 'rabicano', 'birdcatcher spots',
-                               'brindle', 'reverse dapples', 'macchiato', 'minimalsabino']
                 column_data = list(map(lambda x: x.lower(), column_data))
-                for scheck in scheckungen:
+                for scheck in SCHECKUNGEN:
                     column_data = list(map(lambda x: x.replace(scheck, ''), column_data))
                 column_data = list(map(lambda x: x.strip(), column_data))
                 check_list = [ch.get() for ch in self.checkvars]
@@ -469,26 +469,26 @@ class ListingWindow(dialog.Dialog):
         self.table_frame = tk.Frame(master, bg=self.gui.bg)
         self.table_frame.grid(row=1, column=0, padx=self.def_size)
         self.header_objects = [tk.Button(self.table_frame, text=lang.LISTING_HEADER_NAME[:self.MAX_LEN_NAME], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_NAME: self.sort(p), bg=self.gui.bg)]
-        self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_NAME: self.filter_function(e, p))
+        self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_NAME: self.filter_function_wrapper(e, p))
         self.header_objects_copy = [tk.Button(self.table_frame, text=lang.LISTING_HEADER_NAME[:self.MAX_LEN_NAME], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_NAME: self.sort(p), bg=self.gui.bg)]
         self.header_objects_copy2 = [tk.Button(self.table_frame, text=lang.LISTING_HEADER_NAME[:self.MAX_LEN_NAME], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_NAME: self.sort(p), bg=self.gui.bg)]
         self.header_max_labels = [tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg)]
         self.data_headers = [lang.LISTING_HEADER_NAME]
         self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AGE[:self.MAX_LEN_PROP], command=lambda p=lang.LISTING_HEADER_AGE: self.sort(p), bg=self.gui.bg))
-        self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_AGE: self.filter_function(e, p))
+        self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_AGE: self.filter_function_wrapper(e, p))
         self.header_objects_copy.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AGE[:self.MAX_LEN_PROP], command=lambda p=lang.LISTING_HEADER_AGE: self.sort(p), bg=self.gui.bg))
         self.header_objects_copy2.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AGE[:self.MAX_LEN_PROP], command=lambda p=lang.LISTING_HEADER_AGE: self.sort(p), bg=self.gui.bg))
         self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
         self.data_headers.append(lang.LISTING_HEADER_AGE)
         self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_POTENTIAL[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_POTENTIAL: self.sort(p), bg=self.gui.bg))
-        self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_POTENTIAL: self.filter_function(e, p))
+        self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_POTENTIAL: self.filter_function_wrapper(e, p))
         self.header_objects_copy.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_POTENTIAL[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_POTENTIAL: self.sort(p), bg=self.gui.bg))
         self.header_objects_copy2.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_POTENTIAL[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_POTENTIAL: self.sort(p), bg=self.gui.bg))
         self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
         self.data_headers.append(lang.LISTING_HEADER_POTENTIAL)
         if not self.gui.exterior_search_requested:
             self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_TRAIN_STATE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_TRAIN_STATE: self.sort(p), bg=self.gui.bg))
-            self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_TRAIN_STATE: self.filter_function(e, p))
+            self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_TRAIN_STATE: self.filter_function_wrapper(e, p))
             self.header_objects_copy.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_TRAIN_STATE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_TRAIN_STATE: self.sort(p), bg=self.gui.bg))
             self.header_objects_copy2.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_TRAIN_STATE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_TRAIN_STATE: self.sort(p), bg=self.gui.bg))
             self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
@@ -500,14 +500,14 @@ class ListingWindow(dialog.Dialog):
         for prop_list in [self.props, self.additional]:
             for prop in prop_list:
                 self.header_objects.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
-                self.header_objects[-1].bind("<Button-3>", lambda e, p=prop[0]: self.filter_function(e, p))
+                self.header_objects[-1].bind("<Button-3>", lambda e, p=prop[0]: self.filter_function_wrapper(e, p))
                 self.header_objects_copy.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
                 self.header_objects_copy2.append(tk.Button(self.table_frame, text=prop[0][:self.MAX_LEN_PROP], command=lambda p=prop[0]: self.sort(p), bg=self.gui.bg))
                 self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
                 self.data_headers.append(prop[0])
             if not avg_done:
                 self.header_objects.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_AVERAGE: self.sort(p), bg=self.gui.bg))
-                self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_AVERAGE: self.filter_function(e, p))
+                self.header_objects[-1].bind("<Button-3>", lambda e, p=lang.LISTING_HEADER_AVERAGE: self.filter_function_wrapper(e, p))
                 self.header_objects_copy.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_AVERAGE: self.sort(p), bg=self.gui.bg))
                 self.header_objects_copy2.append(tk.Button(self.table_frame, text=lang.LISTING_HEADER_AVERAGE[:self.MAX_LEN_PROP], font=self.bol_font, command=lambda p=lang.LISTING_HEADER_AVERAGE: self.sort(p), bg=self.gui.bg))
                 self.header_max_labels.append(tk.Label(self.table_frame, text='', font=self.def_font, bg=self.gui.bg))
@@ -680,6 +680,9 @@ class ListingWindow(dialog.Dialog):
                                 object_row[-1].bind("<Button-1>", lambda e, pid=id, dis=this_discipline: self.toggle_training(e, pid, dis))
                             else:
                                 object_row.append(tk.Label(self.table_frame, text=textval, font=self.def_font, bg=self.gui.bg))
+                                if prop[0] == 'Fellfarbe':
+                                    object_row[-1].bind("<Button-1>", lambda e, val=textval: self.fellfarbe_equal_filter(val))
+                                    object_row[-1].bind("<Button-3>", lambda e, val=textval: self.fellfarbe_contains_filter(val))
                         table_row.append(normval)
                         if len(prop) == 1 and (prop[0] in ['Gesundheit', 'Charakter', 'Exterieur'] or prop[0] in parser.training_headings):
                             table_row_sum.append(val)      # referenced before assignment only if lang.LISTING_HEADER_PRICE in details_topheadings or training_headings, which is not the case
@@ -764,6 +767,21 @@ class ListingWindow(dialog.Dialog):
             for pid in too_many_redirects_ids:
                 message += ('\n' + str(pid))
             messagebox.showwarning(title=lang.REDIRECTS_WARNING_TITLE, message=message)
+
+    def fellfarbe_equal_filter(self, val):
+        col_to_apply_on = self.data_headers.index('Fellfarbe')
+        button = self.header_objects[col_to_apply_on]
+        filt_str = f'x.lower() == "{val.lower()}"'
+        self.filter_function(button, 'Fellfarbe', filter_str=filt_str)
+
+    def fellfarbe_contains_filter(self, val):
+        col_to_apply_on = self.data_headers.index('Fellfarbe')
+        button = self.header_objects[col_to_apply_on]
+        for scheck in SCHECKUNGEN:
+            val = val.replace(scheck, '')
+        val = val.strip()
+        filt_str = f'x.lower().startswith("{val.lower()}")'
+        self.filter_function(button, 'Fellfarbe', filter_str=filt_str)
 
     def reverse_advanced_filter(self):
         self.filter = [not fi for fi in self.filter]
@@ -1042,14 +1060,16 @@ class ListingWindow(dialog.Dialog):
             el.grid(row=0, column=ci + 1, padx=int(self.def_size / 2))
         self.draw_objects()
 
-    def filter_function(self, event, prop):
+    def filter_function_wrapper(self, event, prop):
+        self.filter_function(event.widget, prop)
+
+    def filter_function(self, button, prop, filter_str=None):
         show_sum = self.check_sum_var.get()
         data_table = self.data_table_sum if show_sum else self.data_table
         self.gui.listing_filter = ''
         self.filter = [True] * len(data_table)
-        button = event.widget
-        row_to_apply_on = self.data_headers.index(prop)
-        if self.filter_row == row_to_apply_on:
+        col_to_apply_on = self.data_headers.index(prop)
+        if self.filter_row == col_to_apply_on:
             self.filter = [True] * len(data_table)   # filter off if clicked the same button again
             self.filter_row = -1
             button.configure(fg='black')
@@ -1057,16 +1077,19 @@ class ListingWindow(dialog.Dialog):
             for but in self.header_objects:
                 if but['fg'] == 'red':
                     but.configure(fg='black')
-            _ = FilterWindow(self, self.gui, lang.FILTER_WINDOW_TITLE)
+            if filter_str is None:
+                _ = FilterWindow(self, self.gui, lang.FILTER_WINDOW_TITLE)
+            else:
+                self.gui.listing_filter = filter_str
             if len(self.gui.listing_filter) > 0:
-                vals = [row[row_to_apply_on] for row in data_table]
+                vals = [row[col_to_apply_on] for row in data_table]
                 try:
                     self.filter = eval('[' + self.gui.listing_filter + ' for x in vals]')
                 except:
                     traceback.print_exc()
                     messagebox.showerror(title=lang.FILTER_ERROR_TITLE, message=lang.FILTER_ERROR_TEXT)
                     self.gui.listing_filter = ''
-                self.filter_row = row_to_apply_on
+                self.filter_row = col_to_apply_on
                 button.configure(fg='red')
                 self.advanced_filter_var.set(0)
                 self.reverse_filter_button.grid_forget()
