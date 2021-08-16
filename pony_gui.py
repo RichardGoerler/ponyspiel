@@ -777,10 +777,11 @@ class ListingWindow(dialog.Dialog):
     def fellfarbe_contains_filter(self, val):
         col_to_apply_on = self.data_headers.index('Fellfarbe')
         button = self.header_objects[col_to_apply_on]
+        val = val.lower()
         for scheck in SCHECKUNGEN:
             val = val.replace(scheck, '')
         val = val.strip()
-        filt_str = f'x.lower().startswith("{val.lower()}")'
+        filt_str = f'x.lower().startswith("{val}")'
         self.filter_function(button, 'Fellfarbe', filter_str=filt_str)
 
     def reverse_advanced_filter(self):
