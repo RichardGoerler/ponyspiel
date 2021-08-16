@@ -28,10 +28,10 @@ import build_count
 
 HALLOWEEN = False
 
-SCHECKUNGEN = ['tovero', 'overo', 'maximal tobiano', 'tobiano', 'splashed white', 'sabino',
+SCHECKUNGEN = ['tovero', 'overo', 'maximal tobiano', 'tobiano', 'splashed white',
                'roan spotted blanket', 'spotted blanket', 'blanket', 'few spot leopard', 'leopard',
                'snowcap', 'snowflake', 'mottled', 'varnish roan', 'rabicano', 'birdcatcher spots',
-               'brindle', 'reverse dapples', 'macchiato', 'minimalsabino']
+               'brindle', 'reverse dapples', 'macchiato', 'minimalsabino', 'sabino']
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
