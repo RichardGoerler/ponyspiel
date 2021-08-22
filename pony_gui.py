@@ -28,7 +28,7 @@ import build_count
 
 HALLOWEEN = False
 
-SCHECKUNGEN = ['tovero', 'overo', 'maximal tobiano', 'tobiano', 'splashed white',
+SCHECKUNGEN = ['tovero', 'overo', 'maximum tobiano', 'tobiano', 'splashed white',
                'roan spotted blanket', 'spotted blanket', 'blanket', 'few spot leopard', 'leopard',
                'snowcap', 'snowflake', 'mottled', 'varnish roan', 'rabicano', 'birdcatcher spots',
                'brindle', 'reverse dapples', 'macchiato', 'minimalsabino', 'sabino']

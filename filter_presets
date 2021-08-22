@@ -1,0 +1,5 @@
+Schecke: (any(s in x for s in ["Tobiano", "White Spotting", "Splashed White", "Overo", "Sabino", "Spotted", "Leopard", "Snowcap", "Snowflake", "Mottled", "Varnish", "Birdcatcher", "Macchiato"]) and all(s not in x for s in ["Rabicano", "Brindle", "Reverse"]))
+Farbvariation: (any(s in x for s in ["Rabicano", "Brindle", "Reverse"]) and all(s not in x for s in ["Tobiano", "White Spotting", "Splashed White", "Overo", "Sabino", "Spotted", "Leopard", "Snowcap", "Snowflake", "Mottled", "Varnish", "Birdcatcher", "Macchiato"]))
+Doppelscheckung: (any(s in x for s in ["Tobiano", "White Spotting", "Splashed White", "Overo", "Sabino", "Spotted", "Leopard", "Snowcap", "Snowflake", "Mottled", "Varnish", "Birdcatcher", "Macchiato"]) and any(s in x for s in ["Rabicano", "Brindle", "Reverse"]))
+Roan: "Roan" in x
+Einfarbig: all( s not in x for s in ["Tobiano", "White Spotting", "Splashed White", "Overo", "Sabino", "Spotted", "Leopard", "Snowcap", "Snowflake", "Mottled", "Varnish", "Birdcatcher", "Reverse", "Macchiato", "Rabicano", "Brindle"])
