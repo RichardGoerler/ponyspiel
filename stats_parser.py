@@ -898,7 +898,7 @@ class PonyExtractor:
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36'}
         self.telegram_id = ''
-        self.bot_token = '1331285354:AAHwXfiRyvrd4JFiSAw5SAB4C3YDlEpXXE8'
+        self.bot_token = '1331285354:AAEbZPUpJ7X1xaR3YSujlSLNr4j1q_ORWHc'
         self.race_dict = {'Alle': 0,
                           'Trakehner': 1,
                           'Pura Raza Española': 2,
