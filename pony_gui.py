@@ -132,6 +132,15 @@ class StudfeeWindow(dialog.Dialog):
         if self.stud_file.is_file():
             with open(self.stud_file, 'r') as f:
                 self.stud_lines = f.read().splitlines()
+        self.stud_fees_quick_file = Path('./stud_fees_quick')
+        self.stud_fees_quick = []
+        if self.stud_fees_quick_file.is_file():
+            with open(self.stud_fees_quick_file, 'r') as f:
+                for fee_l in f.readlines():
+                    try:
+                        self.stud_fees_quick.append(int(fee_l))
+                    except ValueError:
+                        continue
         self.gui.stud_fee = 0
         del_ind = None
         for li, l in enumerate(self.stud_lines):
@@ -148,10 +157,20 @@ class StudfeeWindow(dialog.Dialog):
         self.spin = tk.Spinbox(master, width=6, from_=0, to=999999, bg=self.gui.bg)
         self.spin.delete(0, "end")
         self.spin.insert(0, self.gui.stud_fee)
+        self.quick_frame = tk.Frame(master, bg=self.gui.bg)
+        for i, fee_v in enumerate(self.stud_fees_quick):
+            tk.Button(self.quick_frame, bg=self.gui.bg, text=str(fee_v), command=lambda x=fee_v: self.ok_val(x)).grid(row=i // 3, column=int(i % 3))
+        self.quick_frame.grid(row=1, column=0, columnspan=2, pady=(self.gui.default_size))
         self.spin.grid(row=0, column=1, padx=int(self.gui.default_size/2))
 
     def header(self, master):
         pass
+
+    def ok_val(self, val):
+        self.spin.delete(0, "end")
+        print(val)
+        self.spin.insert(0, str(val))
+        self.ok()
 
     def apply(self):
         self.gui.stud_fee = int(self.spin.get())
@@ -1539,15 +1558,26 @@ class PonyGUI:
         self.care_all_button = tk.Button(self.left_frame, text=lang.CARE_OWN_BUTTON, command=self.care_all, bg=self.bg)
         self.care_all_button.grid(row=0, column=1, padx=int(self.default_size / 2))
         self.interactive_elements.append(self.care_all_button)
-        self.train_all_button = tk.Button(self.left_frame, text=lang.TRAIN_OWN_BUTTON, command=self.train_all_wrapper, bg=self.bg)
+        self.train_what_var = tk.StringVar()
+        self.train_all_button = tk.Button(self.left_frame, text=lang.TRAIN_OWN_BUTTON, command=lambda x=self.train_what_var.get: self.train_all(x() == lang.TRAIN_WHAT_OPTION_ONLY), bg=self.bg)
         self.train_all_button.grid(row=0, column=2, padx=int(self.default_size / 2))
         self.interactive_elements.append(self.train_all_button)
+        self.train_what_options_list = [lang.TRAIN_WHAT_OPTION_ALL, lang.TRAIN_WHAT_OPTION_ONLY]
+        self.train_what_var.set(self.train_what_options_list[0])
+        self.train_what_option = tk.OptionMenu(self.left_frame, self.train_what_var, *self.train_what_options_list)
+        self.train_what_option.grid(row=1, column=2, padx=int(self.default_size / 2))
+        self.interactive_elements.append(self.train_what_option)
         self.beauty_all_button = tk.Button(self.left_frame, text=lang.BEAUTY_OWN_BUTTON, command=self.beauty_all, bg=self.bg)
         self.beauty_all_button.grid(row=0, column=3, padx=int(self.default_size / 2))
         self.interactive_elements.append(self.beauty_all_button)
-        self.deckstation_login_all_button = tk.Button(self.left_frame, text=lang.DECKSTATION_LOGIN_BUTTON, command=self.deckstation_login_all, bg=self.bg)
+        self.deckstation_login_all_button = tk.Button(self.left_frame, text=lang.DECKSTATION_LOGIN_BUTTON, command=self.deckstation_login_all_wrapper, bg=self.bg)
         self.deckstation_login_all_button.grid(row=0, column=4, padx=int(self.default_size / 2))
         self.interactive_elements.append(self.deckstation_login_all_button)
+        self.deckstation_threshold_var = tk.StringVar()
+        self.deckstation_threshold_list = [lang.DECKSTATION_THRESHOLD_ALL, '<= 2000'] + [f'<= {p*1000}' for p in range(5, 45, 5)]
+        self.deckstation_threshold_var.set(self.deckstation_threshold_list[0])
+        self.deckstation_threshold_option = tk.OptionMenu(self.left_frame, self.deckstation_threshold_var, *self.deckstation_threshold_list)
+        self.deckstation_threshold_option.grid(row=1, column=4, padx=int(self.default_size / 2))
 
         self.individual_frame = tk.Frame(self.root, bg=self.bg)
         self.individual_frame.grid(row=7, column=1, columnspan=2)
@@ -1683,7 +1713,14 @@ class PonyGUI:
                 return True
         return False
 
-    def deckstation_login_all(self):
+    def deckstation_login_all_wrapper(self):
+        fee_thresh = None
+        splt = self.deckstation_threshold_var.get().split('=')
+        if len(splt) > 1:
+            fee_thresh = int(splt[1])
+        self.deckstation_login_all(fee_thresh)
+
+    def deckstation_login_all(self, fee_threshold=None):
         too_many_redirects_ids = []
         all_ids, all_races = read_own_file()
         stud_lines = []
@@ -1696,6 +1733,8 @@ class PonyGUI:
         if len(own_stud_lines) > 0:
             progressbar = ProgressWindow(self.root, self, title=lang.DECKSTATION_LOGIN_BUTTON, steps=len(own_stud_lines), initial_text=str(own_stud_lines[0][0]))
             for pid, fee in own_stud_lines:
+                if (fee_threshold is not None) and (int(fee) > fee_threshold):
+                    continue
                 if not self.extractor.login_deckstation(pid, fee):
                     if 'too many redirects' in self.extractor.log[-1].lower():
                         too_many_redirects_ids.append(pid)
@@ -1757,14 +1796,6 @@ class PonyGUI:
             if not self.extractor.login_beauty(pid):
                 messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
                 return
-
-    def train_all_wrapper(self):
-        only_train_file = Path('./only_train')
-        only_train = False
-        if only_train_file.is_file():
-            reply = messagebox.askquestion(lang.ONLY_TRAIN_QUESTION_TITLE, lang.ONLY_TRAIN_QUESTION_MESSAGE)
-            only_train = (reply == 'yes')
-        self.train_all(only_train=only_train)
 
     def train_all(self, only_train=False):
         too_many_redirects_ids = []
