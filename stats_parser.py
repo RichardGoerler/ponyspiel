@@ -135,7 +135,7 @@ class MyHTMLParser(HTMLParser):
                                                                                                629]
 
         # Rennart
-        self.rennen_headings = ['Rennen', 'Sulky', 'Distanzrennen', 'Töltrennen', 'Passrennen',
+        self.rennen_headings = ['Rennen', 'Sulky', 'Distanzrennen', 'Flachrennen', 'Trabrennen',
                                 # Attribute
                                 'Start', 'Fliegender Start', 'Autostart', 'Bänderstart', 'Startbox',
                                 # Attribute
