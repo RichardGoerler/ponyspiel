@@ -107,6 +107,10 @@ class ProgressWindow(tk.Toplevel):
                 # print('shutdown')
         self.gui.root.update()
 
+    def set_text_only(self, text):
+        self.pb_text.configure(text=self.pad_str(text))
+        self.gui.root.update()
+
     def close(self):
         self.destroy()
         
@@ -1761,12 +1765,32 @@ class PonyGUI:
             for pid, fee in own_stud_lines:
                 if (fee_threshold is not None) and (int(fee) > fee_threshold):
                     continue
-                if not self.extractor.login_deckstation(pid, fee):
-                    if 'too many redirects' in self.extractor.log[-1].lower():
-                        too_many_redirects_ids.append(pid)
+                cont = False
+                brk = False
+                for retry_num in range(11):
+                    if not self.extractor.login_deckstation(pid, fee):
+                        if 'too many redirects' in self.extractor.log[-1].lower():
+                            too_many_redirects_ids.append(pid)
+                            cont = True
+                            break
+                        if retry_num < 10:
+                            # try again after 15s
+                            progressbar.set_text_only(lang.WAITING_FOR_CONNECTION.format(retry_num + 1))
+                            time.sleep(15)
+                            progressbar.set_text_only(str(pid))
+                        else:
+                            messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+                            brk = True
+                            break
                     else:
-                        messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
-                        return
+                        # beauty login was successful
+                        break
+                if cont:
+                    # too many redirects occurred in inner loop
+                    continue
+                if brk:
+                    # all retries in vain
+                    return
                 if len(self.extractor.log) > 0 and '25 years' in self.extractor.log[-1].lower() and pid in self.extractor.log[-1]:
                     print('Pony {} is older than 25 years. Removing from stud file.'.format(pid))
                     if stud_file.is_file():
@@ -1795,12 +1819,32 @@ class PonyGUI:
         if len(own_beauty) > 0:
             progressbar = ProgressWindow(self.root, self, title=lang.BEAUTY_OWN_BUTTON, steps=len(own_beauty), initial_text=str(own_beauty[0]))
             for pid in own_beauty:
-                if not self.extractor.login_beauty(pid):
-                    if 'too many redirects' in self.extractor.log[-1].lower():
-                        too_many_redirects_ids.append(pid)
+                cont = False
+                brk = False
+                for retry_num in range(11):
+                    if not self.extractor.login_beauty(pid):
+                        if 'too many redirects' in self.extractor.log[-1].lower():
+                            too_many_redirects_ids.append(pid)
+                            cont = True
+                            break
+                        if retry_num < 10:
+                            # try again after 15s
+                            progressbar.set_text_only(lang.WAITING_FOR_CONNECTION.format(retry_num + 1))
+                            time.sleep(15)
+                            progressbar.set_text_only(str(pid))
+                        else:
+                            messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+                            brk = True
+                            break
                     else:
-                        messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
-                        return
+                        # beauty login was successful
+                        break
+                if cont:
+                    # too many redirects occurred in inner loop
+                    continue
+                if brk:
+                    # all retries in vain
+                    return
                 if len(self.extractor.log) > 0 and '25 years' in self.extractor.log[-1].lower() and pid in self.extractor.log[-1]:
                     print('Pony {} is older than 25 years. Removing from beauty file.'.format(pid))
                     if beauty_file.is_file():
@@ -1857,13 +1901,33 @@ class PonyGUI:
                 else:
                     dis_list = self.default_disciplines
 
-                if not self.extractor.train_pony(this_id, disciplines=dis_list):
-                    if 'too many redirects' in self.extractor.log[-1].lower():
-                        too_many_redirects_ids.append(this_id)
-                        progressbar.step(str(this_id))
-                        continue
-                    messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
-                    progressbar.close()
+                cont = False
+                brk = False
+                for retry_num in range(11):
+                    if not self.extractor.train_pony(this_id, disciplines=dis_list):
+                        if 'too many redirects' in self.extractor.log[-1].lower():
+                            too_many_redirects_ids.append(this_id)
+                            progressbar.step(str(this_id))
+                            cont = True
+                            break
+                        if retry_num < 10:
+                            # try again after 15s
+                            progressbar.set_text_only(lang.WAITING_FOR_CONNECTION.format(retry_num + 1))
+                            time.sleep(15)
+                            progressbar.set_text_only(str(this_id))
+                        else:
+                            messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+                            progressbar.close()
+                            brk = True
+                            break
+                    else:
+                        # training was successful
+                        break
+                if cont:
+                    # too many redirects occurred in inner loop
+                    continue
+                if brk:
+                    # all retries in vain
                     break
                 # check whether pony is fully trained or in charakter training
                 if len(self.extractor.log) > 0 and this_id in self.extractor.log[-1] \
@@ -1925,13 +1989,33 @@ class PonyGUI:
         all_ids, all_races = read_own_file()
         progressbar = ProgressWindow(self.root, self, title=lang.CARE_OWN_BUTTON, steps=len(all_ids), initial_text=str(all_ids[0]))
         for this_id in all_ids:
-            if not self.extractor.care_pony(this_id):
-                if 'too many redirects' in self.extractor.log[-1].lower():
-                    too_many_redirects_ids.append(this_id)
+            cont = False
+            brk = False
+            for retry_num in range(11):
+                if not self.extractor.care_pony(this_id):
+                    if 'too many redirects' in self.extractor.log[-1].lower():
+                        too_many_redirects_ids.append(this_id)
+                        cont = True
+                        break
+                    if retry_num < 10:
+                        # try again after 15s
+                        progressbar.set_text_only(lang.WAITING_FOR_CONNECTION.format(retry_num + 1))
+                        time.sleep(15)
+                        progressbar.set_text_only(str(this_id))
+                    else:
+                        messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
+                        progressbar.close()
+                        brk = True
+                        break
                 else:
-                    messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
-                    progressbar.close()
-                    return
+                    # care was successful
+                    break
+            if cont:
+                # too many redirects occurred in inner loop
+                continue
+            if brk:
+                # all retries in vain
+                return
             progressbar.step(str(this_id))
 
         if len(too_many_redirects_ids) > 0:

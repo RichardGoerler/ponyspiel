@@ -112,6 +112,7 @@ POLL_CANCEL_TEXT = "Wirklich alle Verfügbarkeits-Benachrichtigungen ausschalten
 
 REDIRECTS_WARNING_TITLE = 'Ponies nicht aufrufbar'
 REDIRECTS_WARNING_MESSAGE = 'Einige Ponies sind nicht aufrufbar. Sie tauchen nicht in der Liste auf. Im Folgenden sind die zugehörigen IDs aufgelistet.'
+WAITING_FOR_CONNECTION = 'Auf Verbindung warten ({}) ...'
 
 STUDFEE_LABEL = 'Decktaxe'
 STUDFEE_TITLE = 'Dextaxe eintragen'
