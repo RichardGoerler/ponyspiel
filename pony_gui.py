@@ -136,7 +136,7 @@ class StudfeeWindow(dialog.Dialog):
         self.stud_fees_quick = []
         if self.stud_fees_quick_file.is_file():
             with open(self.stud_fees_quick_file, 'r') as f:
-                for fee_l in f.readlines():
+                for fee_l in f.read().splitlines():
                     try:
                         self.stud_fees_quick.append(int(fee_l))
                     except ValueError:
@@ -187,7 +187,7 @@ class FilterWindow(dialog.Dialog):
         filter_preset_lines = []
         if self.preset_file.is_file():
             with self.preset_file.open('r') as f:
-                filter_preset_lines = f.readlines()
+                filter_preset_lines = f.read().splitlines()
         self.filter_presets = {'': ''}
         for l in filter_preset_lines:
             spl = l.split(':')
@@ -379,6 +379,13 @@ class ListingWindow(dialog.Dialog):
             with open(stud_file, 'r') as f:
                 stud_lines = f.read().splitlines()
         self.studs = [l.split()[0] for l in stud_lines]
+
+        flag_file = Path('./flags')
+        flag_lines = []
+        if flag_file.is_file():
+            with open(flag_file, 'r') as f:
+                flag_lines = f.read().splitlines()
+        self.flags = [l.split()[0] for l in flag_lines]
 
         self.discipline_ids, self.disciplines = read_train_file()
         self.fully_trained_file = Path('./fully_trained')
@@ -620,6 +627,8 @@ class ListingWindow(dialog.Dialog):
                     pony_years = pony_months // 12
                     pony_months %= 12
                     object_row.append(tk.Label(self.table_frame, text='{}/{}'.format(pony_years, pony_months), font=self.def_font, bg=self.gui.bg))
+                object_row[-1].bind("<Button-1>", lambda e, pid=id: self.toggle_flag(e, pid))
+                object_row[-1].configure(borderwidth=1 * int(id in self.flags), relief="solid")
                 table_row.append(age)
                 table_row_sum.append(age)
 
@@ -786,6 +795,23 @@ class ListingWindow(dialog.Dialog):
             for pid in too_many_redirects_ids:
                 message += ('\n' + str(pid))
             messagebox.showwarning(title=lang.REDIRECTS_WARNING_TITLE, message=message)
+
+    def toggle_flag(self, e, pid):
+        flag_file = Path('./flags')
+        lab = e.widget
+        flag_lines = []
+        if flag_file.exists():
+            with open(flag_file, 'r') as f:
+                flag_lines = f.read().splitlines()
+        if lab['borderwidth'] == 1:
+            lab['borderwidth'] = 0
+            fi = flag_lines.index(str(pid))
+            del flag_lines[fi]
+        else:
+            lab['borderwidth'] = 1
+            flag_lines.append(str(pid))
+        with open(flag_file, 'w') as f:
+            f.write('\n'.join(flag_lines))
 
     def fellfarbe_equal_filter(self, val):
         col_to_apply_on = self.data_headers.index('Fellfarbe')
@@ -1747,7 +1773,7 @@ class PonyGUI:
                         # delete pid line from stud file
                         stud_lines = [l for l in stud_lines if pid not in l]
                         with open(stud_file, 'w') as f:
-                            f.writelines(stud_lines)
+                            f.write('\n'.join(stud_lines))
 
                 progressbar.step(str(pid))
 
@@ -1781,7 +1807,7 @@ class PonyGUI:
                         # delete pid line from stud file
                         beauty_ids = [l for l in beauty_ids if pid not in l]
                         with open(beauty_file, 'w') as f:
-                            f.writelines(beauty_ids)
+                            f.write('\n'.join(beauty_ids))
                 progressbar.step(str(pid))
 
         if len(too_many_redirects_ids) > 0:
@@ -1870,11 +1896,9 @@ class PonyGUI:
                 if new_id not in only_train_ids:
                     only_train_ids.append(new_id)
             with open(fully_trained_file, 'w') as f:
-                for pid in fully_trained_ids:
-                    f.write(str(pid) + '\n')
+                f.write('\n'.join(fully_trained_ids))
             with open(only_train_file, 'w') as f:
-                for pid in only_train_ids:
-                    f.write(str(pid) + '\n')
+                f.write('\n'.join(only_train_ids))
 
             if len(too_many_redirects_ids) > 0:
                 message = lang.REDIRECTS_WARNING_MESSAGE
