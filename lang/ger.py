@@ -81,6 +81,8 @@ PASSWORD_LABEL = 'Passwort'
 TELEGRAM_LABEL = 'Telegram ID (optional)'
 
 LISTING_TITLE = 'Auflistung'
+ALL_STABLES_NAME = 'Alle Ställe'
+UNKNOWN_STABLES_NAME = 'unbekannt'
 CHECK_LISTING_SUM = 'Summen-Werte'
 CHECK_ADV_FILTER = 'Profi-Filter'
 ADV_FILTER_REVERSE = 'umkehren'

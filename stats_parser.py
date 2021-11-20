@@ -1054,7 +1054,7 @@ class PonyExtractor:
             urls = []
             if not 'nostable.php?id=' in html_text:
                 self.log.append(f'Could not find nostable link in landing page')
-                return False
+                return False, False
             url_begin = html_text.index('nostable.php?id=')
             url_text = html_text[url_begin: url_begin + 30]
             url_end = url_text.index('"')
@@ -1074,6 +1074,7 @@ class PonyExtractor:
                 prog_win.set_steps(len(urls)+1)
 
             horse_ids = []
+            stable_names = []
             for stable_url in urls:
                 if prog_win is not None:
                     prog_win.step(stable_url)
@@ -1083,13 +1084,19 @@ class PonyExtractor:
                     main_begin = stable_text.index('class="main"')
                 else:
                     self.log.append(f'Could not find main div in stable {self.base_url + stable_url}')
-                    return False
+                    return False, False
                 if '<footer' in stable_text:
                     main_end = stable_text.index('<footer')
                 else:
                     self.log.append(f'Could not find footer in stable {self.base_url + stable_url}')
-                    return False
+                    return False, False
                 stable_text = stable_text[main_begin : main_end]
+                if '<h2 class="center_items">' in stable_text and '</h2>' in stable_text:
+                    caption_start = stable_text.index('<h2 class="center_items">')
+                    caption_end = stable_text.index('</h2>')
+                    stable_name = stable_text[caption_start + 28: caption_end].strip()
+                else:
+                    stable_name = ''
                 search_string = '"horse.php?id='
                 while search_string in stable_text:
                     index = stable_text.index(search_string) + len(search_string)
@@ -1100,11 +1107,12 @@ class PonyExtractor:
                     id = int(id_string)
                     if not id in horse_ids:
                         horse_ids.append(id)
+                        stable_names.append(stable_name)
                     stable_text = stable_text[index:]
 
             if prog_win is not None:
                 prog_win.step('Finished')
-            return horse_ids
+            return horse_ids, stable_names
 
         if not self._login_if_required():
             return False

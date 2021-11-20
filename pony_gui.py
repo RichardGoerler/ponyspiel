@@ -356,8 +356,12 @@ class ListingWindow(dialog.Dialog):
         no_images = not self.gui.listing_images_var.get()
         self.gui.quick_display = False
         too_many_redirects_ids = []
+        self.stable_list = [lang.ALL_STABLES_NAME]
         if not self.gui.exterior_search_requested:
-            all_ids, all_races = read_own_file()
+            all_ids, all_races, all_stables = read_own_file()
+            for stab in all_stables:
+                if stab not in self.stable_list:
+                    self.stable_list.append(stab)
 
             exclude_ids = []
             exclude_file = Path('./listing_exclude')
@@ -368,8 +372,10 @@ class ListingWindow(dialog.Dialog):
             not_exclude_list_indices = [i for i in range(len(all_ids)) if all_ids[i] not in exclude_ids]
             all_ids = [all_ids[i] for i in not_exclude_list_indices]
             all_races = [all_races[i] for i in not_exclude_list_indices]
+            all_stables = [all_stables[i] for i in not_exclude_list_indices]
         else:
             all_ids = self.gui.exterior_search_ids
+            all_stables = [lang.UNKNOWN_STABLES_NAME] * len(all_ids)
 
         beauty_file = Path('./beauty_ponies')
         self.beauty_ids = []
@@ -473,6 +479,8 @@ class ListingWindow(dialog.Dialog):
         self.object_colors = []
         self.sex = []
         self.filter = []
+        self.stables_match = []
+        self.stable_filter = []
         self.filter_row = -1
         self.banners = []
         self.images = []
@@ -494,6 +502,11 @@ class ListingWindow(dialog.Dialog):
         self.advanced_filter_checkbutton = tk.Checkbutton(self.button_frame, text=lang.CHECK_ADV_FILTER, font=self.def_font, variable=self.advanced_filter_var, command=self.toggle_advanced_filter, bg=self.gui.bg)
         self.advanced_filter_checkbutton.grid(row=0, column=4, padx=int(self.def_size / 2))
         self.reverse_filter_button = tk.Button(self.button_frame, text=lang.ADV_FILTER_REVERSE, font=self.def_font, command=self.reverse_advanced_filter, bg=self.gui.bg)
+        self.stable_selected_var = tk.StringVar()
+        self.stable_selected_var.set(self.stable_list[0])
+        self.stable_selector = tk.OptionMenu(self.button_frame, self.stable_selected_var, *self.stable_list, command=self.set_stable_filter)
+        self.stable_selector.config(bg=self.gui.bg, font=self.def_font)
+        self.stable_selector.grid(row=0, column=6, padx=int(self.def_size / 2))
 
         self.gui.race_ids = []
         self.table_frame = tk.Frame(master, bg=self.gui.bg)
@@ -758,19 +771,20 @@ class ListingWindow(dialog.Dialog):
                     el.configure(fg=col)
                 self.object_colors.append(col)
                 self.filter.append(True)
+                self.stable_filter.append(True)
+                self.stables_match.append(all_stables[idx])
 
         # update owned ponies race entries
         own_file = Path('./owned_ponies')
-        if own_file.is_file():
-            with open(own_file, 'r') as f:
-                lines = f.read().splitlines()
-        for li in range(len(lines)):
-            this_line = lines[li].split()
-            pid_loaded = this_line[0]
+        end_ids, end_races, end_stables = read_own_file()
+        lines = []
+        for pid_loaded, race_loaded, stab_loaded in zip(end_ids, end_races, end_stables):
             if pid_loaded in all_ids:
                 this_ind = all_ids.index(pid_loaded)
                 new_race = all_races[this_ind]
-                lines[li] = pid_loaded + ' ' + str(new_race)
+            else:
+                new_race = race_loaded
+            lines.append(pid_loaded + ' ' + str(new_race) + ' ' + str(stab_loaded))
         with open(own_file, 'w') as f:
             for l in lines:
                 f.write(l + '\n')
@@ -1029,7 +1043,7 @@ class ListingWindow(dialog.Dialog):
             disp_sex = [self.show_sex]
         row_index = 0
         for ri, object_row in enumerate(self.objects):
-            if self.sex[ri] in disp_sex and self.filter[ri]:
+            if self.sex[ri] in disp_sex and self.filter[ri] and self.stable_filter[ri]:
                 for ci, el in enumerate(object_row):
                     rindex = row_index % self.MAXROWS
                     block_id = (row_index // self.MAXROWS)
@@ -1110,6 +1124,14 @@ class ListingWindow(dialog.Dialog):
             el.grid(row=0, column=ci + 1, padx=int(self.def_size / 2))
         self.draw_objects()
 
+    def set_stable_filter(self, e):
+        selected_stable = self.stable_selected_var.get()
+        if selected_stable == lang.ALL_STABLES_NAME:
+            self.stable_filter = [True] * len(self.stables_match)
+        else:
+            self.stable_filter = [s == selected_stable for s in self.stables_match]
+        self.redraw()
+
     def filter_function_wrapper(self, event, prop):
         self.filter_function(event.widget, prop)
 
@@ -1178,6 +1200,8 @@ class ListingWindow(dialog.Dialog):
         table_sorted_sum = []
         sex_sorted = []
         filter_sorted = []
+        stable_filter_sorted = []
+        stables_match_sorted = []
         race_ids_sorted = []
         cache_exists_for_row_sorted = []
         for pid in sorted_idx:
@@ -1187,6 +1211,8 @@ class ListingWindow(dialog.Dialog):
             table_sorted_sum.append(self.data_table_sum[pid])
             sex_sorted.append(self.sex[pid])
             filter_sorted.append(self.filter[pid])
+            stable_filter_sorted.append(self.stable_filter[pid])
+            stables_match_sorted.append(self.stables_match[pid])
             race_ids_sorted.append(self.gui.race_ids[pid])
             cache_exists_for_row_sorted.append(self.cache_exists_for_row[pid])
         self.objects = objects_sorted
@@ -1195,6 +1221,8 @@ class ListingWindow(dialog.Dialog):
         self.data_table_sum = table_sorted_sum
         self.sex = sex_sorted
         self.filter = filter_sorted
+        self.stable_filter = stable_filter_sorted
+        self.stables_match = stables_match_sorted
         self.gui.race_ids = race_ids_sorted
         self.cache_exists_for_row = cache_exists_for_row_sorted
         self.draw_objects()
@@ -1336,6 +1364,7 @@ def read_own_file():
     own_file = Path('./owned_ponies')
     all_ids = []
     all_races = []
+    all_stables = []
     if own_file.is_file():
         with open(own_file, 'r') as f:
             lines = f.read().splitlines()
@@ -1346,7 +1375,11 @@ def read_own_file():
                 all_races.append(int(spl[1]))
             else:
                 all_races.append(-1)
-    return all_ids, all_races
+            if len(spl) > 2:
+                all_stables.append(' '.join(spl[2:]))
+            else:
+                all_stables.append(lang.UNKNOWN_STABLES_NAME)
+    return all_ids, all_races, all_stables
 
 def read_train_file():
     own_file = Path('./train_define')
@@ -1752,7 +1785,7 @@ class PonyGUI:
 
     def deckstation_login_all(self, fee_threshold=None):
         too_many_redirects_ids = []
-        all_ids, all_races = read_own_file()
+        all_ids, all_races, _ = read_own_file()
         stud_lines = []
         stud_file = Path('./studs')
         if stud_file.is_file():
@@ -1809,7 +1842,7 @@ class PonyGUI:
 
     def beauty_all(self):
         too_many_redirects_ids = []
-        all_ids, all_races = read_own_file()
+        all_ids, all_races, _ = read_own_file()
         beauty_ids = []
         beauty_file = Path('./beauty_ponies')
         if beauty_file.is_file():
@@ -1869,7 +1902,7 @@ class PonyGUI:
 
     def train_all(self, only_train=False):
         too_many_redirects_ids = []
-        all_ids, all_races = read_own_file()
+        all_ids, all_races, _ = read_own_file()
         fully_trained_ids = []
         only_train_ids = []
         fully_trained_file = Path('./fully_trained')
@@ -1986,7 +2019,7 @@ class PonyGUI:
 
     def care_all(self):
         too_many_redirects_ids = []
-        all_ids, all_races = read_own_file()
+        all_ids, all_races, _ = read_own_file()
         progressbar = ProgressWindow(self.root, self, title=lang.CARE_OWN_BUTTON, steps=len(all_ids), initial_text=str(all_ids[0]))
         for this_id in all_ids:
             cont = False
@@ -2290,7 +2323,7 @@ class PonyGUI:
             self.extractor.del_pony_cache(pony_id_str)
             self.this_cache_button['state'] = tk.DISABLED
         elif type == 'not_owned':
-            own_ids, own_races = read_own_file()
+            own_ids, own_races, _ = read_own_file()
             self.extractor.del_pony_cache_all(exclude=own_ids)
             if pony_id_str not in own_ids:
                 self.this_cache_button['state'] = tk.DISABLED
@@ -2307,21 +2340,18 @@ class PonyGUI:
             pass
 
     def load_own_ponies(self):
-        all_ids, all_races = read_own_file()
+        all_ids, all_races, all_stables = read_own_file()
         prog_wind = ProgressWindow(self.root, self, title=lang.LOAD_OWN_BUTTON, steps=10, initial_text=lang.GET_STABLE_LIST, shutdown_button=False)
-        horse_ids = self.extractor.get_own_ponies(prog_wind)
+        horse_ids, stable_names = self.extractor.get_own_ponies(prog_wind)
         if horse_ids == False:
             messagebox.showerror(title=lang.PONY_INFO_ERROR, message=self.extractor.log[-1])
         else:
             own_file = Path('./owned_ponies')
             with open(own_file, 'w') as f:
-                for id in horse_ids:
+                for id, stab in zip(horse_ids, stable_names):
                     id_str = str(id)
                     this_race = all_races[all_ids.index(id_str)] if id_str in all_ids else -1
-                    if this_race == -1:
-                        f.write(id_str + '\n')
-                    else:
-                        f.write(id_str + ' ' + str(this_race) + '\n')
+                    f.write(id_str + ' ' + str(this_race) + ' ' + str(stab) + '\n')
 
     def make_listing(self):
         self.exterior_search_requested = False
@@ -2351,7 +2381,7 @@ class PonyGUI:
     def update_owned(self):
         pony_id_str = self.id_label.cget('text')
         own_file = Path('./owned_ponies')
-        all_ids, all_races = read_own_file()
+        all_ids, all_races, all_stables = read_own_file()
         if self.check_ownership_var.get():
             # We want to add id to the file if it does not exist
             if pony_id_str not in all_ids:
@@ -2366,9 +2396,10 @@ class PonyGUI:
                 ind = all_ids.index(pony_id_str)
                 del all_ids[ind]
                 del all_races[ind]
+                del all_stables[ind]
         with open(own_file, 'w') as f:
-            for pid, race in zip(all_ids, all_races):
-                f.write(str(pid) + ' ' + str(race) + '\n')
+            for pid, race, stab in zip(all_ids, all_races, all_stables):
+                f.write(str(pid) + ' ' + str(race) + ' ' + str(stab) + '\n')
 
     def is_owned(self):
 
@@ -2381,8 +2412,7 @@ class PonyGUI:
             return exist
 
         pony_id_str = self.id_label.cget('text')
-        own_file = Path('./owned_ponies')
-        all_ids, _ = read_own_file()
+        all_ids, _, _ = read_own_file()
         return pony_id_str in all_ids
 
     def toggle_all_var(self):
