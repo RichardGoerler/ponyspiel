@@ -110,7 +110,7 @@ Enthält eine Spalte ein Gleichheitszeichen, werden die Einträge nach dem Gleic
 
 Ein besonderes Schlüsselwort, bei dem kein Durchschnittswert berechnet wird, ist z.B. Fellfarbe. Dies darf nicht vor dem Gleichheitszeichen stehen.
 
-![listing](https://beachomize.de/ponyspiel_image/Auflistung1.JPG)
+![listing](https://drive.google.com/uc?export=download&id=)1h0goZhagqooWLKijsJXan21T5fY_6A_D)
 
 Stuten sind in Rot, Hengste in blauer Schrift dargestellt. Noch nicht ausgewachsene Pferde sind in einer helleren Farbe dargestellt.
 
@@ -140,7 +140,7 @@ Mittelklick auf das Bild des Pferdes generiert eine automatische Kurzbeschreibun
 
 Rechtsklick auf einen Spaltennamen erlaubt es, nur die Pferde anzuzeigen, deren Spaltenwert eine selbst definierbare Bedingung erfüllt. Es öffnet sich ein Fenster, in welchem die Bedingung eigegeben werden kann.
 
-![Filter](https://beachomize.de/ponyspiel_image/Filter400.jpg)
+![Filter](https://drive.google.com/uc?export=download&id=1X3yHCdZZA0d_UEIbWYEblsDKJ--FkDjs)
 
 Die Bedingung ist ein Python-Ausdruck, der für den Spaltenwert x jedes Pferdes einzeln ausgewertet wird. Es werden anschließend nur die Pferde angezeigt, für die der Ausdruck wahr ist.
 Erneuter Rechtsklick auf den Spaltennamen entfernt den Filter wieder.
