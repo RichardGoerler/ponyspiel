@@ -194,7 +194,3 @@ mit folgenden Paketen
 - tkinter
 - requests
 - Pillow
-
-### Alternativ
-
-_dist/pony_gui.exe_ sollte ohne Installation von Python auf Windows funktionieren.
