@@ -4,7 +4,7 @@ Tool zur Verwaltung von Pferden beim Browsergame noblehorsechampion.
 
 ## Funktionen
 
-![main_window](https://beachomize.de/ponyspiel_image/main_with_numbers5.jpg)
+![main_window](https://drive.google.com/file/d/1oyJAVkbPrj7YfVD8Pxqchse62LkSZROB/view?usp=sharing)
 
 ### 1 - Login
 
