@@ -4,7 +4,7 @@ Tool zur Verwaltung von Pferden beim Browsergame noblehorsechampion.
 
 ## Funktionen
 
-![main_window](https://drive.google.com/file/d/1oyJAVkbPrj7YfVD8Pxqchse62LkSZROB/view?usp=sharing)
+![main_window](https://drive.google.com/uc?export=download&id=1oyJAVkbPrj7YfVD8Pxqchse62LkSZROB)
 
 ### 1 - Login
 
