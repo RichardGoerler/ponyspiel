@@ -110,7 +110,7 @@ Enthält eine Spalte ein Gleichheitszeichen, werden die Einträge nach dem Gleic
 
 Ein besonderes Schlüsselwort, bei dem kein Durchschnittswert berechnet wird, ist z.B. Fellfarbe. Dies darf nicht vor dem Gleichheitszeichen stehen.
 
-![listing](https://drive.google.com/uc?export=download&id=)1h0goZhagqooWLKijsJXan21T5fY_6A_D)
+![listing](https://drive.google.com/uc?export=download&id=1h0goZhagqooWLKijsJXan21T5fY_6A_D)
 
 Stuten sind in Rot, Hengste in blauer Schrift dargestellt. Noch nicht ausgewachsene Pferde sind in einer helleren Farbe dargestellt.
 
