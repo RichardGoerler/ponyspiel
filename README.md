@@ -194,3 +194,7 @@ mit folgenden Paketen
 - tkinter
 - requests
 - Pillow
+
+### Freunde
+
+https://reittherapie-seelentiefe.de
