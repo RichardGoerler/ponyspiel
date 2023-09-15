@@ -195,6 +195,3 @@ mit folgenden Paketen
 - requests
 - Pillow
 
-### Freunde
-
-https://reittherapie-seelentiefe.de
